@@ -5,6 +5,6 @@ This is a reference server implementation of the version 1.2.0 HTSget API protoc
   - API usage
   - setup instructions
 
-## Setup Instructions
+## Setup
 - Install [Golang and language tools](https://golang.org/dl/)
 - 
