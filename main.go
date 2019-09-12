@@ -1,11 +1,32 @@
 package main
 
 import (
-	"fmt"
+	"encoding/json"
 	"net/http"
 
 	"github.com/go-chi/chi"
 )
+
+var dataSource = "http://s3.amazonaws.com/czbiohub-tabula-muris/"
+
+type Ticket struct {
+	HTSget Container `json:"htsget"`
+}
+
+type Container struct {
+	Format string `json:"format"`
+	URLS   []URL  `json:"urls"`
+}
+
+type URL struct {
+	URL     string  `json:"url"`
+	Headers Headers `json:"headers"`
+	Class   string  `json:"class"`
+}
+
+type Headers struct {
+	Range string `json:"range"`
+}
 
 func main() {
 	r := chi.NewRouter()
@@ -22,5 +43,14 @@ func main() {
 }
 
 func getReads(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte(fmt.Sprintf("url:%s", "some url")))
+	urls := []URL{{dataSource + "id", Headers{"bytes=1-100"}, "body"}}
+	container := Container{"BAM", urls}
+	ticket := Ticket{HTSget: container}
+
+	ticketJSON, err := json.Marshal(ticket)
+	if err != nil {
+		panic(err)
+	}
+
+	w.Write(ticketJSON)
 }
