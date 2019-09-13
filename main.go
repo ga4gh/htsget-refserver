@@ -35,13 +35,17 @@ func main() {
 	})
 
 	// route for "reads" resource
-	r.Get("/reads/*", getReads)
+	r.Get("/reads/{id}", getReads)
 
 	http.ListenAndServe(":3000", r)
 }
 
 func getReads(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "*")
+	id := chi.URLParam(r, "id")
+	// var filename
+	// if strings.hasPrefix(id, "10X") {
+
+	// }
 	urls := []URL{{dataSource + id, Headers{"bytes=1-100"}, "body"}}
 	container := Container{"BAM", urls}
 	ticket := Ticket{HTSget: container}
@@ -51,5 +55,6 @@ func getReads(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
+	w.Header().Set("Content-Type", "application/vnd.ga4gh.htsget.v1.0.0+json; charset=utf-8")
 	w.Write(ticketJSON)
 }
