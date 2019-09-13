@@ -34,16 +34,15 @@ func main() {
 		w.Write([]byte("Welcome to the HTSget reference server :D"))
 	})
 
-	// routes for "reads" resource
-	r.Route("/reads", func(r chi.Router) {
-		r.Get("/", getReads) // GET /reads
-	})
+	// route for "reads" resource
+	r.Get("/reads/*", getReads)
 
 	http.ListenAndServe(":3000", r)
 }
 
 func getReads(w http.ResponseWriter, r *http.Request) {
-	urls := []URL{{dataSource + "id", Headers{"bytes=1-100"}, "body"}}
+	id := chi.URLParam(r, "*")
+	urls := []URL{{dataSource + id, Headers{"bytes=1-100"}, "body"}}
 	container := Container{"BAM", urls}
 	ticket := Ticket{HTSget: container}
 
