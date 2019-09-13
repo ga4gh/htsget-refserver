@@ -6,6 +6,8 @@ This is a reference server implementation of the version 1.2.0 HTSget API protoc
   - setup instructions
 
 ## Setup
-- Install [Golang and language tools](https://golang.org/dl/)
+- Install [Golang(v1.13) and language tools](https://golang.org/dl/)
+
+Note: this project uses the new [Go modules](https://blog.golang.org/using-go-modules) to manage dependencies.
 
 `$ go run main.go` to start the server on port 3000.
