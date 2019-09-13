@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/go-chi/chi"
 )
@@ -31,7 +32,7 @@ type Headers struct {
 func main() {
 	r := chi.NewRouter()
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Welcome to the HTSget reference server :D"))
+		w.Write([]byte("Welcome to the HTSget reference server :D This server serves the publicly available Tabula-Muris dataset on AWS."))
 	})
 
 	// route for "reads" resource
@@ -42,11 +43,13 @@ func main() {
 
 func getReads(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	// var filename
-	// if strings.hasPrefix(id, "10X") {
-
-	// }
-	urls := []URL{{dataSource + id, Headers{"bytes=1-100"}, "body"}}
+	var fileName string
+	if strings.HasPrefix(id, "10X") {
+		fileName = "10x_bam_files/" + id
+	} else {
+		fileName = "facs_bam_files/" + id
+	}
+	urls := []URL{{dataSource + fileName, Headers{"bytes=1-100"}, "body"}}
 	container := Container{"BAM", urls}
 	ticket := Ticket{HTSget: container}
 
