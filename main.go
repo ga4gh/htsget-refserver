@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"path/filepath"
 	"strings"
 
 	"github.com/go-chi/chi"
@@ -30,15 +31,17 @@ type Headers struct {
 }
 
 func main() {
-	r := chi.NewRouter()
-	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Welcome to the HTSget reference server :D This server serves the publicly available Tabula-Muris dataset on AWS."))
-	})
+	router := chi.NewRouter()
+
+	staticPath, _ := filepath.Abs("./")
+	fs := http.FileServer(http.Dir(staticPath))
+
+	router.Handle("/", fs)
 
 	// route for "reads" resource
-	r.Get("/reads/{id}", getReads)
+	router.Get("/reads/{id}", getReads)
 
-	http.ListenAndServe(":3000", r)
+	http.ListenAndServe(":3000", router)
 }
 
 func getReads(w http.ResponseWriter, r *http.Request) {
