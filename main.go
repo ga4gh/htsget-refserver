@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/go-chi/chi"
@@ -79,6 +80,22 @@ func getReads(w http.ResponseWriter, req *http.Request) {
 		referenceName = params["referenceName"][0]
 	}
 
+	// start/end params
+	var start uint64
+	var end uint64
+	if _, ok := params["start"]; ok {
+		if _, ok := params["end"]; ok {
+			if validRange(params["start"][0], params["end"][0], referenceName) {
+				start, _ = strconv.ParseUint(params["start"][0], 10, 32)
+				end, _ = strconv.ParseUint(params["end"][0], 10, 32)
+			} else {
+				panic("InvalidRange")
+			}
+		}
+	} else if _, ok := params["end"]; ok {
+		panic("InvalidRange")
+	}
+
 	var fileName string
 	if strings.HasPrefix(id, "10X") {
 		fileName = "10x_bam_files/" + id
@@ -88,6 +105,7 @@ func getReads(w http.ResponseWriter, req *http.Request) {
 
 	var md5 string
 	var headers *Headers
+	headers = &Headers{"bytes=" + strconv.FormatUint(start, 10) + "-" + strconv.FormatUint(end, 10)}
 	urls := []URL{{dataSource + fileName, headers, class}}
 	container := Container{format, urls, md5}
 	ticket := Ticket{HTSget: container}
@@ -121,4 +139,21 @@ func validClass(s string) bool {
 	default:
 		return false
 	}
+}
+
+func validRange(startStr string, endStr string, refName string) bool {
+	start, errStart := strconv.ParseUint(startStr, 10, 32)
+	end, errEnd := strconv.ParseUint(endStr, 10, 32)
+
+	if errStart != nil || errEnd != nil {
+		return false
+	}
+	if start > end {
+		return false
+	}
+	if refName == "" || refName == "*" {
+		return false
+	}
+
+	return true
 }
