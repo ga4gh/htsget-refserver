@@ -33,9 +33,9 @@ type Headers struct {
 func main() {
 	router := chi.NewRouter()
 
+	// serve index.html at root of api
 	staticPath, _ := filepath.Abs("./")
 	fs := http.FileServer(http.Dir(staticPath))
-
 	router.Handle("/", fs)
 
 	// route for "reads" resource
@@ -44,16 +44,48 @@ func main() {
 	http.ListenAndServe(":3000", router)
 }
 
-func getReads(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
+func getReads(w http.ResponseWriter, req *http.Request) {
+	id := chi.URLParam(req, "id")
+
+	// *** Parse query params ***
+	params := req.URL.Query()
+
+	// format param - optional
+	var format string
+	if _, ok := params["format"]; ok {
+		if validReadFormat(params["format"][0]) {
+			format = params["format"][0]
+		} else {
+			panic("UnsupportedFormat")
+		}
+	} else {
+		format = "BAM"
+	}
+
+	// class param
+	var class string
+	if _, ok := params["class"]; ok {
+		if validClass(params["class"][0]) {
+			class = params["class"][0]
+		} else {
+			panic("InvalidInput")
+		}
+	}
+
+	// referenceName param
+	var referenceName string
+	if _, ok := params["referenceName"]; ok {
+		referenceName = params["referenceName"][0]
+	}
+
 	var fileName string
 	if strings.HasPrefix(id, "10X") {
 		fileName = "10x_bam_files/" + id
 	} else {
 		fileName = "facs_bam_files/" + id
 	}
-	urls := []URL{{dataSource + fileName, Headers{"bytes=1-100"}, "body"}}
-	container := Container{"BAM", urls}
+	urls := []URL{{dataSource + fileName, Headers{"bytes=1-100"}, class}}
+	container := Container{format, urls}
 	ticket := Ticket{HTSget: container}
 
 	ticketJSON, err := json.Marshal(ticket)
@@ -63,4 +95,26 @@ func getReads(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/vnd.ga4gh.htsget.v1.0.0+json; charset=utf-8")
 	w.Write(ticketJSON)
+}
+
+func validReadFormat(s string) bool {
+	switch strings.ToUpper(s) {
+	case "BAM":
+		return true
+	case "CRAM":
+		return true
+	default:
+		return false
+	}
+}
+
+func validClass(s string) bool {
+	switch strings.ToLower(s) {
+	case "head":
+		return true
+	case "body":
+		return true
+	default:
+		return false
+	}
 }
