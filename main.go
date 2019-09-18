@@ -54,7 +54,7 @@ func getReads(w http.ResponseWriter, req *http.Request) {
 	var format string
 	if _, ok := params["format"]; ok {
 		if validReadFormat(params["format"][0]) {
-			format = params["format"][0]
+			format = strings.ToUpper(params["format"][0])
 		} else {
 			panic("UnsupportedFormat")
 		}
@@ -66,7 +66,7 @@ func getReads(w http.ResponseWriter, req *http.Request) {
 	var class string
 	if _, ok := params["class"]; ok {
 		if validClass(params["class"][0]) {
-			class = params["class"][0]
+			class = strings.ToLower(params["class"][0])
 		} else {
 			panic("InvalidInput")
 		}
