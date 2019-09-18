@@ -18,12 +18,13 @@ type Ticket struct {
 type Container struct {
 	Format string `json:"format"`
 	URLS   []URL  `json:"urls"`
+	MD5    string `json:"md5,omitempty"`
 }
 
 type URL struct {
-	URL     string  `json:"url"`
-	Headers Headers `json:"headers"`
-	Class   string  `json:"class"`
+	URL     string   `json:"url"`
+	Headers *Headers `json:"headers,omitempty"`
+	Class   string   `json:"class,omitempty"`
 }
 
 type Headers struct {
@@ -84,8 +85,11 @@ func getReads(w http.ResponseWriter, req *http.Request) {
 	} else {
 		fileName = "facs_bam_files/" + id
 	}
-	urls := []URL{{dataSource + fileName, Headers{"bytes=1-100"}, class}}
-	container := Container{format, urls}
+
+	var md5 string
+	var headers *Headers
+	urls := []URL{{dataSource + fileName, headers, class}}
+	container := Container{format, urls, md5}
 	ticket := Ticket{HTSget: container}
 
 	ticketJSON, err := json.Marshal(ticket)
