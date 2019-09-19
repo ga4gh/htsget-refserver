@@ -96,6 +96,16 @@ func getReads(w http.ResponseWriter, req *http.Request) {
 		panic("InvalidRange")
 	}
 
+	// fields params
+	var fields []string
+	if _, ok := params["fields"]; ok {
+		if validFields(strings.Split(params["fields"][0], ",")) {
+			fields = strings.Split(params["fields"][0], ",")
+		} else {
+			panic("InvalidInput")
+		}
+	}
+
 	var fileName string
 	if strings.HasPrefix(id, "10X") {
 		fileName = "10x_bam_files/" + id
@@ -155,5 +165,28 @@ func validRange(startStr string, endStr string, refName string) bool {
 		return false
 	}
 
+	return true
+}
+
+func validFields(fields []string) bool {
+	fieldsMap := map[string]bool{
+		"QNAME": true, // read names
+		"FLAG":  true, // read bit flags
+		"RNAME": true, // reference sequence name
+		"POS":   true, // alignment position
+		"MAPQ":  true, // mapping quality score
+		"CIGAR": true, // CIGAR string
+		"RNEXT": true, // reference sequence name of the next fragment template
+		"PNEXT": true, // alignment position of the next fragment in the template
+		"TLEN":  true, // inferred template size
+		"SEQ":   true, // read bases
+		"QUAL":  true, // base quality scores
+	}
+
+	for _, field := range fields {
+		if !fieldsMap[field] {
+			return false
+		}
+	}
 	return true
 }
