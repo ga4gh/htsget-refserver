@@ -99,11 +99,23 @@ func getReads(w http.ResponseWriter, req *http.Request) {
 	// fields params
 	var fields []string
 	if _, ok := params["fields"]; ok {
-		if validFields(strings.Split(params["fields"][0], ",")) {
-			fields = strings.Split(params["fields"][0], ",")
-		} else {
+		fields = strings.Split(params["fields"][0], ",")
+		if !validFields(fields) {
 			panic("InvalidInput")
 		}
+	}
+
+	// tags and notags params
+	var tags []string   // default value should be all
+	var notags []string // default value should be none
+	if _, ok := params["tags"]; ok {
+		tags = strings.Split(params["tags"][0], ",")
+	}
+	if _, ok := params["notags"]; ok {
+		notags = strings.Split(params["notags"][0], ",")
+	}
+	if !validTags(tags, notags) {
+		panic("InvalidInput")
 	}
 
 	var fileName string
@@ -185,6 +197,19 @@ func validFields(fields []string) bool {
 
 	for _, field := range fields {
 		if !fieldsMap[field] {
+			return false
+		}
+	}
+	return true
+}
+
+func validTags(tags []string, notags []string) bool {
+	var tagsMap map[string]bool
+	for _, tag := range tags {
+		tagsMap[tag] = true
+	}
+	for _, tag := range notags {
+		if !tagsMap[tag] {
 			return false
 		}
 	}
