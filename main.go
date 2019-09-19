@@ -12,22 +12,28 @@ import (
 
 var dataSource = "http://s3.amazonaws.com/czbiohub-tabula-muris/"
 
+// Ticket holds the entire json ticket returned to the client
 type Ticket struct {
 	HTSget Container `json:"htsget"`
 }
 
+// Container holds the file format, urls of files for the client,
+// and optionally an MD5 digest resulting from the concatenation of url data blocks
 type Container struct {
 	Format string `json:"format"`
 	URLS   []URL  `json:"urls"`
 	MD5    string `json:"md5,omitempty"`
 }
 
+// URL holds the url, headers and class
 type URL struct {
 	URL     string   `json:"url"`
 	Headers *Headers `json:"headers,omitempty"`
 	Class   string   `json:"class,omitempty"`
 }
 
+// Headers contains any headers sent by the client such as
+// the range of the query and authorization tokens
 type Headers struct {
 	Range string `json:"range"`
 }
