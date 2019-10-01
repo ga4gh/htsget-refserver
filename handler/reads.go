@@ -1,5 +1,9 @@
 package handler
 
+import (
+	"github.com/go-chi/chi"
+)
+
 var dataSource = "http://s3.amazonaws.com/czbiohub-tabula-muris/"
 
 // Ticket holds the entire json ticket returned to the client
