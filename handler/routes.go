@@ -1,12 +1,13 @@
 package handler
 
 import (
-	"github.com/go-chi/chi"
 	"net/http"
 	"path/filepath"
+
+	"github.com/go-chi/chi"
 )
 
-func SetRouter() *Mux {
+func SetRouter() *chi.Mux {
 	router := chi.NewRouter()
 
 	// serve index.html at root of api
