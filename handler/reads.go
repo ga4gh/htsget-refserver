@@ -2,11 +2,11 @@ package handler
 
 import (
 	"encoding/json"
-	"github.com/go-chi/chi"
 	"net/http"
-	"path/filepath"
 	"strconv"
 	"strings"
+
+	"github.com/go-chi/chi"
 )
 
 var dataSource = "http://s3.amazonaws.com/czbiohub-tabula-muris/"
@@ -96,19 +96,6 @@ func getReads(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	// tags and notags params
-	var tags []string   // default value should be all
-	var notags []string // default value should be none
-	if _, ok := params["tags"]; ok {
-		tags = strings.Split(params["tags"][0], ",")
-	}
-	if _, ok := params["notags"]; ok {
-		notags = strings.Split(params["notags"][0], ",")
-	}
-	if !validTags(tags, notags) {
-		panic("InvalidInput")
-	}
-
 	var fileName string
 	if strings.HasPrefix(id, "10X") {
 		fileName = "10x_bam_files/" + id
@@ -118,7 +105,6 @@ func getReads(w http.ResponseWriter, req *http.Request) {
 
 	var md5 string
 	var headers *Headers
-	var byteRange []string
 	headers = &Headers{"bytes=" + strconv.FormatUint(start, 10) + "-" + strconv.FormatUint(end, 10)}
 	urls := []URL{{dataSource + fileName, headers, class}}
 	container := Container{format, urls, md5}
