@@ -2,6 +2,8 @@ package handler
 
 import (
 	"github.com/go-chi/chi"
+	"net/http"
+	"path/filepath"
 )
 
 func SetRouter() *Mux {
