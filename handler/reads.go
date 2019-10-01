@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -12,28 +13,28 @@ import (
 var dataSource = "http://s3.amazonaws.com/czbiohub-tabula-muris/"
 
 // Ticket holds the entire json ticket returned to the client
-type Ticket struct {
-	HTSget Container `json:"htsget"`
+type ticket struct {
+	HTSget container `json:"htsget"`
 }
 
 // Container holds the file format, urls of files for the client,
 // and optionally an MD5 digest resulting from the concatenation of url data blocks
-type Container struct {
-	Format string `json:"format"`
-	URLS   []URL  `json:"urls"`
-	MD5    string `json:"md5,omitempty"`
+type container struct {
+	Format string    `json:"format"`
+	URLS   []urlJSON `json:"urls"`
+	MD5    string    `json:"md5,omitempty"`
 }
 
 // URL holds the url, headers and class
-type URL struct {
+type urlJSON struct {
 	URL     string   `json:"url"`
-	Headers *Headers `json:"headers,omitempty"`
+	Headers *headers `json:"headers,omitempty"`
 	Class   string   `json:"class,omitempty"`
 }
 
 // Headers contains any headers sent by the client such as
 // the range of the query and authorization tokens
-type Headers struct {
+type headers struct {
 	Range string `json:"range"`
 }
 
@@ -43,42 +44,66 @@ func getReads(w http.ResponseWriter, req *http.Request) {
 	// *** Parse query params ***
 	params := req.URL.Query()
 
-	// format param - optional
-	var format string
+	format, err := parseFormat(params)
+	class, err := parseClass(params)
+	refName, err := parseRefName(params)
+	start, end, err := parseRange(params, refName)
+	fields, err := parseFields(params)
+
+	filePath := filePath(id)
+
+	var md5 string
+	h := &headers{"bytes=" + strconv.FormatUint(start, 10) + "-" + strconv.FormatUint(end, 10)}
+	u := []urlJSON{{dataSource + filePath, h, class}}
+	c := container{format, u, md5}
+	t := ticket{HTSget: c}
+
+	ticketJSON, err := json.Marshal(t)
+	if err != nil {
+		panic(err)
+	}
+
+	w.Header().Set("Content-Type", "application/vnd.ga4gh.htsget.v1.0.0+json; charset=utf-8")
+	w.Write(ticketJSON)
+}
+
+func parseFormat(params url.Values) (string, error) {
 	if _, ok := params["format"]; ok {
 		if validReadFormat(params["format"][0]) {
-			format = strings.ToUpper(params["format"][0])
+			return strings.ToUpper(params["format"][0]), nil
 		} else {
 			panic("UnsupportedFormat")
 		}
 	} else {
-		format = "BAM"
+		return "BAM", nil
 	}
+}
 
-	// class param
-	var class string
+func parseClass(params url.Values) (string, error) {
 	if _, ok := params["class"]; ok {
 		if validClass(params["class"][0]) {
-			class = strings.ToLower(params["class"][0])
+			return strings.ToLower(params["class"][0]), nil
 		} else {
 			panic("InvalidInput")
 		}
 	}
+	return "", nil
+}
 
-	// referenceName param
-	var referenceName string
+func parseRefName(params url.Values) (string, error) {
 	if _, ok := params["referenceName"]; ok {
-		referenceName = params["referenceName"][0]
+		return params["referenceName"][0], nil
 	}
+	return "", nil
+}
 
-	// start/end params
-	var start uint64
-	var end uint64
+func parseRange(params url.Values, refName string) (uint64, uint64, error) {
 	if _, ok := params["start"]; ok {
 		if _, ok := params["end"]; ok {
-			if validRange(params["start"][0], params["end"][0], referenceName) {
-				start, _ = strconv.ParseUint(params["start"][0], 10, 32)
-				end, _ = strconv.ParseUint(params["end"][0], 10, 32)
+			if validRange(params["start"][0], params["end"][0], refName) {
+				start, _ := strconv.ParseUint(params["start"][0], 10, 32)
+				end, _ := strconv.ParseUint(params["end"][0], 10, 32)
+				return start, end, nil
 			} else {
 				panic("InvalidRange")
 			}
@@ -86,37 +111,18 @@ func getReads(w http.ResponseWriter, req *http.Request) {
 	} else if _, ok := params["end"]; ok {
 		panic("InvalidRange")
 	}
+	return 0, 0, nil
+}
 
-	// fields params
-	var fields []string
+func parseFields(params url.Values) ([]string, error) {
 	if _, ok := params["fields"]; ok {
-		fields = strings.Split(params["fields"][0], ",")
+		fields := strings.Split(params["fields"][0], ",")
 		if !validFields(fields) {
 			panic("InvalidInput")
 		}
+		return fields, nil
 	}
-
-	var fileName string
-	if strings.HasPrefix(id, "10X") {
-		fileName = "10x_bam_files/" + id
-	} else {
-		fileName = "facs_bam_files/" + id
-	}
-
-	var md5 string
-	var headers *Headers
-	headers = &Headers{"bytes=" + strconv.FormatUint(start, 10) + "-" + strconv.FormatUint(end, 10)}
-	urls := []URL{{dataSource + fileName, headers, class}}
-	container := Container{format, urls, md5}
-	ticket := Ticket{HTSget: container}
-
-	ticketJSON, err := json.Marshal(ticket)
-	if err != nil {
-		panic(err)
-	}
-
-	w.Header().Set("Content-Type", "application/vnd.ga4gh.htsget.v1.0.0+json; charset=utf-8")
-	w.Write(ticketJSON)
+	return []string{}, nil
 }
 
 func validReadFormat(s string) bool {
@@ -139,6 +145,16 @@ func validClass(s string) bool {
 	default:
 		return false
 	}
+}
+
+func filePath(id string) string {
+	var path string
+	if strings.HasPrefix(id, "10X") {
+		path = "10x_bam_files/" + id
+	} else {
+		path = "facs_bam_files/" + id
+	}
+	return path
 }
 
 func validRange(startStr string, endStr string, refName string) bool {
