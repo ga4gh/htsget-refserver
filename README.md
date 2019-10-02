@@ -10,4 +10,4 @@ This is a reference server implementation of the version 1.2.0 HTSget API protoc
 
 This project uses [Go modules](https://blog.golang.org/using-go-modules) to manage packages and dependencies.
 
-`$ go run main.go` to start the server on port 3000.
+`$ go build & ./htsget-refserver` from root directory to start the server on port 3000.
