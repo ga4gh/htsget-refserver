@@ -1,9 +1,11 @@
 package handler
 
 import (
+	"bufio"
 	"github.com/go-chi/chi"
 	"io"
 	"net/http"
+	"os/exec"
 )
 
 var dataSource = "http://s3.amazonaws.com/czbiohub-tabula-muris/"
@@ -21,10 +23,33 @@ func getData(w http.ResponseWriter, r *http.Request) {
 	//start, end, err := parseRange(params, refName)
 
 	// if no params are given, then directly fetch file from s3
+	if len(params) == 0 {
+		resp, err := http.Get(dataSource + filePath)
+		if err != nil {
+			panic(err)
+		}
+		io.Copy(w, resp.Body)
+	}
 
-	resp, err := http.Get(dataSource + filePath)
+	testFile := "facs_bam_files/A1-B001176-3_56_F-1-1_R1.mus.Aligned.out.sorted.bam"
+
+	cmd := exec.Command("samtools", "view", "-b", dataSource+testFile)
+	/* cmd := exec.Command("./test.sh")*/
+	/*cmd.Dir = "/Users/dliu"*/
+	pipe, _ := cmd.StdoutPipe()
+	err := cmd.Start()
 	if err != nil {
 		panic(err)
 	}
-	//io.Copy(w, resp.Body)
+
+	reader := bufio.NewReader(pipe)
+	/* buffer := make([]byte, 12)*/
+	//n, err := reader.Read(buffer)
+	//for ; err == nil; n, err = reader.Read(buffer) {
+	//w.Write(buffer[:n])
+	//}
+
+	io.Copy(w, reader)
+
+	cmd.Wait()
 }
