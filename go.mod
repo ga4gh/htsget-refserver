@@ -1,4 +1,4 @@
-module htsget_refserver
+module github.com/david-xliu/htsget-refserver
 
 go 1.13
 
