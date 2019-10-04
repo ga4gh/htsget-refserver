@@ -18,7 +18,7 @@ func SetRouter() *chi.Mux {
 
 	// Route for "reads" resource
 	router.Get("/reads/{id}", getReads)
-	router.Get("/file/{id}", getFile)
+	router.Get("/data/{id}", getData)
 
 	return router
 }
