@@ -4,13 +4,12 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 
 	"github.com/go-chi/chi"
 )
-
-var dataSource = "http://s3.amazonaws.com/czbiohub-tabula-muris/"
 
 // Ticket holds the entire json ticket returned to the client
 type ticket struct {
@@ -38,31 +37,43 @@ type headers struct {
 	Range string `json:"range"`
 }
 
-func getReads(w http.ResponseWriter, req *http.Request) {
-	id := chi.URLParam(req, "id")
+func getReads(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
 
 	// *** Parse query params ***
-	params := req.URL.Query()
-
+	params := r.URL.Query()
 	format, err := parseFormat(params)
 	class, err := parseClass(params)
 	refName, err := parseRefName(params)
 	start, end, err := parseRange(params, refName)
-	fields, err := parseFields(params)
+	//fields, err := parseFields(params)
 
-	filePath := filePath(id)
+	// The address of the endpoint on this server which serves the data
+	dataEndpoint, err := url.Parse("localhost:3000/data/")
+	if err != nil {
+		panic(err)
+	}
 
-	var md5 string
+	if os.Getenv("APP_ENV") == "production" {
+		dataEndpoint.Path += id
+	} else {
+		dataEndpoint.Opaque += id
+	}
+	// Add Query Parameters to the URL
+	dataEndpoint.RawQuery = params.Encode() // Escape Query Parameters
+	asdf := dataEndpoint.String()
+
+	// build HTTP response
 	h := &headers{"bytes=" + strconv.FormatUint(start, 10) + "-" + strconv.FormatUint(end, 10)}
-	u := []urlJSON{{dataSource + filePath, h, class}}
-	c := container{format, u, md5}
+	u := []urlJSON{{asdf, h, class}}
+	c := container{format, u, ""}
 	t := ticket{HTSget: c}
-
 	ticketJSON, err := json.Marshal(t)
 	if err != nil {
 		panic(err)
 	}
 
+	// send back response
 	w.Header().Set("Content-Type", "application/vnd.ga4gh.htsget.v1.0.0+json; charset=utf-8")
 	w.Write(ticketJSON)
 }
