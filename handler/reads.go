@@ -40,6 +40,15 @@ type headers struct {
 func getReads(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
+	// send Head request to check that file exists and to get file size
+	res, err := http.Head("https://golang.org")
+	if err != nil {
+		panic(err)
+	}
+	defer res.Body.Close()
+	size := res.ContentLength
+	w.Write(res)
+
 	// *** Parse query params ***
 	params := r.URL.Query()
 	format, err := parseFormat(params)
@@ -47,6 +56,7 @@ func getReads(w http.ResponseWriter, r *http.Request) {
 	refName, err := parseRefName(params)
 	start, end, err := parseRange(params, refName)
 	//fields, err := parseFields(params)
+	fmt.Printf("ContentLength:%v", contentlength)
 
 	// The address of the endpoint on this server which serves the data
 	dataEndpoint, err := url.Parse("localhost:3000/data/")
