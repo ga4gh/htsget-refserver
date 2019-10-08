@@ -24,10 +24,11 @@ func getData(w http.ResponseWriter, r *http.Request) {
 
 	// if no params are given, then directly fetch file from s3
 	if len(params) == 0 {
-		resp, err := http.Get(dataSource + filePath)
+		res, err := http.Get(dataSource + filePath)
 		if err != nil {
 			panic(err)
 		}
+		defer res.Body.Close()
 		io.Copy(w, resp.Body)
 	}
 
