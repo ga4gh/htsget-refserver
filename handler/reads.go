@@ -37,8 +37,31 @@ type headers struct {
 	Range string `json:"range"`
 }
 
+var FIELDS map[string]int = map[string]int{
+	"QNAME": 1,  // read names
+	"FLAG":  2,  // read bit flags
+	"RNAME": 3,  // reference sequence name
+	"POS":   4,  // alignment position
+	"MAPQ":  5,  // mapping quality score
+	"CIGAR": 6,  // CIGAR string
+	"RNEXT": 7,  // reference sequence name of the next fragment template
+	"PNEXT": 8,  // alignment position of the next fragment in the template
+	"TLEN":  9,  // inferred template size
+	"SEQ":   10, // read bases
+	"QUAL":  11, // base quality scores
+}
+
 func getReads(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
+
+	// send Head request to check that file exists and to get file size
+	/* res, err := http.Head("https://golang.org")*/
+	//if err != nil {
+	//panic(err)
+	//}
+	//defer res.Body.Close()
+	//size := res.ContentLength
+	//w.Write(res)
 
 	// *** Parse query params ***
 	params := r.URL.Query()
@@ -46,7 +69,11 @@ func getReads(w http.ResponseWriter, r *http.Request) {
 	class, err := parseClass(params)
 	refName, err := parseRefName(params)
 	start, end, err := parseRange(params, refName)
-	//fields, err := parseFields(params)
+	_, err = parseFields(params)
+	if err != nil {
+		panic(err)
+	}
+	//fmt.Printf("ContentLength:%v", contentlength)
 
 	// The address of the endpoint on this server which serves the data
 	dataEndpoint, err := url.Parse("localhost:3000/data/")
@@ -61,11 +88,10 @@ func getReads(w http.ResponseWriter, r *http.Request) {
 	}
 	// Add Query Parameters to the URL
 	dataEndpoint.RawQuery = params.Encode() // Escape Query Parameters
-	asdf := dataEndpoint.String()
 
 	// build HTTP response
 	h := &headers{"bytes=" + strconv.FormatUint(start, 10) + "-" + strconv.FormatUint(end, 10)}
-	u := []urlJSON{{asdf, h, class}}
+	u := []urlJSON{{dataEndpoint.String(), h, class}}
 	c := container{format, u, ""}
 	t := ticket{HTSget: c}
 	ticketJSON, err := json.Marshal(t)
@@ -186,22 +212,8 @@ func validRange(startStr string, endStr string, refName string) bool {
 }
 
 func validFields(fields []string) bool {
-	fieldsMap := map[string]bool{
-		"QNAME": true, // read names
-		"FLAG":  true, // read bit flags
-		"RNAME": true, // reference sequence name
-		"POS":   true, // alignment position
-		"MAPQ":  true, // mapping quality score
-		"CIGAR": true, // CIGAR string
-		"RNEXT": true, // reference sequence name of the next fragment template
-		"PNEXT": true, // alignment position of the next fragment in the template
-		"TLEN":  true, // inferred template size
-		"SEQ":   true, // read bases
-		"QUAL":  true, // base quality scores
-	}
-
 	for _, field := range fields {
-		if !fieldsMap[field] {
+		if _, ok := FIELDS[field]; ok {
 			return false
 		}
 	}
