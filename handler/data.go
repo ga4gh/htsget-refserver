@@ -50,9 +50,9 @@ func getData(w http.ResponseWriter, r *http.Request) {
 
 	reader := bufio.NewReader(pipe)
 	l, _, err := reader.ReadLine()
-	var columns []int
+	columns := make([]int, 12)
 	for _, field := range fields {
-		columns = append(columns, FIELDS[field])
+		columns[FIELDS[field]] = 1
 	}
 	sort.Ints(columns)
 
@@ -62,8 +62,16 @@ func getData(w http.ResponseWriter, r *http.Request) {
 		} else {
 			var output []string
 			ls := strings.Split(string(l), "\t")
-			for _, col := range columns {
-				output = append(output, ls[col-1])
+			for i, col := range columns {
+				if col == 1 {
+					output = append(output, ls[i-1])
+				} else {
+					if i == 2 || i == 4 || i == 5 || i == 8 || i == 9 {
+						output = append(output, "0")
+					} else {
+						output = append(output, "*")
+					}
+				}
 			}
 			w.Write([]byte(strings.Join(output, "\t") + "\n"))
 		}
