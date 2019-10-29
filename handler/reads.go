@@ -1,29 +1,24 @@
 package handler
 
 import (
-	"bufio"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io"
 	"math"
 	"net/http"
 	"net/url"
 	"os"
-	"os/exec"
-	"sort"
 	"strconv"
 	"strings"
 
-	"github.com/biogo/hts/bam"
 	"github.com/go-chi/chi"
 )
 
-var EOF, _ = hex.DecodeString("1f8b08040000000000ff0600424302001b0003000000000000000000")
-var EOF_LEN = int64(len(EOF))
+const EOF, _ = hex.DecodeString("1f8b08040000000000ff0600424302001b0003000000000000000000")
+const EOF_LEN = int64(len(EOF))
 
-var dataSource = "http://s3.amazonaws.com/czbiohub-tabula-muris/"
-var testFile = "A1-B001176-3_56_F-1-1_R1.mus.Aligned.out.sorted.bam"
+const dataSource = "http://s3.amazonaws.com/czbiohub-tabula-muris/"
+const testFile = "A1-B001176-3_56_F-1-1_R1.mus.Aligned.out.sorted.bam"
 
 // Ticket holds the entire json ticket returned to the client
 type ticket struct {
@@ -67,6 +62,7 @@ var FIELDS map[string]int = map[string]int{
 
 func getReads(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
+	dataEndpoint := getDataURL()
 
 	//send Head request to check that file exists and to get file size
 	res, err := http.Head(dataSource + filePath(id))
@@ -90,87 +86,6 @@ func getReads(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err)
 	}
-
-	// The address of the endpoint on this server which serves the data
-	dataEndpoint, err := url.Parse("localhost:3000/data/")
-	if err != nil {
-		panic(err)
-	}
-
-	if os.Getenv("APP_ENV") == "production" {
-		dataEndpoint.Path += id
-	} else {
-		dataEndpoint.Opaque += id
-	}
-
-	var refRange string
-	var cmd *exec.Cmd
-	if refName != "" {
-		refRange = refName + ":" + start + "-" + end
-		cmd = exec.Command("samtools", "view", "-h", dataSource+filePath(id), refRange)
-	} else {
-		cmd = exec.Command("samtools", "view", "-h", dataSource+filePath(id))
-	}
-
-	fmt.Println("fetching file from ", dataSource+filePath(id))
-	pipe, _ := cmd.StdoutPipe()
-	err = cmd.Start()
-	if err != nil {
-		panic(err)
-	}
-	cwd, _ := os.Getwd()
-	fSam, _ := os.Create(cwd + "/data/" + id)
-	reader := bufio.NewReader(pipe)
-	var numBytes int64 = 0
-	if len(fields) == 0 {
-		numBytes, _ = io.Copy(fSam, reader)
-	} else {
-		l, _, err := reader.ReadLine()
-		columns := make([]int, 12)
-		for _, field := range fields {
-			columns[FIELDS[field]] = 1
-		}
-		sort.Ints(columns)
-
-		for ; err == nil; l, _, err = reader.ReadLine() {
-			if l[0] == 64 {
-				l = append(l, "\n"...)
-				fSam.Write(l)
-			} else {
-				var output []string
-				ls := strings.Split(string(l), "\t")
-				for i, col := range columns {
-					if col == 1 {
-						output = append(output, ls[i-1])
-					} else {
-						if i == 2 || i == 4 || i == 5 || i == 8 || i == 9 {
-							output = append(output, "0")
-						} else {
-							output = append(output, "*")
-						}
-					}
-				}
-				l = []byte(strings.Join(output, "\t") + "\n")
-				fSam.Write(l)
-			}
-			numBytes += int64(len(l))
-		}
-	}
-	fmt.Println(numBytes)
-	cmd.Wait()
-	fSam.Close()
-
-	cmd = exec.Command("samtools", "view", "-h", "-b", cwd+"/data/"+id, "-o", cwd+"/data/"+id)
-	cmd.Run()
-
-	fin, _ := os.Open(cwd + "/data/" + id)
-	defer fin.Close()
-	b, _ := bam.NewReader(fin, 0)
-	defer b.Close()
-	b.Header()
-	b.Read()
-	lastChunk := b.LastChunk()
-	hLen := lastChunk.Begin.File
 
 	numBlocks := int(math.Floor((float64(numBytes) / (9 * math.Pow10(8)))))
 	if numBlocks == 0 {
@@ -220,4 +135,24 @@ func filePath(id string) string {
 		path = "facs_bam_files/" + id
 	}
 	return path
+}
+
+func getDataURL() *URL {
+	// The address of the endpoint on this server which serves the data
+	var dataEndpoint, err = url.Parse("localhost:3000/data/")
+	if err != nil {
+		panic(err)
+	}
+
+	if os.Getenv("APP_ENV") == "production" {
+		dataEndpoint.Path += id
+	} else {
+		dataEndpoint.Opaque += id
+	}
+}
+
+// writeFile writes the given file located on AWS to the local file system, preparing it for
+// the client by retrieving only the specified region, fields, and tags.
+func writeFile() {
+
 }
