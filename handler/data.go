@@ -84,8 +84,6 @@ func getData(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	cmd = exec.Command("samtools", "view", "-h", "-b", tempPath, "-o", tempPath)
-	cmd.Run()
 	fin, _ := os.Open(tempPath)
 	defer fin.Close()
 	b, _ := bam.NewReader(fin, 0)
@@ -96,4 +94,9 @@ func getData(w http.ResponseWriter, r *http.Request) {
 	hLen := lastChunk.Begin.File
 
 	cmd.Wait()
+}
+
+func samToBam() {
+	cmd = exec.Command("samtools", "view", "-h", "-b", tempPath, "-o", tempPath)
+	cmd.Run()
 }
