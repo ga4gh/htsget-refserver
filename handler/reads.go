@@ -150,9 +150,3 @@ func getDataURL() *URL {
 		dataEndpoint.Opaque += id
 	}
 }
-
-// writeFile writes the given file located on AWS to the local file system, preparing it for
-// the client by retrieving only the specified region, fields, and tags.
-func writeFile() {
-
-}
