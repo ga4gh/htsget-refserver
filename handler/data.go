@@ -86,6 +86,7 @@ func getData(w http.ResponseWriter, r *http.Request) {
 
 	samToBam(tempPath)
 	removeHeader(tempPath)
+	removeEOF(tempPath)
 	cmd.Wait()
 }
 
@@ -110,4 +111,9 @@ func removeHeader(tempPath string) {
 
 	os.Remove(tempPath)
 	os.Rename(tempPath+"_copy", tempPath)
+}
+
+func removeEOF(tempPath string) error {
+	fi, _ := os.Stat(tempPath)
+	return os.Truncate(tempPath, fi.Size()-12)
 }
