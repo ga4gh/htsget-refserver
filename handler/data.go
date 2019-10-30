@@ -84,6 +84,17 @@ func getData(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	samToBam(tempPath)
+	removeHeader(tempPath)
+	cmd.Wait()
+}
+
+func samToBam(tempPath string) {
+	cmd = exec.Command("samtools", "view", "-h", "-b", tempPath, "-o", tempPath)
+	cmd.Run()
+}
+
+func removeHeader(tempPath string) {
 	fin, _ := os.Open(tempPath)
 	defer fin.Close()
 	b, _ := bam.NewReader(fin, 0)
@@ -93,10 +104,10 @@ func getData(w http.ResponseWriter, r *http.Request) {
 	lastChunk := b.LastChunk()
 	hLen := lastChunk.Begin.File
 
-	cmd.Wait()
-}
+	fDest, _ := os.Create(tempPath + "_copy")
+	fin.Seek(hLen, 0)
+	io.Copy(fin, fDest)
 
-func samToBam() {
-	cmd = exec.Command("samtools", "view", "-h", "-b", tempPath, "-o", tempPath)
-	cmd.Run()
+	os.Remove(tempPath)
+	os.Rename(tempPath+"_copy", tempPath)
 }
