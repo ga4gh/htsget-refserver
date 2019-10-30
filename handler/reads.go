@@ -4,7 +4,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"math"
 	"net/http"
 	"net/url"
 	"os"
@@ -14,11 +13,12 @@ import (
 	"github.com/go-chi/chi"
 )
 
-const EOF, _ = hex.DecodeString("1f8b08040000000000ff0600424302001b0003000000000000000000")
-const EOF_LEN = int64(len(EOF))
+var EOF, _ = hex.DecodeString("1f8b08040000000000ff0600424302001b0003000000000000000000")
 
-const dataSource = "http://s3.amazonaws.com/czbiohub-tabula-muris/"
-const testFile = "A1-B001176-3_56_F-1-1_R1.mus.Aligned.out.sorted.bam"
+var EOF_LEN = int64(len(EOF))
+
+var dataSource = "http://s3.amazonaws.com/czbiohub-tabula-muris/"
+var testFile = "A1-B001176-3_56_F-1-1_R1.mus.Aligned.out.sorted.bam"
 
 // Ticket holds the entire json ticket returned to the client
 type ticket struct {
@@ -40,10 +40,11 @@ type urlJSON struct {
 	Class   string   `json:"class,omitempty"`
 }
 
-// Headers contains any headers sent by the client such as
-// the range of the query and authorization tokens
+// Headers contains any headers needed by the server from the client
 type headers struct {
-	Range string `json:"range"`
+	BlockID   string `json:"block-id"`   // id of current block
+	NumBlocks string `json:"num-blocks"` // total number of blocks
+	Range     string `json:"range,omitempty"`
 }
 
 var FIELDS map[string]int = map[string]int{
@@ -62,7 +63,6 @@ var FIELDS map[string]int = map[string]int{
 
 func getReads(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	dataEndpoint := getDataURL()
 
 	//send Head request to check that file exists and to get file size
 	res, err := http.Head(dataSource + filePath(id))
@@ -79,7 +79,7 @@ func getReads(w http.ResponseWriter, r *http.Request) {
 	// *** Parse query params ***
 	params := r.URL.Query()
 	format, err := parseFormat(params)
-	//reqClass, err := parseClass(params)
+	queryClass, err := parseQueryClass(params)
 	refName, err := parseRefName(params)
 	start, end, err := parseRange(params, refName)
 	fields, err := parseFields(params)
@@ -87,7 +87,8 @@ func getReads(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	numBlocks := int(math.Floor((float64(numBytes) / (9 * math.Pow10(8)))))
+	//numBlocks := int(math.Floor((float64(numBytes) / (9 * math.Pow10(8)))))
+	numBlocks := 0
 	if numBlocks == 0 {
 		numBlocks = 1
 	}
@@ -95,23 +96,36 @@ func getReads(w http.ResponseWriter, r *http.Request) {
 	// build HTTP response
 	u := make([]urlJSON, 0)
 	var respClass string
+	if queryClass == "header" {
+		respClass = "header"
+	}
+	dataEndpoint := getDataURL(format, refName, start, end, fields, id)
 	var h *headers
 	if numBlocks == 1 {
+		h = &headers{
+			BlockID:   "1",
+			NumBlocks: strconv.Itoa(numBlocks),
+		}
 		u = append(u, urlJSON{dataEndpoint.String(), h, respClass})
 	} else {
-		var start int64 = 0
-		var blockSize int64 = int64(math.Floor((float64(numBytes) / float64(numBlocks))))
-		var end int64 = start + blockSize
+		//var start int64 = 0
+		//var blockSize int64 = int64(math.Floor((float64(numBytes) / float64(numBlocks))))
+		//var end int64 = start + blockSize
 		for i := 1; i <= numBlocks; i++ {
 			if i == 1 { // first of multiple blocks
-				h = &headers{"bytes=" + "0" + "-" + strconv.FormatInt(hLen, 10)}
-				start = hLen + 1
-			} else {
-				if end > numBytes {
-					end = numBytes
+				h = &headers{
+					BlockID:   strconv.Itoa(i),
+					NumBlocks: strconv.Itoa(numBlocks),
+					//Range:     "bytes=" + "0" + "-" + strconv.FormatInt(hLen, 10),
 				}
-				h = &headers{"bytes=" + strconv.FormatInt(start, 10) + "-" + strconv.FormatInt(end, 10)}
+				//start = hLen + 1
 			}
+			/* else {*/
+			//[>       if end > numBytes {<]
+			////end = numBytes
+			//[>}<]
+			//h = &headers{"bytes=" + strconv.FormatInt(start, 10) + "-" + strconv.FormatInt(end, 10)}
+			/*}*/
 			u = append(u, urlJSON{dataEndpoint.String(), h, respClass})
 		}
 	}
@@ -137,16 +151,28 @@ func filePath(id string) string {
 	return path
 }
 
-func getDataURL() *URL {
+func getDataURL(format string, refName string, start string, end string, fields []string, id string) *url.URL {
 	// The address of the endpoint on this server which serves the data
 	var dataEndpoint, err = url.Parse("localhost:3000/data/")
 	if err != nil {
 		panic(err)
 	}
 
+	// add id url param
 	if os.Getenv("APP_ENV") == "production" {
 		dataEndpoint.Path += id
 	} else {
 		dataEndpoint.Opaque += id
 	}
+
+	// add query params
+	query := dataEndpoint.Query()
+	query.Set("format", format)
+	query.Set("referenceName", refName)
+	query.Set("start", start)
+	query.Set("end", end)
+	query.Set("fields", strings.Join(fields, ","))
+	dataEndpoint.RawQuery = query.Encode()
+
+	return dataEndpoint
 }
