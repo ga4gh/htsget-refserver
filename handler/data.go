@@ -25,6 +25,7 @@ func getData(w http.ResponseWriter, r *http.Request) {
 	start, end, err := parseRange(params, refName)
 	fields, err := parseFields(params)
 	blockID := r.Header.Get["block-ID"]
+	numBlocks := r.Header.Get["num-blocks"]
 
 	args := []string{"view", dataSource + filePath(id)}
 	var refRange string
@@ -85,8 +86,12 @@ func getData(w http.ResponseWriter, r *http.Request) {
 	}
 
 	samToBam(tempPath)
-	removeHeader(tempPath)
-	removeEOF(tempPath)
+	if class != "header" {
+		removeHeader(tempPath)
+	}
+	if blockID != numBlocks {
+		removeEOF(tempPath)
+	}
 	cmd.Wait()
 }
 
