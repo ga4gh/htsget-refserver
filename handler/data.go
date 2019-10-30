@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/biogo/hts/bam"
@@ -20,12 +21,15 @@ func getData(w http.ResponseWriter, r *http.Request) {
 	// *** Parse query params ***
 	params := r.URL.Query()
 	format, err := parseFormat(params)
-	class, err := parseClass(params)
+	if format != "BAM" {
+		panic("format not supported")
+	}
 	refName, err := parseRefName(params)
 	start, end, err := parseRange(params, refName)
 	fields, err := parseFields(params)
-	blockID := r.Header.Get["block-ID"]
-	numBlocks := r.Header.Get["num-blocks"]
+	blockID, _ := strconv.Atoi(r.Header.Get("block-id"))
+	numBlocks, _ := strconv.Atoi(r.Header.Get("num-blocks"))
+	class := r.Header.Get("class")
 
 	args := []string{"view", dataSource + filePath(id)}
 	var refRange string
@@ -46,7 +50,7 @@ func getData(w http.ResponseWriter, r *http.Request) {
 	}
 
 	cwd, _ := os.Getwd()
-	tempPath := cwd + "/temp/" + id + "_" + blockID
+	tempPath := cwd + "/temp/" + id + "_" + strconv.Itoa(blockID)
 	fSam, _ := os.Create(tempPath)
 	defer fSam.Close()
 	reader := bufio.NewReader(pipe)
@@ -85,18 +89,20 @@ func getData(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	samToBam(tempPath)
-	if class != "header" {
-		removeHeader(tempPath)
-	}
-	if blockID != numBlocks {
-		removeEOF(tempPath)
+	if class != "" && numBlocks > 1 {
+		samToBam(tempPath)
+		if class != "header" {
+			removeHeader(tempPath)
+		}
+		if blockID != numBlocks {
+			removeEOF(tempPath)
+		}
 	}
 	cmd.Wait()
 }
 
 func samToBam(tempPath string) {
-	cmd = exec.Command("samtools", "view", "-h", "-b", tempPath, "-o", tempPath)
+	cmd := exec.Command("samtools", "view", "-h", "-b", tempPath, "-o", tempPath)
 	cmd.Run()
 }
 

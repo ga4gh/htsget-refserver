@@ -18,16 +18,18 @@ func parseFormat(params url.Values) (string, error) {
 	}
 }
 
-func parseClass(params url.Values) (string, error) {
+func parseQueryClass(params url.Values) (string, error) {
 	if _, ok := params["class"]; ok {
-		if validClass(params["class"][0]) {
-			return strings.ToLower(params["class"][0]), nil
+		class := strings.ToLower(params["class"][0])
+		if class == "header" {
+			return class, nil
 		} else {
 			panic("InvalidInput")
 		}
 	}
 	return "", nil
 }
+
 func parseRefName(params url.Values) (string, error) {
 	if _, ok := params["referenceName"]; ok {
 		return params["referenceName"][0], nil
@@ -76,7 +78,7 @@ func validReadFormat(s string) bool {
 
 func validClass(s string) bool {
 	switch strings.ToLower(s) {
-	case "head":
+	case "header":
 		return true
 	case "body":
 		return true
