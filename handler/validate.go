@@ -106,7 +106,7 @@ func validRange(startStr string, endStr string, refName string) bool {
 
 func validFields(fields []string) bool {
 	for _, field := range fields {
-		if _, ok := FIELDS[field]; ok {
+		if _, ok := FIELDS[field]; !ok {
 			return false
 		}
 	}
