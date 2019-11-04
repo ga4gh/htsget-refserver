@@ -41,6 +41,8 @@ func getData(w http.ResponseWriter, r *http.Request) {
 	}
 	if class == "header" {
 		args = append(args, "-H")
+	} else {
+		args = append(args, "-h")
 	}
 	cmd = exec.Command("samtools", args...)
 
