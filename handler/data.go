@@ -2,6 +2,7 @@ package handler
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -51,6 +52,15 @@ func getData(w http.ResponseWriter, r *http.Request) {
 
 	cwd, _ := os.Getwd()
 	tempPath := cwd + "/temp/" + id + "_" + strconv.Itoa(blockID)
+
+	if exists, _ := exists(cwd + "/temp"); !exists {
+		os.Mkdir(cwd+"/temp/", 0755)
+	} else {
+		if isDir, _ := isDir(cwd + "/temp"); !isDir {
+			os.Mkdir(cwd+"/temp/", 0755)
+		}
+	}
+
 	fSam, _ := os.Create(tempPath)
 	defer fSam.Close()
 	reader := bufio.NewReader(pipe)
@@ -88,9 +98,11 @@ func getData(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
+	cmd.Wait()
+
+	samToBam(tempPath)
 
 	if class != "" && numBlocks > 1 {
-		samToBam(tempPath)
 		if class != "header" {
 			removeHeader(tempPath)
 		}
@@ -98,7 +110,10 @@ func getData(w http.ResponseWriter, r *http.Request) {
 			removeEOF(tempPath)
 		}
 	}
-	cmd.Wait()
+
+	fclient, _ := os.Open(tempPath)
+	defer fclient.Close()
+	io.Copy(w, fclient)
 }
 
 func samToBam(tempPath string) {
@@ -127,4 +142,24 @@ func removeHeader(tempPath string) {
 func removeEOF(tempPath string) error {
 	fi, _ := os.Stat(tempPath)
 	return os.Truncate(tempPath, fi.Size()-12)
+}
+
+// exists returns whether the given file or directory existsi.
+func exists(path string) (bool, error) {
+	_, err := os.Stat(path)
+	if err == nil || !os.IsNotExist(err) {
+		return true, err
+	}
+	return false, nil
+}
+
+// isDir returne whether the given path is directory
+func isDir(path string) (bool, error) {
+	src, err := os.Stat(path)
+
+	if src.Mode().IsRegular() {
+		fmt.Println(path + " already exist as a file!")
+		return false, err
+	}
+	return true, err
 }
