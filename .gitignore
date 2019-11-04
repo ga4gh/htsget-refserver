@@ -1,3 +1,6 @@
 # executable file
+*.bam
+*.bai
+temp/*
 htsget-refserver
 data/*
