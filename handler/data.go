@@ -102,10 +102,10 @@ func getData(w http.ResponseWriter, r *http.Request) {
 
 	samToBam(tempPath)
 
-	if class != "" && numBlocks > 1 {
-		if class != "header" {
-			removeHeader(tempPath)
-		}
+	if class == "header" {
+		removeEOF(tempPath)
+	} else if class == "body" {
+		removeHeader(tempPath)
 		if blockID != numBlocks {
 			removeEOF(tempPath)
 		}
