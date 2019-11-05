@@ -1,6 +1,9 @@
 # executable file
+htsget-refserver
+
 *.bam
 *.bai
 temp/*
-htsget-refserver
 data/*
+
+.DS_Store
