@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
-	"sort"
 	"strconv"
 	"strings"
 
@@ -71,11 +70,10 @@ func getData(w http.ResponseWriter, r *http.Request) {
 		io.Copy(fSam, reader)
 	} else {
 		l, _, err := reader.ReadLine()
-		columns := make([]int, 12)
+		columns := make([]bool, 11)
 		for _, field := range fields {
-			columns[FIELDS[field]] = 1
+			columns[FIELDS[field]-1] = true
 		}
-		sort.Ints(columns)
 
 		for ; err == nil; l, _, err = reader.ReadLine() {
 			if l[0] == 64 {
@@ -85,10 +83,10 @@ func getData(w http.ResponseWriter, r *http.Request) {
 				var output []string
 				ls := strings.Split(string(l), "\t")
 				for i, col := range columns {
-					if col == 1 {
-						output = append(output, ls[i-1])
+					if col {
+						output = append(output, ls[i])
 					} else {
-						if i == 2 || i == 4 || i == 5 || i == 8 || i == 9 {
+						if i == 1 || i == 3 || i == 4 || i == 7 || i == 8 {
 							output = append(output, "0")
 						} else {
 							output = append(output, "*")
