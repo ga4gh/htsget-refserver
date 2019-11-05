@@ -87,7 +87,6 @@ func getReads(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	//numBlocks := int(math.Floor((float64(numBytes) / (9 * math.Pow10(8)))))
 	numBlocks := 0
 	if numBlocks == 0 {
 		numBlocks = 1
