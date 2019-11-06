@@ -33,7 +33,6 @@ func getData(w http.ResponseWriter, r *http.Request) {
 
 	args := []string{"view", dataSource + filePath(id)}
 	var refRange string
-	var cmd *exec.Cmd
 	if refName != "" {
 		refRange = refName + ":" + start + "-" + end
 		args = append(args, refRange)
@@ -43,7 +42,7 @@ func getData(w http.ResponseWriter, r *http.Request) {
 	} else {
 		args = append(args, "-h")
 	}
-	cmd = exec.Command("samtools", args...)
+	cmd := exec.Command("samtools", args...)
 
 	pipe, _ := cmd.StdoutPipe()
 	err = cmd.Start()
@@ -103,21 +102,21 @@ func getData(w http.ResponseWriter, r *http.Request) {
 	samToBam(tempPath)
 
 	if class == "header" {
-		removeEOF(tempPath)
+		removeEOF(tempPath + "_bam")
 	} else if class == "body" {
-		removeHeader(tempPath)
+		removeHeader(tempPath + "_bam")
 		if blockID != numBlocks {
-			removeEOF(tempPath)
+			removeEOF(tempPath + "_bam")
 		}
 	}
 
-	fclient, _ := os.Open(tempPath)
+	fclient, _ := os.Open(tempPath + "_bam")
 	defer fclient.Close()
 	io.Copy(w, fclient)
 }
 
 func samToBam(tempPath string) {
-	cmd := exec.Command("samtools", "view", "-h", "-b", tempPath, "-o", tempPath)
+	cmd := exec.Command("samtools", "view", "-h", "-b", tempPath, "-o", tempPath+"_bam")
 	cmd.Run()
 }
 

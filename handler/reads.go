@@ -1,12 +1,14 @@
 package handler
 
 import (
+	"bufio"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
 	"os"
+	"os/exec"
 	"strconv"
 	"strings"
 
@@ -18,7 +20,6 @@ var EOF, _ = hex.DecodeString("1f8b08040000000000ff0600424302001b000300000000000
 var EOF_LEN = int64(len(EOF))
 
 var dataSource = "http://s3.amazonaws.com/czbiohub-tabula-muris/"
-var testFile = "A1-B001176-3_56_F-1-1_R1.mus.Aligned.out.sorted.bam"
 
 // Ticket holds the entire json ticket returned to the client
 type ticket struct {
@@ -85,6 +86,12 @@ func getReads(w http.ResponseWriter, r *http.Request) {
 	fields, err := parseFields(params)
 	if err != nil {
 		panic(err)
+	}
+
+	if refName != "" {
+		if !referenceExists(id, refName) {
+			panic("requested reference does not exist")
+		}
 	}
 
 	numBlocks := 0
@@ -174,4 +181,20 @@ func getDataURL(format string, refName string, start string, end string, fields 
 	dataEndpoint.RawQuery = query.Encode()
 
 	return dataEndpoint
+}
+
+func referenceExists(id string, refName string) bool {
+	cmd := exec.Command("samtools", "view", "-H", dataSource+filePath(id))
+	pipe, _ := cmd.StdoutPipe()
+	cmd.Start()
+	reader := bufio.NewReader(pipe)
+	l, _, err := reader.ReadLine()
+
+	for ; err == nil; l, _, err = reader.ReadLine() {
+		if strings.Contains(string(l), "SN:"+refName) {
+			return true
+		}
+	}
+	cmd.Wait()
+	return false
 }
