@@ -5,25 +5,21 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io"
-	"math"
 	"net/http"
 	"net/url"
 	"os"
 	"os/exec"
-	"sort"
 	"strconv"
 	"strings"
 
-	"github.com/biogo/hts/bam"
 	"github.com/go-chi/chi"
 )
 
 var EOF, _ = hex.DecodeString("1f8b08040000000000ff0600424302001b0003000000000000000000")
+
 var EOF_LEN = int64(len(EOF))
 
 var dataSource = "http://s3.amazonaws.com/czbiohub-tabula-muris/"
-var testFile = "A1-B001176-3_56_F-1-1_R1.mus.Aligned.out.sorted.bam"
 
 // Ticket holds the entire json ticket returned to the client
 type ticket struct {
@@ -45,10 +41,11 @@ type urlJSON struct {
 	Class   string   `json:"class,omitempty"`
 }
 
-// Headers contains any headers sent by the client such as
-// the range of the query and authorization tokens
+// Headers contains any headers needed by the server from the client
 type headers struct {
-	Range string `json:"range"`
+	BlockID   string `json:"block-id"`   // id of current block
+	NumBlocks string `json:"num-blocks"` // total number of blocks
+	Range     string `json:"range,omitempty"`
 }
 
 var FIELDS map[string]int = map[string]int{
@@ -83,7 +80,7 @@ func getReads(w http.ResponseWriter, r *http.Request) {
 	// *** Parse query params ***
 	params := r.URL.Query()
 	format, err := parseFormat(params)
-	//reqClass, err := parseClass(params)
+	queryClass, err := parseQueryClass(params)
 	refName, err := parseRefName(params)
 	start, end, err := parseRange(params, refName)
 	fields, err := parseFields(params)
@@ -91,88 +88,13 @@ func getReads(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	// The address of the endpoint on this server which serves the data
-	dataEndpoint, err := url.Parse("localhost:3000/data/")
-	if err != nil {
-		panic(err)
-	}
-
-	if os.Getenv("APP_ENV") == "production" {
-		dataEndpoint.Path += id
-	} else {
-		dataEndpoint.Opaque += id
-	}
-
-	var refRange string
-	var cmd *exec.Cmd
-	if refName != "" {
-		refRange = refName + ":" + start + "-" + end
-		cmd = exec.Command("samtools", "view", "-h", dataSource+filePath(id), refRange)
-	} else {
-		cmd = exec.Command("samtools", "view", "-h", dataSource+filePath(id))
-	}
-
-	fmt.Println("fetching file from ", dataSource+filePath(id))
-	pipe, _ := cmd.StdoutPipe()
-	err = cmd.Start()
-	if err != nil {
-		panic(err)
-	}
-	cwd, _ := os.Getwd()
-	fSam, _ := os.Create(cwd + "/data/" + id)
-	reader := bufio.NewReader(pipe)
-	var numBytes int64 = 0
-	if len(fields) == 0 {
-		numBytes, _ = io.Copy(fSam, reader)
-	} else {
-		l, _, err := reader.ReadLine()
-		columns := make([]int, 12)
-		for _, field := range fields {
-			columns[FIELDS[field]] = 1
-		}
-		sort.Ints(columns)
-
-		for ; err == nil; l, _, err = reader.ReadLine() {
-			if l[0] == 64 {
-				l = append(l, "\n"...)
-				fSam.Write(l)
-			} else {
-				var output []string
-				ls := strings.Split(string(l), "\t")
-				for i, col := range columns {
-					if col == 1 {
-						output = append(output, ls[i-1])
-					} else {
-						if i == 2 || i == 4 || i == 5 || i == 8 || i == 9 {
-							output = append(output, "0")
-						} else {
-							output = append(output, "*")
-						}
-					}
-				}
-				l = []byte(strings.Join(output, "\t") + "\n")
-				fSam.Write(l)
-			}
-			numBytes += int64(len(l))
+	if refName != "" && refName != "*" {
+		if !referenceExists(id, refName) {
+			panic("requested reference does not exist")
 		}
 	}
-	fmt.Println(numBytes)
-	cmd.Wait()
-	fSam.Close()
 
-	cmd = exec.Command("samtools", "view", "-h", "-b", cwd+"/data/"+id, "-o", cwd+"/data/"+id)
-	cmd.Run()
-
-	fin, _ := os.Open(cwd + "/data/" + id)
-	defer fin.Close()
-	b, _ := bam.NewReader(fin, 0)
-	defer b.Close()
-	b.Header()
-	b.Read()
-	lastChunk := b.LastChunk()
-	hLen := lastChunk.Begin.File
-
-	numBlocks := int(math.Floor((float64(numBytes) / (9 * math.Pow10(8)))))
+	numBlocks := 0
 	if numBlocks == 0 {
 		numBlocks = 1
 	}
@@ -180,23 +102,36 @@ func getReads(w http.ResponseWriter, r *http.Request) {
 	// build HTTP response
 	u := make([]urlJSON, 0)
 	var respClass string
+	if queryClass == "header" {
+		respClass = "header"
+	}
+	dataEndpoint := getDataURL(format, refName, start, end, fields, id)
 	var h *headers
 	if numBlocks == 1 {
+		h = &headers{
+			BlockID:   "1",
+			NumBlocks: strconv.Itoa(numBlocks),
+		}
 		u = append(u, urlJSON{dataEndpoint.String(), h, respClass})
 	} else {
-		var start int64 = 0
-		var blockSize int64 = int64(math.Floor((float64(numBytes) / float64(numBlocks))))
-		var end int64 = start + blockSize
+		//var start int64 = 0
+		//var blockSize int64 = int64(math.Floor((float64(numBytes) / float64(numBlocks))))
+		//var end int64 = start + blockSize
 		for i := 1; i <= numBlocks; i++ {
 			if i == 1 { // first of multiple blocks
-				h = &headers{"bytes=" + "0" + "-" + strconv.FormatInt(hLen, 10)}
-				start = hLen + 1
-			} else {
-				if end > numBytes {
-					end = numBytes
+				h = &headers{
+					BlockID:   strconv.Itoa(i),
+					NumBlocks: strconv.Itoa(numBlocks),
+					//Range:     "bytes=" + "0" + "-" + strconv.FormatInt(hLen, 10),
 				}
-				h = &headers{"bytes=" + strconv.FormatInt(start, 10) + "-" + strconv.FormatInt(end, 10)}
+				//start = hLen + 1
 			}
+			/* else {*/
+			//[>       if end > numBytes {<]
+			////end = numBytes
+			//[>}<]
+			//h = &headers{"bytes=" + strconv.FormatInt(start, 10) + "-" + strconv.FormatInt(end, 10)}
+			/*}*/
 			u = append(u, urlJSON{dataEndpoint.String(), h, respClass})
 		}
 	}
@@ -220,4 +155,54 @@ func filePath(id string) string {
 		path = "facs_bam_files/" + id
 	}
 	return path
+}
+
+func getDataURL(format string, refName string, start string, end string, fields []string, id string) *url.URL {
+	// The address of the endpoint on this server which serves the data
+	var dataEndpoint, err = url.Parse("localhost:3000/data/")
+	if err != nil {
+		panic(err)
+	}
+
+	// add id url param
+	if os.Getenv("APP_ENV") == "production" {
+		dataEndpoint.Path += id
+	} else {
+		dataEndpoint.Opaque += id
+	}
+
+	// add query params
+	query := dataEndpoint.Query()
+	query.Set("format", format)
+	if refName != "" {
+		query.Set("referenceName", refName)
+	}
+	if start != "-1" {
+		query.Set("start", start)
+	}
+	if end != "-1" {
+		query.Set("end", end)
+	}
+	if f := strings.Join(fields, ","); f != "" {
+		query.Set("fields", f)
+	}
+	dataEndpoint.RawQuery = query.Encode()
+
+	return dataEndpoint
+}
+
+func referenceExists(id string, refName string) bool {
+	cmd := exec.Command("samtools", "view", "-H", dataSource+filePath(id))
+	pipe, _ := cmd.StdoutPipe()
+	cmd.Start()
+	reader := bufio.NewReader(pipe)
+	l, _, err := reader.ReadLine()
+
+	for ; err == nil; l, _, err = reader.ReadLine() {
+		if strings.Contains(string(l), "SN:"+refName) {
+			return true
+		}
+	}
+	cmd.Wait()
+	return false
 }
