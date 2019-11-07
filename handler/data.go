@@ -33,8 +33,16 @@ func getData(w http.ResponseWriter, r *http.Request) {
 
 	args := []string{"view", dataSource + filePath(id)}
 	var refRange string
-	if refName != "" {
-		refRange = refName + ":" + start + "-" + end
+	if refName != "" && refName != "*" {
+		if start == "-1" {
+			refRange = refName
+		} else {
+			if end == "-1" {
+				refRange = refName + ":" + start
+			} else {
+				refRange = refName + ":" + start + "-" + end
+			}
+		}
 		args = append(args, refRange)
 	}
 	if class == "header" {
@@ -65,7 +73,7 @@ func getData(w http.ResponseWriter, r *http.Request) {
 	defer fSam.Close()
 	reader := bufio.NewReader(pipe)
 
-	if len(fields) == 0 {
+	if len(fields) == 0 && refName != "*" {
 		io.Copy(fSam, reader)
 	} else {
 		l, _, err := reader.ReadLine()
@@ -81,19 +89,25 @@ func getData(w http.ResponseWriter, r *http.Request) {
 			} else {
 				var output []string
 				ls := strings.Split(string(l), "\t")
-				for i, col := range columns {
-					if col {
-						output = append(output, ls[i])
-					} else {
-						if i == 1 || i == 3 || i == 4 || i == 7 || i == 8 {
-							output = append(output, "0")
+				keepLine := true
+				if refName == "*" {
+					keepLine = isUnmappedUnplaced(ls)
+				}
+				if keepLine {
+					for i, col := range columns {
+						if col {
+							output = append(output, ls[i])
 						} else {
-							output = append(output, "*")
+							if i == 1 || i == 3 || i == 4 || i == 7 || i == 8 {
+								output = append(output, "0")
+							} else {
+								output = append(output, "*")
+							}
 						}
 					}
+					l = []byte(strings.Join(output, "\t") + "\n")
+					fSam.Write(l)
 				}
-				l = []byte(strings.Join(output, "\t") + "\n")
-				fSam.Write(l)
 			}
 		}
 	}
@@ -161,4 +175,12 @@ func isDir(path string) (bool, error) {
 		return false, err
 	}
 	return true, err
+}
+
+func isUnmappedUnplaced(l []string) bool {
+	flag, _ := strconv.ParseInt(l[1], 2, 64)
+	flag = flag >> 2
+	unmapped := flag&1 == 1
+
+	return unmapped && l[2] == "*" && l[3] == "0"
 }
