@@ -41,17 +41,16 @@ func parseRange(params url.Values, refName string) (string, string, error) {
 	if _, ok := params["start"]; ok {
 		if _, ok := params["end"]; ok {
 			if validRange(params["start"][0], params["end"][0], refName) {
-				start, _ := strconv.ParseUint(params["start"][0], 10, 32)
-				end, _ := strconv.ParseUint(params["end"][0], 10, 32)
-				return strconv.FormatUint(start, 10), strconv.FormatUint(end, 10), nil
+				return params["start"][0], params["end"][0], nil
 			} else {
 				panic("InvalidRange")
 			}
 		}
+		return params["start"][0], "-1", nil
 	} else if _, ok := params["end"]; ok {
 		panic("InvalidRange")
 	}
-	return "0", "0", nil
+	return "-1", "-1", nil
 }
 
 func parseFields(params url.Values) ([]string, error) {
