@@ -174,10 +174,18 @@ func getDataURL(format string, refName string, start string, end string, fields 
 	// add query params
 	query := dataEndpoint.Query()
 	query.Set("format", format)
-	query.Set("referenceName", refName)
-	query.Set("start", start)
-	query.Set("end", end)
-	query.Set("fields", strings.Join(fields, ","))
+	if refName != "" {
+		query.Set("referenceName", refName)
+	}
+	if start != "-1" {
+		query.Set("start", start)
+	}
+	if end != "-1" {
+		query.Set("end", end)
+	}
+	if f := strings.Join(fields, ","); f != "" {
+		query.Set("fields", f)
+	}
 	dataEndpoint.RawQuery = query.Encode()
 
 	return dataEndpoint
