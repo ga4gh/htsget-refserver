@@ -88,7 +88,7 @@ func getReads(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	if refName != "" {
+	if refName != "" && refName != "*" {
 		if !referenceExists(id, refName) {
 			panic("requested reference does not exist")
 		}
