@@ -1,5 +1,6 @@
 # executable file
 cmd
+!cmd/
 
 *.bam
 *.bai
