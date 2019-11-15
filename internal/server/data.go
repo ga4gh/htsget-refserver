@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/biogo/hts/bam"
+	"github.com/david-xliu/htsget-refserver/internal/genomics"
 	"github.com/go-chi/chi"
 )
 
@@ -30,7 +31,10 @@ func getData(w http.ResponseWriter, r *http.Request) {
 	blockID, _ := strconv.Atoi(r.Header.Get("block-id"))
 	numBlocks, _ := strconv.Atoi(r.Header.Get("num-blocks"))
 	class := r.Header.Get("class")
-	args := getCmdArgs(id, refName, start, end, numBlocks, class)
+
+	region := &genomics.Region{Name: refName, Start: start, End: end}
+
+	args := getCmdArgs(id, region, numBlocks, class)
 	cmd := exec.Command("samtools", args...)
 
 	pipe, _ := cmd.StdoutPipe()
@@ -111,20 +115,10 @@ func getTempPath(id string, blockID int) string {
 	return tempPath
 }
 
-func getCmdArgs(id string, refName string, start string, end string, numBlocks int, class string) []string {
+func getCmdArgs(id string, region *genomics.Region, numBlocks int, class string) []string {
 	args := []string{"view", dataSource + filePath(id)}
-	var refRange string
-	if refName != "" && refName != "*" {
-		if start == "-1" {
-			refRange = refName
-		} else {
-			if end == "-1" {
-				refRange = refName + ":" + start
-			} else {
-				refRange = refName + ":" + start + "-" + end
-			}
-		}
-		args = append(args, refRange)
+	if region.String() != "" {
+		args = append(args, region.String())
 	}
 	if class == "header" {
 		args = append(args, "-H")
@@ -174,7 +168,7 @@ func fileExists(path string) (bool, error) {
 	return false, nil
 }
 
-// isDir returne whether the given path is directory
+// isDir returns whether the given path is directory
 func isDir(path string) (bool, error) {
 	src, err := os.Stat(path)
 
