@@ -45,8 +45,8 @@ type urlJSON struct {
 
 // Headers contains any headers needed by the server from the client
 type headers struct {
-	BlockID   string `json:"block-id"`   // id of current block
-	NumBlocks string `json:"num-blocks"` // total number of blocks
+	BlockID   string `json:"block-id,omitempty"`   // id of current block
+	NumBlocks string `json:"num-blocks,omitempty"` // total number of blocks
 	Range     string `json:"range,omitempty"`
 }
 
