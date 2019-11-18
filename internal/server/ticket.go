@@ -119,36 +119,32 @@ func getReads(w http.ResponseWriter, r *http.Request) {
 	dataEndpoint := getDataURL(format, region, fields, id)
 	var h *headers
 
-	// range query
-	if numBlocks == 1 {
+	// no range query, redirect to aws
+	if len(fields) == 0 && refName == "" {
+		path := dataSource + filePath(id)
+		var start, end int64 = 0, 0
+
+		for i := 1; i <= numBlocks; i++ {
+			end = start + blockSize - 1
+			if end >= numBytes {
+				end = numBytes - 1
+			}
+			h := &headers{
+				Range: strconv.FormatInt(start, 10) + "-" + strconv.FormatInt(end, 10),
+			}
+			start = end + 1
+			u = append(u, urlJSON{path, h, ""})
+		}
+	} else if refName != "" {
 		h = &headers{
 			BlockID:   "1",
 			NumBlocks: "1",
 		}
 		u = append(u, urlJSON{dataEndpoint.String(), h, respClass})
 	} else {
-		// no range query, redirect to aws
-		if len(fields) == 0 {
-			path := dataSource + filePath(id)
-			var start, end int64 = 0, 0
 
-			for i := 1; i <= numBlocks; i++ {
-				end = start + blockSize - 1
-				if end >= numBytes {
-					end = numBytes - 1
-				}
-				h := &headers{
-					BlockID:   strconv.Itoa(i),
-					NumBlocks: strconv.Itoa(numBlocks),
-					Range:     strconv.FormatInt(start, 10) + "-" + strconv.FormatInt(end, 10),
-				}
-				start = end + 1
-				u = append(u, urlJSON{path, h, ""})
-			}
-		} else {
-
-		}
 	}
+
 	c := container{format, u, ""}
 	t := ticket{HTSget: c}
 	ticket, err := json.Marshal(t)
