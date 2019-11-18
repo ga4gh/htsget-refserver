@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -103,13 +104,14 @@ func processData(fSam *os.File, reader *bufio.Reader, refName string, fields []s
 
 func getTempPath(id string, blockID int) string {
 	cwd, _ := os.Getwd()
-	tempPath := cwd + "/temp/" + id + "_" + strconv.Itoa(blockID)
+	parent := filepath.Dir(wd)
+	tempPath := parent + "/temp/" + id + "_" + strconv.Itoa(blockID)
 
-	if exists, _ := fileExists(cwd + "/temp"); !exists {
-		os.Mkdir(cwd+"/temp/", 0755)
+	if exists, _ := fileExists(parent + "/temp"); !exists {
+		os.Mkdir(parent+"/temp/", 0755)
 	} else {
-		if isDir, _ := isDir(cwd + "/temp"); !isDir {
-			os.Mkdir(cwd+"/temp/", 0755)
+		if isDir, _ := isDir(parent + "/temp"); !isDir {
+			os.Mkdir(parent+"/temp/", 0755)
 		}
 	}
 	return tempPath
