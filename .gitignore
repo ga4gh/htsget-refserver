@@ -4,7 +4,7 @@ cmd
 
 *.bam
 *.bai
-temp/*
+cmd/temp/*
 data/*
 
 .DS_Store
