@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"math"
 	"net/http"
 	"net/url"
 	"os"
@@ -12,6 +13,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/david-xliu/htsget-refserver/internal/genomics"
 	"github.com/go-chi/chi"
 )
 
@@ -88,15 +90,23 @@ func getReads(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
+	region := &genomics.Region{Name: refName, Start: start, End: end}
+
 	if refName != "" && refName != "*" {
 		if !referenceExists(id, refName) {
 			panic("requested reference does not exist")
 		}
 	}
 
-	numBlocks := 0
-	if numBlocks == 0 {
+	numBytes := res.ContentLength
+	var numBlocks int
+	var blockSize int64 = 1e9
+	if refName != "" {
 		numBlocks = 1
+	} else {
+		if len(fields) == 0 {
+			numBlocks = int(math.Ceil(float64(numBytes) / float64(blockSize)))
+		}
 	}
 
 	// build HTTP response
@@ -105,46 +115,50 @@ func getReads(w http.ResponseWriter, r *http.Request) {
 	if queryClass == "header" {
 		respClass = "header"
 	}
-	dataEndpoint := getDataURL(format, refName, start, end, fields, id)
+
+	dataEndpoint := getDataURL(format, region, fields, id)
 	var h *headers
+
+	// range query
 	if numBlocks == 1 {
 		h = &headers{
 			BlockID:   "1",
-			NumBlocks: strconv.Itoa(numBlocks),
+			NumBlocks: "1",
 		}
 		u = append(u, urlJSON{dataEndpoint.String(), h, respClass})
 	} else {
-		//var start int64 = 0
-		//var blockSize int64 = int64(math.Floor((float64(numBytes) / float64(numBlocks))))
-		//var end int64 = start + blockSize
-		for i := 1; i <= numBlocks; i++ {
-			if i == 1 { // first of multiple blocks
-				h = &headers{
+		// no range query, redirect to aws
+		if len(fields) == 0 {
+			path := dataSource + filePath(id)
+			var start, end int64 = 0, 0
+
+			for i := 1; i <= numBlocks; i++ {
+				end = start + blockSize - 1
+				if end >= numBytes {
+					end = numBytes - 1
+				}
+				h := &headers{
 					BlockID:   strconv.Itoa(i),
 					NumBlocks: strconv.Itoa(numBlocks),
-					//Range:     "bytes=" + "0" + "-" + strconv.FormatInt(hLen, 10),
+					Range:     strconv.FormatInt(start, 10) + "-" + strconv.FormatInt(end, 10),
 				}
-				//start = hLen + 1
+				start = end + 1
+				u = append(u, urlJSON{path, h, ""})
 			}
-			/* else {*/
-			//[>       if end > numBytes {<]
-			////end = numBytes
-			//[>}<]
-			//h = &headers{"bytes=" + strconv.FormatInt(start, 10) + "-" + strconv.FormatInt(end, 10)}
-			/*}*/
-			u = append(u, urlJSON{dataEndpoint.String(), h, respClass})
+		} else {
+
 		}
 	}
 	c := container{format, u, ""}
 	t := ticket{HTSget: c}
-	ticketJSON, err := json.Marshal(t)
+	ticket, err := json.Marshal(t)
 	if err != nil {
 		panic(err)
 	}
 
 	// send back response
 	w.Header().Set("Content-Type", "application/vnd.ga4gh.htsget.v1.2.0+json; charset=utf-8")
-	w.Write(ticketJSON)
+	w.Write(ticket)
 }
 
 func filePath(id string) string {
@@ -157,7 +171,7 @@ func filePath(id string) string {
 	return path
 }
 
-func getDataURL(format string, refName string, start string, end string, fields []string, id string) *url.URL {
+func getDataURL(format string, region *genomics.Region, fields []string, id string) *url.URL {
 	// The address of the endpoint on this server which serves the data
 	var dataEndpoint, err = url.Parse("localhost:3000/data/")
 	if err != nil {
@@ -174,14 +188,14 @@ func getDataURL(format string, refName string, start string, end string, fields 
 	// add query params
 	query := dataEndpoint.Query()
 	query.Set("format", format)
-	if refName != "" {
-		query.Set("referenceName", refName)
+	if region.Name != "" {
+		query.Set("referenceName", region.Name)
 	}
-	if start != "-1" {
-		query.Set("start", start)
+	if region.Start != "-1" {
+		query.Set("start", region.Start)
 	}
-	if end != "-1" {
-		query.Set("end", end)
+	if region.End != "-1" {
+		query.Set("end", region.End)
 	}
 	if f := strings.Join(fields, ","); f != "" {
 		query.Set("fields", f)
