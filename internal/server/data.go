@@ -104,7 +104,7 @@ func processData(fSam *os.File, reader *bufio.Reader, refName string, fields []s
 
 func getTempPath(id string, blockID int) string {
 	cwd, _ := os.Getwd()
-	parent := filepath.Dir(wd)
+	parent := filepath.Dir(cwd)
 	tempPath := parent + "/temp/" + id + "_" + strconv.Itoa(blockID)
 
 	if exists, _ := fileExists(parent + "/temp"); !exists {
