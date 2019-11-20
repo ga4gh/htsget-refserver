@@ -5,11 +5,13 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
 	"math"
 	"net/http"
 	"net/url"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -142,7 +144,54 @@ func getReads(w http.ResponseWriter, r *http.Request) {
 		}
 		u = append(u, urlJSON{dataEndpoint.String(), h, respClass})
 	} else {
+		cwd, _ := os.Getwd()
+		parent := filepath.Dir(cwd)
+		hpath := parent + "/temp/" + id + "_header"
+		cmd := exec.Command("samtools", "view", "-H", dataSource+filePath(id), "-o", hpath)
+		cmd.Run()
 
+		fh, _ := os.Open(hpath)
+		lc := refNameCounter(fh)
+		numBlocks = lc + 2
+		fh.Seek(0, 0)
+		reader := bufio.NewReader(fh)
+		l, _, err := reader.ReadLine()
+
+		block := 1
+		dataEndpoint = getDataURL(format, nil, make([]string, 0), id)
+		h = &headers{
+			BlockID:   strconv.Itoa(block),
+			NumBlocks: strconv.Itoa(numBlocks),
+		}
+		u = append(u, urlJSON{dataEndpoint.String(), h, "header"})
+
+		block++
+
+		for ; err == nil; l, _, err = reader.ReadLine() {
+			if strings.HasPrefix(string(l), "@SQ") {
+				ls := strings.Split(string(l), "\t")
+				for _, col := range ls {
+					if strings.HasPrefix(col, "SN:") {
+						refName = col[3:]
+					}
+				}
+
+				dataEndpoint = getDataURL(format, &genomics.Region{Name: refName, Start: "-1", End: "-1"}, fields, id)
+				h = &headers{
+					BlockID:   strconv.Itoa(block),
+					NumBlocks: strconv.Itoa(numBlocks),
+				}
+				u = append(u, urlJSON{dataEndpoint.String(), h, "body"})
+				block++
+			}
+		}
+
+		dataEndpoint = getDataURL(format, &genomics.Region{Name: "*", Start: "-1", End: "-1"}, fields, id)
+		h = &headers{
+			BlockID:   strconv.Itoa(block),
+			NumBlocks: strconv.Itoa(numBlocks),
+		}
+		u = append(u, urlJSON{dataEndpoint.String(), h, "body"})
 	}
 
 	c := container{format, u, ""}
@@ -184,15 +233,18 @@ func getDataURL(format string, region *genomics.Region, fields []string, id stri
 	// add query params
 	query := dataEndpoint.Query()
 	query.Set("format", format)
-	if region.Name != "" {
-		query.Set("referenceName", region.Name)
+	if region != nil {
+		if region.Name != "" {
+			query.Set("referenceName", region.Name)
+		}
+		if region.Start != "-1" {
+			query.Set("start", region.Start)
+		}
+		if region.End != "-1" {
+			query.Set("end", region.End)
+		}
 	}
-	if region.Start != "-1" {
-		query.Set("start", region.Start)
-	}
-	if region.End != "-1" {
-		query.Set("end", region.End)
-	}
+
 	if f := strings.Join(fields, ","); f != "" {
 		query.Set("fields", f)
 	}
@@ -215,4 +267,17 @@ func referenceExists(id string, refName string) bool {
 	}
 	cmd.Wait()
 	return false
+}
+
+func refNameCounter(r io.Reader) int {
+	count := 0
+	var l string
+	var err error
+	bufReader := bufio.NewReader(r)
+	for ; err == nil; l, err = bufReader.ReadString('\n') {
+		if strings.Contains(l, "@SQ") {
+			count++
+		}
+	}
+	return count
 }
