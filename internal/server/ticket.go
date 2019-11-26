@@ -113,11 +113,6 @@ func getReads(w http.ResponseWriter, r *http.Request) {
 
 	// build HTTP response
 	u := make([]urlJSON, 0)
-	var respClass string
-	if queryClass == "header" {
-		respClass = "header"
-	}
-
 	dataEndpoint := getDataURL(format, region, fields, id)
 	var h *headers
 
@@ -137,13 +132,19 @@ func getReads(w http.ResponseWriter, r *http.Request) {
 			start = end + 1
 			u = append(u, urlJSON{path, h, ""})
 		}
-	} else if refName != "" {
+	} else if refName != "" { // genomic region provided
 		h = &headers{
 			BlockID:   "1",
-			NumBlocks: "1",
+			NumBlocks: "2",
 		}
-		u = append(u, urlJSON{dataEndpoint.String(), h, respClass})
-	} else {
+		u = append(u, urlJSON{dataEndpoint.String(), h, "header"})
+
+		h = &headers{
+			BlockID:   "2",
+			NumBlocks: "2",
+		}
+		u = append(u, urlJSON{dataEndpoint.String(), h, "body"})
+	} else { // no genomic region provided, query by field and tag
 		cwd, _ := os.Getwd()
 		parent := filepath.Dir(cwd)
 		hpath := parent + "/temp/" + id + "_header"
@@ -175,8 +176,8 @@ func getReads(w http.ResponseWriter, r *http.Request) {
 						refName = col[3:]
 					}
 				}
-
-				dataEndpoint = getDataURL(format, &genomics.Region{Name: refName, Start: "-1", End: "-1"}, fields, id)
+				r := &genomics.Region{Name: refName, Start: "-1", End: "-1"}
+				dataEndpoint = getDataURL(format, r, fields, id)
 				h = &headers{
 					BlockID:   strconv.Itoa(block),
 					NumBlocks: strconv.Itoa(numBlocks),
@@ -186,7 +187,8 @@ func getReads(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		dataEndpoint = getDataURL(format, &genomics.Region{Name: "*", Start: "-1", End: "-1"}, fields, id)
+		r := &genomics.Region{Name: "*", Start: "-1", End: "-1"}
+		dataEndpoint = getDataURL(format, r, fields, id)
 		h = &headers{
 			BlockID:   strconv.Itoa(block),
 			NumBlocks: strconv.Itoa(numBlocks),
@@ -202,7 +204,8 @@ func getReads(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// send back response
-	w.Header().Set("Content-Type", "application/vnd.ga4gh.htsget.v1.2.0+json; charset=utf-8")
+	ct := "application/vnd.ga4gh.htsget.v1.2.0+json; charset=utf-8"
+	w.Header().Set("Content-Type", ct)
 	w.Write(ticket)
 }
 
@@ -216,7 +219,7 @@ func filePath(id string) string {
 	return path
 }
 
-func getDataURL(format string, region *genomics.Region, fields []string, id string) *url.URL {
+func getDataURL(fmt string, r *genomics.Region, fields []string, id string) *url.URL {
 	// The address of the endpoint on this server which serves the data
 	var dataEndpoint, err = url.Parse("localhost:3000/data/")
 	if err != nil {
@@ -232,16 +235,16 @@ func getDataURL(format string, region *genomics.Region, fields []string, id stri
 
 	// add query params
 	query := dataEndpoint.Query()
-	query.Set("format", format)
-	if region != nil {
-		if region.Name != "" {
-			query.Set("referenceName", region.Name)
+	query.Set("format", fmt)
+	if r != nil {
+		if r.Name != "" {
+			query.Set("referenceName", r.Name)
 		}
-		if region.Start != "-1" {
-			query.Set("start", region.Start)
+		if r.Start != "-1" {
+			query.Set("start", r.Start)
 		}
-		if region.End != "-1" {
-			query.Set("end", region.End)
+		if r.End != "-1" {
+			query.Set("end", r.End)
 		}
 	}
 

@@ -43,47 +43,41 @@ func getData(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err)
 	}
-
 	tempPath := getTempPath(id, blockID)
 
 	fSam, _ := os.Create(tempPath)
 	defer fSam.Close()
 	reader := bufio.NewReader(pipe)
 
-	if len(fields) == 0 && refName != "*" {
+	// write header and return
+	if class == "header" {
 		io.Copy(fSam, reader)
+		if blockID == numBlocks {
+			removeEOF(tempPath)
+		}
+		io.Copy(w, fSam)
+		cmd.Wait()
+		return
+	}
+
+	if len(fields) == 0 {
+		cwd, _ := os.Getwd()
+		l := reader.ReadString("/n")
+		os.Create()
 	} else {
-		processData(fSam, reader, refName, fields)
-	}
-	cmd.Wait()
+		//processData(fSam, reader, refName, fields)
+		l, _, err := reader.ReadLine()
+		columns := make([]bool, 11)
+		for _, field := range fields {
+			columns[FIELDS[field]-1] = true
+		}
 
-	samToBam(tempPath)
-	trimBlob(class, numBlocks, tempPath, blockID)
+		for ; err == nil; l, _, err = reader.ReadLine() {
+			if l[0] != 64 {
+				var output []string
+				ls := strings.Split(string(l), "\t")
 
-	fclient, _ := os.Open(tempPath + "_bam")
-	defer fclient.Close()
-	io.Copy(w, fclient)
-}
-
-func processData(fSam *os.File, reader *bufio.Reader, refName string, fields []string) {
-	l, _, err := reader.ReadLine()
-	columns := make([]bool, 11)
-	for _, field := range fields {
-		columns[FIELDS[field]-1] = true
-	}
-
-	for ; err == nil; l, _, err = reader.ReadLine() {
-		if l[0] == 64 {
-			l = append(l, "\n"...)
-			fSam.Write(l)
-		} else {
-			var output []string
-			ls := strings.Split(string(l), "\t")
-			keepLine := true
-			if refName == "*" {
-				keepLine = isUnmappedUnplaced(ls)
-			}
-			if keepLine {
+				fmt.Println("test")
 				for i, col := range columns {
 					if col {
 						output = append(output, ls[i])
@@ -96,11 +90,71 @@ func processData(fSam *os.File, reader *bufio.Reader, refName string, fields []s
 					}
 				}
 				l = []byte(strings.Join(output, "\t") + "\n")
+
 				fSam.Write(l)
+
+				samToBam(tempPath)
+				removeHeader(tempPath + "_bam")
+				removeEOF(tempPath + "_bam")
+
+				fclient, _ := os.Open(tempPath + "_bam")
+				defer fclient.Close()
+				fmt.Println("writing data")
+				io.Copy(w, fclient)
+				fmt.Println("wrote data")
 			}
 		}
+
+		if blockID == numBlocks {
+			w.Write(EOF)
+		}
 	}
+	cmd.Wait()
+
+	/* samToBam(tempPath)*/
+	/*trimBlob(class, numBlocks, tempPath, blockID)*/
+
+	/* fclient, _ := os.Open(tempPath + "_bam")*/
+	//defer fclient.Close()
+	/*io.Copy(w, fclient)*/
 }
+
+/*func processData(fSam *os.File, r *bufio.Reader, name string, fields []string) {*/
+//l, _, err := r.ReadLine()
+//columns := make([]bool, 11)
+//for _, field := range fields {
+//columns[FIELDS[field]-1] = true
+//}
+
+//for ; err == nil; l, _, err = r.ReadLine() {
+//if l[0] == 64 {
+//l = append(l, "\n"...)
+//fSam.Write(l)
+//} else {
+//var output []string
+//ls := strings.Split(string(l), "\t")
+//keepLine := true
+//if name == "*" {
+//keepLine = isUnmappedUnplaced(ls)
+//}
+//if keepLine {
+//for i, col := range columns {
+//if col {
+//output = append(output, ls[i])
+//} else {
+//if i == 1 || i == 3 || i == 4 || i == 7 || i == 8 {
+//output = append(output, "0")
+//} else {
+//output = append(output, "*")
+//}
+//}
+//}
+//l = []byte(strings.Join(output, "\t") + "\n")
+//fSam.Write(l)
+//}
+//}
+//}
+/*}*/
 
 func getTempPath(id string, blockID int) string {
 	cwd, _ := os.Getwd()
@@ -117,17 +171,15 @@ func getTempPath(id string, blockID int) string {
 	return tempPath
 }
 
-func getCmdArgs(id string, region *genomics.Region, numBlocks int, class string) []string {
+func getCmdArgs(id string, r *genomics.Region, numBlocks int, class string) []string {
 	args := []string{"view", dataSource + filePath(id)}
-	if region.String() != "" {
-		args = append(args, region.String())
-	}
 	if class == "header" {
 		args = append(args, "-H")
-		if numBlocks == 1 {
-			args = append(args, "-b")
-		}
+		args = append(args, "-b")
 	} else {
+		if r.String() != "" {
+			args = append(args, r.String())
+		}
 		args = append(args, "-h")
 	}
 	return args
@@ -181,13 +233,13 @@ func isDir(path string) (bool, error) {
 	return true, err
 }
 
-func isUnmappedUnplaced(l []string) bool {
-	flag, _ := strconv.ParseInt(l[1], 2, 64)
-	flag = flag >> 2
-	unmapped := flag&1 == 1
+/*func isUnmappedUnplaced(l []string) bool {*/
+//flag, _ := strconv.ParseInt(l[1], 2, 64)
+//flag = flag >> 2
+//unmapped := flag&1 == 1
 
-	return unmapped && l[2] == "*" && l[3] == "0"
-}
+//return unmapped && l[2] == "*" && l[3] == "0"
+/*}*/
 
 func trimBlob(class string, numBlocks int, tempPath string, blockID int) {
 	if class == "header" && numBlocks > 1 {
