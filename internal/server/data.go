@@ -22,10 +22,7 @@ func getData(w http.ResponseWriter, r *http.Request) {
 
 	// *** Parse query params ***
 	params := r.URL.Query()
-	format, err := parseFormat(params)
-	if format != "BAM" {
-		panic("format not supported")
-	}
+	_, err := parseFormat(params)
 	refName, err := parseRefName(params)
 	start, end, err := parseRange(params, refName)
 	fields, err := parseFields(params)
@@ -35,73 +32,157 @@ func getData(w http.ResponseWriter, r *http.Request) {
 
 	region := &genomics.Region{Name: refName, Start: start, End: end}
 
-	args := getCmdArgs(id, region, numBlocks, class)
+	args := getCmdArgs(id, region, class, fields)
 	cmd := exec.Command("samtools", args...)
-
+	fmt.Println(args)
 	pipe, _ := cmd.StdoutPipe()
 	err = cmd.Start()
 	if err != nil {
 		panic(err)
 	}
-	tempPath := getTempPath(id, blockID)
 
-	fSam, _ := os.Create(tempPath)
-	defer fSam.Close()
 	reader := bufio.NewReader(pipe)
 
-	// write header and return
+	var eofLen int
 	if class == "header" {
-		io.Copy(fSam, reader)
-		if blockID == numBlocks {
-			removeEOF(tempPath)
-		}
-		io.Copy(w, fSam)
-		cmd.Wait()
-		return
+		eofLen = HEADER_EOF_LEN
+	} else {
+		eofLen = EOF_LEN
 	}
 
-	if len(fields) == 0 {
-		cwd, _ := os.Getwd()
-		l := reader.ReadString("/n")
-		os.Create()
+	if len(fields) == 0 || class == "header" {
+		if class != "header" { // remove header
+			headerBuf := make([]byte, headerLen(id))
+			io.ReadFull(reader, headerBuf)
+		}
+
+		if blockID != numBlocks { // remove EOF if current block is not the last block
+			bufSize := 65536
+			buf := make([]byte, bufSize)
+			n, _ := io.ReadFull(reader, buf)
+			eofBuf := make([]byte, eofLen)
+			for n == bufSize {
+				copy(eofBuf, buf[n-eofLen:])
+				w.Write(buf[:n-eofLen])
+				n, _ = io.ReadFull(reader, buf)
+				if n == bufSize {
+					w.Write(eofBuf)
+				}
+			}
+
+			if n >= eofLen {
+				w.Write(buf[:n-eofLen])
+			} else {
+				w.Write(eofBuf[:eofLen-n])
+			}
+		} else {
+			io.Copy(w, reader)
+		}
 	} else {
-		//processData(fSam, reader, refName, fields)
-		l, _, err := reader.ReadLine()
 		columns := make([]bool, 11)
 		for _, field := range fields {
 			columns[FIELDS[field]-1] = true
 		}
 
-		for ; err == nil; l, _, err = reader.ReadLine() {
-			if l[0] != 64 {
-				var output []string
-				ls := strings.Split(string(l), "\t")
+		var eof bool = false
+		for !eof {
+			tmpPath := tmpDirPath() + id
+			tmp, err := os.Create(tmpPath)
+			if err != nil {
+				panic(err)
+			}
 
-				fmt.Println("test")
-				for i, col := range columns {
-					if col {
-						output = append(output, ls[i])
-					} else {
-						if i == 1 || i == 3 || i == 4 || i == 7 || i == 8 {
-							output = append(output, "0")
+			/* for i := 0; i < 500; i++ {*/
+			for true {
+				l, _, err := reader.ReadLine()
+				if err != nil {
+					eof = true
+					break
+				}
+
+				if l[0] != 64 {
+					var output []string
+					ls := strings.Split(string(l), "\t")
+
+					for i, col := range columns {
+						if col {
+							output = append(output, ls[i])
 						} else {
-							output = append(output, "*")
+							if i == 1 || i == 3 || i == 4 || i == 7 || i == 8 {
+								output = append(output, "0")
+							} else {
+								output = append(output, "*")
+							}
 						}
 					}
+					l = []byte(strings.Join(output, "\t") + "\n")
+					if err != nil {
+						panic(err)
+					}
 				}
-				l = []byte(strings.Join(output, "\t") + "\n")
+				_, err = tmp.Write(l)
+			}
+			tmp.Close()
 
-				fSam.Write(l)
+			fmt.Println(eofLen)
+			bamCmd := exec.Command("samtools", "view", "-b", tmpPath)
+			bamPipe, _ := bamCmd.StdoutPipe()
+			err = bamCmd.Start()
+			if err != nil {
+				panic(err)
+			}
 
-				samToBam(tempPath)
-				removeHeader(tempPath + "_bam")
-				removeEOF(tempPath + "_bam")
+			emptyHeaderLen := 50
+			// remove header
+			bamReader := bufio.NewReader(bamPipe)
+			headerBuf := make([]byte, emptyHeaderLen)
+			io.ReadFull(bamReader, headerBuf)
 
-				fclient, _ := os.Open(tempPath + "_bam")
-				defer fclient.Close()
-				fmt.Println("writing data")
-				io.Copy(w, fclient)
-				fmt.Println("wrote data")
+			// remove EOF
+			cwd, _ := os.Getwd()
+			eofPath := cwd + "/eof_" + id
+			eofRemoval, _ := os.Create(eofPath)
+
+			io.Copy(eofRemoval, bamReader)
+			eofRemoval.Close()
+			removeEOF(eofPath)
+			eofRemoval, _ = os.Open(eofPath)
+			io.Copy(w, eofRemoval)
+
+			/*     bufSize := 65536*/
+			//buf := make([]byte, bufSize)
+			//n, _ := io.ReadFull(bamReader, buf)
+			//eofBuf := make([]byte, eofLen)
+			//for n == bufSize {
+			//copy(eofBuf, buf[n-eofLen:])
+			//w.Write(buf[:n-eofLen])
+			//n, _ = io.ReadFull(bamReader, buf)
+			//if n == bufSize {
+			//w.Write(eofBuf)
+			//}
+			//}
+
+			//if n >= eofLen {
+			//w.Write(buf[:n-eofLen])
+			//} else {
+			//w.Write(eofBuf[:eofLen-n])
+			/*}*/
+
+			/*     w.Write(EOF)*/
+			//w.Write(EOF)
+			/*w.Write(EOF)*/
+
+			err = bamCmd.Wait()
+			if err != nil {
+				panic(err)
+			}
+			err = os.Remove(tmpPath)
+			if err != nil {
+				panic(err)
+			}
+			err = os.Remove(eofPath)
+			if err != nil {
+				panic(err)
 			}
 		}
 
@@ -109,52 +190,9 @@ func getData(w http.ResponseWriter, r *http.Request) {
 			w.Write(EOF)
 		}
 	}
+	fmt.Println("exiting")
 	cmd.Wait()
-
-	/* samToBam(tempPath)*/
-	/*trimBlob(class, numBlocks, tempPath, blockID)*/
-
-	/* fclient, _ := os.Open(tempPath + "_bam")*/
-	//defer fclient.Close()
-	/*io.Copy(w, fclient)*/
 }
-
-/*func processData(fSam *os.File, r *bufio.Reader, name string, fields []string) {*/
-//l, _, err := r.ReadLine()
-//columns := make([]bool, 11)
-//for _, field := range fields {
-//columns[FIELDS[field]-1] = true
-//}
-
-//for ; err == nil; l, _, err = r.ReadLine() {
-//if l[0] == 64 {
-//l = append(l, "\n"...)
-//fSam.Write(l)
-//} else {
-//var output []string
-//ls := strings.Split(string(l), "\t")
-//keepLine := true
-//if name == "*" {
-//keepLine = isUnmappedUnplaced(ls)
-//}
-//if keepLine {
-//for i, col := range columns {
-//if col {
-//output = append(output, ls[i])
-//} else {
-//if i == 1 || i == 3 || i == 4 || i == 7 || i == 8 {
-//output = append(output, "0")
-//} else {
-//output = append(output, "*")
-//}
-//}
-//}
-//l = []byte(strings.Join(output, "\t") + "\n")
-//fSam.Write(l)
-//}
-//}
-//}
-/*}*/
 
 func getTempPath(id string, blockID int) string {
 	cwd, _ := os.Getwd()
@@ -171,46 +209,83 @@ func getTempPath(id string, blockID int) string {
 	return tempPath
 }
 
-func getCmdArgs(id string, r *genomics.Region, numBlocks int, class string) []string {
+func getCmdArgs(id string, r *genomics.Region, class string, fields []string) []string {
 	args := []string{"view", dataSource + filePath(id)}
 	if class == "header" {
 		args = append(args, "-H")
 		args = append(args, "-b")
 	} else {
+		if len(fields) == 0 {
+			args = append(args, "-b")
+		}
 		if r.String() != "" {
 			args = append(args, r.String())
 		}
-		args = append(args, "-h")
 	}
 	return args
 }
 
-func samToBam(tempPath string) {
-	cmd := exec.Command("samtools", "view", "-h", "-b", tempPath, "-o", tempPath+"_bam")
+func samToBam(tempPath string) string {
+	bamPath := tempPath + "_bam"
+	cmd := exec.Command("samtools", "view", "-h", "-b", tempPath, "-o", bamPath)
 	cmd.Run()
+	return bamPath
 }
 
-func removeHeader(tempPath string) {
-	fin, _ := os.Open(tempPath)
+func headerLen(id string) int64 {
+	cmd := exec.Command("samtools", "view", "-H", "-b", dataSource+filePath(id))
+	path := tmpDirPath() + id + "_header"
+	tmpHeader, err := os.Create(path)
+	if err != nil {
+		panic(err)
+	}
+
+	cmd.Stdout = tmpHeader
+	cmd.Run()
+
+	fi, err := tmpHeader.Stat()
+	if err != nil {
+		panic(err)
+	}
+
+	size := fi.Size() - 12
+	tmpHeader.Close()
+	os.Remove(path)
+	return size
+}
+
+func removeHeader(path string) {
+	fin, err := os.Open(path)
+	if err != nil {
+		panic(err)
+	}
 	defer fin.Close()
-	b, _ := bam.NewReader(fin, 0)
-	defer b.Close()
+	fin.Seek(0, 0)
+	b, err := bam.NewReader(fin, 0)
+	if err != nil {
+		panic(err)
+	}
+
 	b.Header()
 	b.Read()
 	lastChunk := b.LastChunk()
 	hLen := lastChunk.Begin.File
 
-	fDest, _ := os.Create(tempPath + "_copy")
+	fDest, err := os.Create(path + "_copy")
+	if err != nil {
+		panic(err)
+	}
+
 	fin.Seek(hLen, 0)
 	io.Copy(fin, fDest)
 
-	os.Remove(tempPath)
-	os.Rename(tempPath+"_copy", tempPath)
+	os.Remove(path)
+	os.Rename(path+"_copy", path)
 }
 
 func removeEOF(tempPath string) error {
 	fi, _ := os.Stat(tempPath)
-	return os.Truncate(tempPath, fi.Size()-12)
+	return os.Truncate(tempPath, fi.Size()-28)
 }
 
 // exists returns whether the given file or directory existsi.
@@ -233,21 +308,11 @@ func isDir(path string) (bool, error) {
 	return true, err
 }
 
-/*func isUnmappedUnplaced(l []string) bool {*/
-//flag, _ := strconv.ParseInt(l[1], 2, 64)
-//flag = flag >> 2
-//unmapped := flag&1 == 1
-
-//return unmapped && l[2] == "*" && l[3] == "0"
-/*}*/
-
-func trimBlob(class string, numBlocks int, tempPath string, blockID int) {
-	if class == "header" && numBlocks > 1 {
-		removeEOF(tempPath + "_bam")
-	} else if class == "body" {
-		removeHeader(tempPath + "_bam")
-		if blockID != numBlocks {
-			removeEOF(tempPath + "_bam")
-		}
+func tmpDirPath() string {
+	wd, err := os.Getwd()
+	if err != nil {
+		panic(err)
 	}
+	parent := filepath.Dir(wd)
+	return parent + "/temp/"
 }

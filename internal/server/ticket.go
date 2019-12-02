@@ -21,7 +21,8 @@ import (
 
 var EOF, _ = hex.DecodeString("1f8b08040000000000ff0600424302001b0003000000000000000000")
 
-var EOF_LEN = int64(len(EOF))
+var EOF_LEN = len(EOF)
+var HEADER_EOF_LEN = 12
 
 var dataSource = "http://s3.amazonaws.com/czbiohub-tabula-muris/"
 
@@ -67,6 +68,7 @@ var FIELDS map[string]int = map[string]int{
 }
 
 func getReads(w http.ResponseWriter, r *http.Request) {
+	fmt.Println(os.Getpid())
 	id := chi.URLParam(r, "id")
 
 	//send Head request to check that file exists and to get file size
@@ -84,7 +86,7 @@ func getReads(w http.ResponseWriter, r *http.Request) {
 	// *** Parse query params ***
 	params := r.URL.Query()
 	format, err := parseFormat(params)
-	queryClass, err := parseQueryClass(params)
+	//queryClass, err := parseQueryClass(params)
 	refName, err := parseRefName(params)
 	start, end, err := parseRange(params, refName)
 	fields, err := parseFields(params)
