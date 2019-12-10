@@ -5,13 +5,11 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io"
 	"math"
 	"net/http"
 	"net/url"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -68,7 +66,6 @@ var FIELDS map[string]int = map[string]int{
 }
 
 func getReads(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(os.Getpid())
 	id := chi.URLParam(r, "id")
 
 	//send Head request to check that file exists and to get file size
@@ -86,14 +83,16 @@ func getReads(w http.ResponseWriter, r *http.Request) {
 	// *** Parse query params ***
 	params := r.URL.Query()
 	format, err := parseFormat(params)
-	//queryClass, err := parseQueryClass(params)
+	queryClass, err := parseQueryClass(params)
 	refName, err := parseRefName(params)
 	start, end, err := parseRange(params, refName)
-	fields, err := parseFields(params)
+	var fields []string
+	if !strings.HasPrefix(id, "10X") {
+		fields, err = parseFields(params)
+	}
 	if err != nil {
 		panic(err)
 	}
-
 	region := &genomics.Region{Name: refName, Start: start, End: end}
 
 	if refName != "" && refName != "*" {
@@ -118,8 +117,13 @@ func getReads(w http.ResponseWriter, r *http.Request) {
 	dataEndpoint := getDataURL(format, region, fields, id)
 	var h *headers
 
-	// no range query, redirect to aws
-	if len(fields) == 0 && refName == "" {
+	if queryClass == "header" {
+		h = &headers{
+			BlockID:   "1",
+			NumBlocks: "1",
+		}
+		u = append(u, urlJSON{dataEndpoint.String(), h, "header"})
+	} else if len(fields) == 0 && refName == "" {
 		path := dataSource + filePath(id)
 		var start, end int64 = 0, 0
 
@@ -134,7 +138,7 @@ func getReads(w http.ResponseWriter, r *http.Request) {
 			start = end + 1
 			u = append(u, urlJSON{path, h, ""})
 		}
-	} else if refName != "" { // genomic region provided
+	} else {
 		h = &headers{
 			BlockID:   "1",
 			NumBlocks: "2",
@@ -144,56 +148,6 @@ func getReads(w http.ResponseWriter, r *http.Request) {
 		h = &headers{
 			BlockID:   "2",
 			NumBlocks: "2",
-		}
-		u = append(u, urlJSON{dataEndpoint.String(), h, "body"})
-	} else { // no genomic region provided, query by field and tag
-		cwd, _ := os.Getwd()
-		parent := filepath.Dir(cwd)
-		hpath := parent + "/temp/" + id + "_header"
-		cmd := exec.Command("samtools", "view", "-H", dataSource+filePath(id), "-o", hpath)
-		cmd.Run()
-
-		fh, _ := os.Open(hpath)
-		lc := refNameCounter(fh)
-		numBlocks = lc + 2
-		fh.Seek(0, 0)
-		reader := bufio.NewReader(fh)
-		l, _, err := reader.ReadLine()
-
-		block := 1
-		dataEndpoint = getDataURL(format, nil, make([]string, 0), id)
-		h = &headers{
-			BlockID:   strconv.Itoa(block),
-			NumBlocks: strconv.Itoa(numBlocks),
-		}
-		u = append(u, urlJSON{dataEndpoint.String(), h, "header"})
-
-		block++
-
-		for ; err == nil; l, _, err = reader.ReadLine() {
-			if strings.HasPrefix(string(l), "@SQ") {
-				ls := strings.Split(string(l), "\t")
-				for _, col := range ls {
-					if strings.HasPrefix(col, "SN:") {
-						refName = col[3:]
-					}
-				}
-				r := &genomics.Region{Name: refName, Start: "-1", End: "-1"}
-				dataEndpoint = getDataURL(format, r, fields, id)
-				h = &headers{
-					BlockID:   strconv.Itoa(block),
-					NumBlocks: strconv.Itoa(numBlocks),
-				}
-				u = append(u, urlJSON{dataEndpoint.String(), h, "body"})
-				block++
-			}
-		}
-
-		r := &genomics.Region{Name: "*", Start: "-1", End: "-1"}
-		dataEndpoint = getDataURL(format, r, fields, id)
-		h = &headers{
-			BlockID:   strconv.Itoa(block),
-			NumBlocks: strconv.Itoa(numBlocks),
 		}
 		u = append(u, urlJSON{dataEndpoint.String(), h, "body"})
 	}
@@ -272,17 +226,4 @@ func referenceExists(id string, refName string) bool {
 	}
 	cmd.Wait()
 	return false
-}
-
-func refNameCounter(r io.Reader) int {
-	count := 0
-	var l string
-	var err error
-	bufReader := bufio.NewReader(r)
-	for ; err == nil; l, err = bufReader.ReadString('\n') {
-		if strings.Contains(l, "@SQ") {
-			count++
-		}
-	}
-	return count
 }
