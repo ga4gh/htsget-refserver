@@ -34,7 +34,6 @@ func getData(w http.ResponseWriter, r *http.Request) {
 
 	args := getCmdArgs(id, region, class, fields)
 	cmd := exec.Command("samtools", args...)
-	fmt.Println(args)
 	pipe, _ := cmd.StdoutPipe()
 	err = cmd.Start()
 	if err != nil {
@@ -84,113 +83,70 @@ func getData(w http.ResponseWriter, r *http.Request) {
 			columns[FIELDS[field]-1] = true
 		}
 
+		tmpPath := tmpDirPath() + id
+		tmp, err := os.Create(tmpPath)
+		if err != nil {
+			panic(err)
+		}
 		var eof bool = false
 		for !eof {
-			tmpPath := tmpDirPath() + id
-			tmp, err := os.Create(tmpPath)
+			l, _, err := reader.ReadLine()
 			if err != nil {
-				panic(err)
+				eof = true
+				break
 			}
 
-			/* for i := 0; i < 500; i++ {*/
-			for true {
-				l, _, err := reader.ReadLine()
-				if err != nil {
-					eof = true
-					break
-				}
+			if l[0] != 64 {
+				var output []string
+				ls := strings.Split(string(l), "\t")
 
-				if l[0] != 64 {
-					var output []string
-					ls := strings.Split(string(l), "\t")
-
-					for i, col := range columns {
-						if col {
-							output = append(output, ls[i])
+				for i, col := range columns {
+					if col {
+						output = append(output, ls[i])
+					} else {
+						if i == 1 || i == 3 || i == 4 || i == 7 || i == 8 {
+							output = append(output, "0")
 						} else {
-							if i == 1 || i == 3 || i == 4 || i == 7 || i == 8 {
-								output = append(output, "0")
-							} else {
-								output = append(output, "*")
-							}
+							output = append(output, "*")
 						}
 					}
-					l = []byte(strings.Join(output, "\t") + "\n")
-					if err != nil {
-						panic(err)
-					}
 				}
-				_, err = tmp.Write(l)
+				l = []byte(strings.Join(output, "\t") + "\n")
+				if err != nil {
+					panic(err)
+				}
 			}
+			_, err = tmp.Write(l)
 			tmp.Close()
+		}
+		bamCmd := exec.Command("samtools", "view", "-b", tmpPath)
+		bamPipe, _ := bamCmd.StdoutPipe()
+		err = bamCmd.Start()
+		if err != nil {
+			panic(err)
+		}
 
-			fmt.Println(eofLen)
-			bamCmd := exec.Command("samtools", "view", "-b", tmpPath)
-			bamPipe, _ := bamCmd.StdoutPipe()
-			err = bamCmd.Start()
-			if err != nil {
-				panic(err)
-			}
+		emptyHeaderLen := 50
 
-			emptyHeaderLen := 50
-			// remove header
-			bamReader := bufio.NewReader(bamPipe)
-			headerBuf := make([]byte, emptyHeaderLen)
-			io.ReadFull(bamReader, headerBuf)
+		// remove header
+		bamReader := bufio.NewReader(bamPipe)
+		headerBuf := make([]byte, emptyHeaderLen)
+		io.ReadFull(bamReader, headerBuf)
 
-			// remove EOF
-			cwd, _ := os.Getwd()
-			eofPath := cwd + "/eof_" + id
-			eofRemoval, _ := os.Create(eofPath)
+		err = bamCmd.Wait()
+		if err != nil {
+			panic(err)
+		}
 
-			io.Copy(eofRemoval, bamReader)
-			eofRemoval.Close()
-			removeEOF(eofPath)
-			eofRemoval, _ = os.Open(eofPath)
-			io.Copy(w, eofRemoval)
-
-			/*     bufSize := 65536*/
-			//buf := make([]byte, bufSize)
-			//n, _ := io.ReadFull(bamReader, buf)
-			//eofBuf := make([]byte, eofLen)
-			//for n == bufSize {
-			//copy(eofBuf, buf[n-eofLen:])
-			//w.Write(buf[:n-eofLen])
-			//n, _ = io.ReadFull(bamReader, buf)
-			//if n == bufSize {
-			//w.Write(eofBuf)
-			//}
-			//}
-
-			//if n >= eofLen {
-			//w.Write(buf[:n-eofLen])
-			//} else {
-			//w.Write(eofBuf[:eofLen-n])
-			/*}*/
-
-			/*     w.Write(EOF)*/
-			//w.Write(EOF)
-			/*w.Write(EOF)*/
-
-			err = bamCmd.Wait()
-			if err != nil {
-				panic(err)
-			}
-			err = os.Remove(tmpPath)
-			if err != nil {
-				panic(err)
-			}
-			err = os.Remove(eofPath)
-			if err != nil {
-				panic(err)
-			}
+		err = os.Remove(tmpPath)
+		if err != nil {
+			panic(err)
 		}
 
 		if blockID == numBlocks {
 			w.Write(EOF)
 		}
 	}
-	fmt.Println("exiting")
 	cmd.Wait()
 }
 

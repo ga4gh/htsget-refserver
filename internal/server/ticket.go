@@ -49,6 +49,7 @@ type headers struct {
 	BlockID   string `json:"block-id,omitempty"`   // id of current block
 	NumBlocks string `json:"num-blocks,omitempty"` // total number of blocks
 	Range     string `json:"range,omitempty"`
+	Class     string `json:"class,omitempty"`
 }
 
 var FIELDS map[string]int = map[string]int{
@@ -65,9 +66,14 @@ var FIELDS map[string]int = map[string]int{
 	"QUAL":  11, // base quality scores
 }
 
-func getReads(w http.ResponseWriter, r *http.Request) {
+func getTickets(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-
+	var host string
+	if os.Getenv("APP_ENV") == "production" {
+		host = "htsref.online/"
+	} else {
+		host = "localhost:3000/"
+	}
 	//send Head request to check that file exists and to get file size
 	res, err := http.Head(dataSource + filePath(id))
 	if err != nil {
@@ -114,13 +120,14 @@ func getReads(w http.ResponseWriter, r *http.Request) {
 
 	// build HTTP response
 	u := make([]urlJSON, 0)
-	dataEndpoint := getDataURL(format, region, fields, id)
+	dataEndpoint := getDataURL(region, fields, id, queryClass, host)
 	var h *headers
 
 	if queryClass == "header" {
 		h = &headers{
 			BlockID:   "1",
 			NumBlocks: "1",
+			Class:     "header",
 		}
 		u = append(u, urlJSON{dataEndpoint.String(), h, "header"})
 	} else if len(fields) == 0 && refName == "" {
@@ -142,6 +149,7 @@ func getReads(w http.ResponseWriter, r *http.Request) {
 		h = &headers{
 			BlockID:   "1",
 			NumBlocks: "2",
+			Class:     "header",
 		}
 		u = append(u, urlJSON{dataEndpoint.String(), h, "header"})
 
@@ -175,13 +183,9 @@ func filePath(id string) string {
 	return path
 }
 
-func getDataURL(fmt string, r *genomics.Region, fields []string, id string) *url.URL {
+func getDataURL(r *genomics.Region, fields []string, id, class, host string) *url.URL {
 	// The address of the endpoint on this server which serves the data
-	var dataEndpoint, err = url.Parse("localhost:3000/data/")
-	if err != nil {
-		panic(err)
-	}
-
+	var dataEndpoint, _ = url.Parse(host + "data/")
 	// add id url param
 	if os.Getenv("APP_ENV") == "production" {
 		dataEndpoint.Path += id
@@ -191,7 +195,9 @@ func getDataURL(fmt string, r *genomics.Region, fields []string, id string) *url
 
 	// add query params
 	query := dataEndpoint.Query()
-	query.Set("format", fmt)
+	if class == "header" {
+		query.Set("class", class)
+	}
 	if r != nil {
 		if r.Name != "" {
 			query.Set("referenceName", r.Name)
