@@ -52,6 +52,21 @@ type headers struct {
 	Class     string `json:"class,omitempty"`
 }
 
+// htsgetError holds errors defined in the htsget protocol
+type htsgetError struct {
+	Code   int
+	Htsget errorContainer `json:"htsget"`
+}
+
+type errorContainer struct {
+	Error   string
+	Message string
+}
+
+func (err *htsgetError) Error() string {
+	return fmt.Sprint(err.Htsget.Error + ": " + err.Htsget.Message)
+}
+
 var FIELDS map[string]int = map[string]int{
 	"QNAME": 1,  // read names
 	"FLAG":  2,  // read bit flags
