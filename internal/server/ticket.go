@@ -81,7 +81,7 @@ var FIELDS map[string]int = map[string]int{
 	"QUAL":  11, // base quality scores
 }
 
-func getTickets(w http.ResponseWriter, r *http.Request) {
+func getReads(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	var host string
 	if os.Getenv("APP_ENV") == "production" {
