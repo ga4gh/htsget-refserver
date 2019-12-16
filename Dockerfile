@@ -2,7 +2,7 @@ FROM golang:latest
 
 WORKDIR /usr/src/app
 
-ENV SAMTOOLS_VERSION 1.10
+ENV SAMTOOLS_VERSION 1.9
 
 RUN apt-get update \
     && apt-get install --yes build-essential
@@ -24,7 +24,7 @@ RUN cd /tmp \
 
 ENV PATH="/usr/local:${PATH}"
 
-RUN go build -o htsref ./cmd
+RUN go build -o ./htsref ./cmd
 EXPOSE 3000
 
 CMD ["./htsref"]
