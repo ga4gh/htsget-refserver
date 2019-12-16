@@ -18,7 +18,6 @@ import (
 )
 
 var EOF, _ = hex.DecodeString("1f8b08040000000000ff0600424302001b0003000000000000000000")
-
 var EOF_LEN = len(EOF)
 var HEADER_EOF_LEN = 12
 
@@ -59,8 +58,8 @@ type htsgetError struct {
 }
 
 type errorContainer struct {
-	Error   string
-	Message string
+	Error   string `json:"error"`
+	Message string `json:"message"`
 }
 
 func (err *htsgetError) Error() string {
@@ -89,6 +88,7 @@ func getReads(w http.ResponseWriter, r *http.Request) {
 	} else {
 		host = "localhost:3000/"
 	}
+
 	//send Head request to check that file exists and to get file size
 	res, err := http.Head(dataSource + filePath(id))
 	if err != nil {
