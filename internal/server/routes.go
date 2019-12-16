@@ -8,11 +8,14 @@ import (
 )
 
 // SetRouter sets up and returns a go-chi router to caller
-func SetRouter() *chi.Mux {
+func SetRouter() (*chi.Mux, error) {
 	router := chi.NewRouter()
 
 	// serve index.html at root of api
-	staticPath, _ := filepath.Abs("./")
+	staticPath, err := filepath.Abs("./")
+	if err != nil {
+		return nil, err
+	}
 	fs := http.FileServer(http.Dir(staticPath))
 	router.Handle("/", fs)
 
@@ -20,5 +23,5 @@ func SetRouter() *chi.Mux {
 	router.Get("/reads/{id}", getReads)
 	router.Get("/data/{id}", getData)
 
-	return router
+	return router, err
 }
