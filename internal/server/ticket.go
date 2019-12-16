@@ -85,40 +85,102 @@ func getReads(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	var host string
 	if os.Getenv("APP_ENV") == "production" {
-		host = "htsref.online/"
+		host = "https://htsget.ga4gh.org/"
 	} else {
 		host = "localhost:3000/"
 	}
 	//send Head request to check that file exists and to get file size
 	res, err := http.Head(dataSource + filePath(id))
 	if err != nil {
-		panic(err)
+		writeError(w, err)
+		return
 	}
 	res.Body.Close()
 	if res.Status == "404 Not Found" {
-		fmt.Println(res.Status)
-		// TODO return and send error message
+		htsErr := &htsgetError{
+			Code: http.StatusNotFound,
+			Htsget: errorContainer{
+				"NotFound",
+				"The resource requested was not found",
+			},
+		}
+		writeError(w, htsErr)
 		return
 	}
 
 	// *** Parse query params ***
 	params := r.URL.Query()
 	format, err := parseFormat(params)
+	if err != nil {
+		htsErr := &htsgetError{
+			Code: http.StatusBadRequest,
+			Htsget: errorContainer{
+				"UnsupportedFormat",
+				"The requested file format is not supported by the server",
+			},
+		}
+		writeError(w, htsErr)
+		return
+	}
+
 	queryClass, err := parseQueryClass(params)
-	refName, err := parseRefName(params)
+	if err != nil {
+		htsErr := &htsgetError{
+			Code: http.StatusBadRequest,
+			Htsget: errorContainer{
+				"InvalidInput",
+				"The request parameters do not adhere to the specification",
+			},
+		}
+		writeError(w, htsErr)
+		return
+	}
+
+	refName := parseRefName(params)
 	start, end, err := parseRange(params, refName)
+	if err != nil {
+		htsErr := &htsgetError{
+			Code: http.StatusBadRequest,
+			Htsget: errorContainer{
+				"InvalidRange",
+				"The request range cannot be satisfied",
+			},
+		}
+		writeError(w, htsErr)
+		return
+	}
+
 	var fields []string
 	if !strings.HasPrefix(id, "10X") {
 		fields, err = parseFields(params)
+		if err != nil {
+			htsErr := &htsgetError{
+				Code: http.StatusBadRequest,
+				Htsget: errorContainer{
+					"InvalidInput",
+					"The request parameters do not adhere to the specification",
+				},
+			}
+			writeError(w, htsErr)
+			return
+		}
 	}
-	if err != nil {
-		panic(err)
-	}
+
 	region := &genomics.Region{Name: refName, Start: start, End: end}
 
 	if refName != "" && refName != "*" {
-		if !referenceExists(id, refName) {
-			panic("requested reference does not exist")
+		if ok, err := referenceExists(id, refName); !ok {
+			htsErr := &htsgetError{
+				Code: http.StatusNotFound,
+				Htsget: errorContainer{
+					"NotFound",
+					"The resource requested was not found",
+				},
+			}
+			writeError(w, htsErr)
+			return
+		} else if err != nil {
+			writeError(w, err)
 		}
 	}
 
@@ -135,8 +197,11 @@ func getReads(w http.ResponseWriter, r *http.Request) {
 
 	// build HTTP response
 	u := make([]urlJSON, 0)
-	dataEndpoint := getDataURL(region, fields, id, queryClass, host)
 	var h *headers
+	dataEndpoint, err := getDataURL(region, fields, id, queryClass, host)
+	if err != nil {
+		writeError(w, err)
+	}
 
 	if queryClass == "header" {
 		h = &headers{
@@ -176,16 +241,10 @@ func getReads(w http.ResponseWriter, r *http.Request) {
 	}
 
 	c := container{format, u, ""}
-	t := ticket{HTSget: c}
-	ticket, err := json.Marshal(t)
-	if err != nil {
-		panic(err)
-	}
-
-	// send back response
+	ticket := ticket{HTSget: c}
 	ct := "application/vnd.ga4gh.htsget.v1.2.0+json; charset=utf-8"
 	w.Header().Set("Content-Type", ct)
-	w.Write(ticket)
+	json.NewEncoder(w).Encode(ticket)
 }
 
 func filePath(id string) string {
@@ -198,9 +257,13 @@ func filePath(id string) string {
 	return path
 }
 
-func getDataURL(r *genomics.Region, fields []string, id, class, host string) *url.URL {
+func getDataURL(r *genomics.Region, fields []string, id, class, host string) (*url.URL, error) {
 	// The address of the endpoint on this server which serves the data
-	var dataEndpoint, _ = url.Parse(host + "data/")
+	var dataEndpoint, err = url.Parse(host + "data/")
+	if err != nil {
+		return nil, err
+	}
+
 	// add id url param
 	if os.Getenv("APP_ENV") == "production" {
 		dataEndpoint.Path += id
@@ -230,21 +293,37 @@ func getDataURL(r *genomics.Region, fields []string, id, class, host string) *ur
 	}
 	dataEndpoint.RawQuery = query.Encode()
 
-	return dataEndpoint
+	return dataEndpoint, nil
 }
 
-func referenceExists(id string, refName string) bool {
+func referenceExists(id string, refName string) (bool, error) {
 	cmd := exec.Command("samtools", "view", "-H", dataSource+filePath(id))
-	pipe, _ := cmd.StdoutPipe()
+	pipe, err := cmd.StdoutPipe()
+	if err != nil {
+		return false, err
+	}
 	cmd.Start()
 	reader := bufio.NewReader(pipe)
 	l, _, err := reader.ReadLine()
 
 	for ; err == nil; l, _, err = reader.ReadLine() {
 		if strings.Contains(string(l), "SN:"+refName) {
-			return true
+			return true, nil
 		}
 	}
 	cmd.Wait()
-	return false
+	return false, nil
+}
+
+func writeError(w http.ResponseWriter, err error) {
+	if err, ok := err.(*htsgetError); ok {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(err.Code)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"htsget": err.Htsget,
+		})
+		return
+	}
+
+	http.Error(w, err.Error(), 500)
 }
