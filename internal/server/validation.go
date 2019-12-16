@@ -1,6 +1,7 @@
 package server
 
 import (
+	"errors"
 	"net/url"
 	"strconv"
 	"strings"
@@ -11,7 +12,7 @@ func parseFormat(params url.Values) (string, error) {
 		if validReadFormat(params["format"][0]) {
 			return strings.ToUpper(params["format"][0]), nil
 		} else {
-			panic("UnsupportedFormat")
+			return "", errors.New("Unsupported format")
 		}
 	} else {
 		return "BAM", nil
@@ -24,17 +25,17 @@ func parseQueryClass(params url.Values) (string, error) {
 		if class == "header" {
 			return class, nil
 		} else {
-			panic("InvalidInput")
+			return "", errors.New("InvalidInput")
 		}
 	}
 	return "", nil
 }
 
-func parseRefName(params url.Values) (string, error) {
+func parseRefName(params url.Values) string {
 	if _, ok := params["referenceName"]; ok {
-		return params["referenceName"][0], nil
+		return params["referenceName"][0]
 	}
-	return "", nil
+	return ""
 }
 
 func parseRange(params url.Values, refName string) (string, string, error) {
@@ -43,12 +44,12 @@ func parseRange(params url.Values, refName string) (string, string, error) {
 			if validRange(params["start"][0], params["end"][0], refName) {
 				return params["start"][0], params["end"][0], nil
 			} else {
-				panic("InvalidRange")
+				return "0", "0", errors.New("InvalidRange")
 			}
 		}
 		return params["start"][0], "-1", nil
 	} else if _, ok := params["end"]; ok {
-		panic("InvalidRange")
+		return "0", "0", errors.New("InvalidRange")
 	}
 	return "-1", "-1", nil
 }
@@ -57,7 +58,7 @@ func parseFields(params url.Values) ([]string, error) {
 	if _, ok := params["fields"]; ok {
 		fields := strings.Split(params["fields"][0], ",")
 		if !validFields(fields) {
-			panic("InvalidInput")
+			return []string{}, errors.New("InvalidInput")
 		}
 		return fields, nil
 	}
