@@ -70,7 +70,7 @@ func validReadFormat(s string) bool {
 	case "BAM":
 		return true
 	case "CRAM":
-		return true
+		return false // currently not supported
 	default:
 		return false
 	}
