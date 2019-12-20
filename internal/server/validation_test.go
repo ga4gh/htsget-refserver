@@ -84,19 +84,127 @@ func TestParseFormat(t *testing.T) {
 }
 
 func TestParseQueryClass(t *testing.T) {
+	class, err := parseQueryClass(params[0])
+	if class != "header" {
+		t.Errorf("Got: %v, expected: header", class)
+	}
+	if err != nil {
+		t.Errorf("Got non-nil error: %v, expected nil error", err.Error())
+	}
 
+	class, err = parseQueryClass(params[1])
+	if err == nil {
+		t.Errorf("Got nil error, expected error with message: InvalidInput")
+	}
+
+	class, err = parseQueryClass(params[2])
+	if err == nil {
+		t.Errorf("Got nil error, expected error with message: InvalidInput")
+	}
+
+	class, err = parseQueryClass(params[3])
+	if class != "" {
+		t.Errorf("Got: %v, expected an empty string", class)
+	}
+	if err != nil {
+		t.Errorf("Got non-nil error: %v, expected nil error", err.Error())
+	}
 }
 
 func TestParseRefName(t *testing.T) {
+	name := parseRefName(params[0])
+	if name != "*" {
+		t.Errorf("Got: %v, expected: *", name)
+	}
 
+	name = parseRefName(params[1])
+	if name != "chr11" {
+		t.Errorf("Got: %v, expected: chr11", name)
+	}
+
+	name = parseRefName(params[3])
+	if name != "" {
+		t.Errorf("Got: %v, expected an empty string", name)
+	}
 }
 
 func TestParseRange(t *testing.T) {
+	start, end, err := parseRange(params[0], "*")
+	if err == nil {
+		t.Errorf("Got nil error, expected error: InvalidRange")
+	}
 
+	start, end, err = parseRange(params[1], "chr11")
+	if err == nil {
+		t.Errorf("Got nil error, expected error: InvalidRange")
+	}
+
+	start, end, err = parseRange(params[2], "Chr1")
+	if err == nil {
+		t.Errorf("Got nil error, expected error: InvalidRange")
+	}
+
+	start, end, err = parseRange(params[3], "")
+	if err == nil {
+		t.Errorf("Got nil error, expected error: InvalidRange")
+	}
+
+	start, end, err = parseRange(params[4], "Chr1")
+	if start != "-1" {
+		t.Errorf("Got: %v, expected: -1", start)
+	}
+	if end != "-1" {
+		t.Errorf("got: %v, expected: -1", end)
+	}
+	if err != nil {
+		t.Errorf("Got non-nil error: %v, expected nil error", err.Error())
+	}
+
+	start, end, err = parseRange(params[5], "")
+	if start != "11000" {
+		t.Errorf("Got: %v, expected: 11000", start)
+	}
+	if end != "-1" {
+		t.Errorf("Got: %v, expected: -1", end)
+	}
+	if err != nil {
+		t.Errorf("Got non-nil error: %v, expected nil error", err.Error())
+	}
+
+	start, end, err = parseRange(params[6], "")
+	if err == nil {
+		t.Errorf("Got non-nil error, expected error: InvalidInput")
+	}
 }
 
 func TestParseFields(t *testing.T) {
+	fields, err := parseFields(params[0])
+	if len(fields) != 1 {
+		t.Errorf("Got a slice of fields with length: %v, expected length: 1", len(fields))
+	}
 
+	if fields[0] != "QNAME" {
+		t.Errorf("First element of fields is: %v, expected: QNAME", fields[0])
+	}
+	if err != nil {
+		t.Errorf("Got non-nil error: %v, expected nil error", err.Error())
+	}
+
+	fields, err = parseFields(params[1])
+	if err == nil {
+		t.Errorf("Got nil error, expected error: InvalidInput")
+	}
+
+	fields, err = parseFields(params[2])
+	if len(fields) != 2 {
+		t.Errorf("Got a slice of fields with length: %v, expected length: 2", len(fields))
+	}
+	if fields[0] != "TLEN" {
+		t.Errorf("First element of fields is: %v, expected: TLEN", fields[0])
+	}
+	if fields[1] != "SEQ" {
+		t.Errorf("Second element of fields is: %v, expected: SEQ", fields[1])
+	}
 }
 
 func TestValidReadFormat(t *testing.T) {
