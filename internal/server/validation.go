@@ -100,6 +100,9 @@ func validRange(startStr string, endStr string, refName string) bool {
 	if refName == "" || refName == "*" {
 		return false
 	}
+	if start < 0 || end < 0 {
+		return false
+	}
 
 	return true
 }
