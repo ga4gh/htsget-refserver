@@ -47,6 +47,40 @@ var params []map[string][]string = []map[string][]string{
 	},
 }
 
+func TestParseFormat(t *testing.T) {
+	format, err := parseFormat(params[0])
+	if format != "BAM" {
+		t.Errorf("Got: %v, expected: BAM", format)
+	}
+	if err != nil {
+		t.Errorf("Got non-nil error: %v, expected nil error", err.Error())
+	}
+
+	format, err = parseFormat(params[1])
+	if err == nil {
+		t.Errorf("Got nil error, expected error with message: Unsupported format")
+	}
+
+	format, err = parseFormat(params[2])
+	if err == nil {
+		t.Errorf("Got nil error, expected error with message: Unsupported format")
+	}
+
+	format, err = parseFormat(params[3])
+	if format != "BAM" {
+		t.Errorf("Got: %v, expected: BAM", format)
+	}
+	if err != nil {
+		t.Errorf("Got non-nil error: %v, expected nil error", err.Error())
+	}
+
+	format, err = parseFormat(params[4])
+	if format != "BAM" {
+		t.Errorf("Got: %v, expected: BAM", format)
+	}
+	if err != nil {
+		t.Errorf("Got non-nil error: %v, expected nil error", err.Error())
+	}
 }
 
 func TestParseQueryClass(t *testing.T) {
