@@ -88,8 +88,8 @@ func validClass(s string) bool {
 }
 
 func validRange(startStr string, endStr string, refName string) bool {
-	start, errStart := strconv.ParseUint(startStr, 10, 32)
-	end, errEnd := strconv.ParseUint(endStr, 10, 32)
+	start, errStart := strconv.ParseInt(startStr, 10, 64)
+	end, errEnd := strconv.ParseInt(endStr, 10, 64)
 
 	if errStart != nil || errEnd != nil {
 		return false
