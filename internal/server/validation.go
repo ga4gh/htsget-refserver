@@ -53,6 +53,10 @@ func parseRange(params url.Values, refName string) (string, string, error) {
 func parseFields(params url.Values) ([]string, error) {
 	if _, ok := params["fields"]; ok {
 		fields := strings.Split(params["fields"][0], ",")
+		for i := 0; i < len(fields); i++ {
+			fields[i] = strings.ToUpper(fields[i])
+		}
+
 		if !validFields(fields) {
 			return []string{}, errors.New("InvalidInput")
 		}
