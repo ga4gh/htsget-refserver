@@ -1,9 +1,7 @@
-package server_test
+package server
 
 import (
 	"testing"
-
-	. "github.com/david-xliu/htsget-refserver/internal/server"
 )
 
 func TestParseFormat(t *testing.T) {
