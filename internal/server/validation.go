@@ -11,12 +11,10 @@ func parseFormat(params url.Values) (string, error) {
 	if _, ok := params["format"]; ok {
 		if validReadFormat(params["format"][0]) {
 			return strings.ToUpper(params["format"][0]), nil
-		} else {
-			return "", errors.New("Unsupported format")
 		}
-	} else {
-		return "BAM", nil
+		return "", errors.New("Unsupported format")
 	}
+	return "BAM", nil
 }
 
 func parseQueryClass(params url.Values) (string, error) {
@@ -24,9 +22,8 @@ func parseQueryClass(params url.Values) (string, error) {
 		class := strings.ToLower(params["class"][0])
 		if class == "header" {
 			return class, nil
-		} else {
-			return "", errors.New("InvalidInput")
 		}
+		return "", errors.New("InvalidInput")
 	}
 	return "", nil
 }
@@ -43,9 +40,8 @@ func parseRange(params url.Values, refName string) (string, string, error) {
 		if _, ok := params["end"]; ok {
 			if validRange(params["start"][0], params["end"][0], refName) {
 				return params["start"][0], params["end"][0], nil
-			} else {
-				return "0", "0", errors.New("InvalidRange")
 			}
+			return "0", "0", errors.New("InvalidRange")
 		}
 		return params["start"][0], "-1", nil
 	} else if _, ok := params["end"]; ok {
