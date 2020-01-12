@@ -65,6 +65,34 @@ func parseFields(params url.Values) ([]string, error) {
 	return []string{}, nil
 }
 
+func parseTags(params url.Values) []string {
+	if _, ok := params["tags"]; ok {
+		var tags []string
+		if params["tags"][0] == "" {
+			tags = []string{""}
+			return tags
+		}
+		tags = strings.Split(params["tags"][0], ",")
+		return tags
+	}
+	return []string{}
+}
+
+func parseNoTags(params url.Values, tags []string) ([]string, error) {
+	if _, ok := params["notags"]; ok {
+		var notags []string
+		if params["notags"][0] == "" {
+			return []string{}, nil
+		}
+		notags = strings.Split(params["notags"][0], ",")
+		if validNoTags(tags, notags) {
+			return notags, nil
+		}
+		return []string{}, errors.New("InvalidInput")
+	}
+	return []string{}, nil
+}
+
 func validReadFormat(s string) bool {
 	switch strings.ToUpper(s) {
 	case "BAM":
@@ -111,6 +139,17 @@ func validFields(fields []string) bool {
 	for _, field := range fields {
 		if _, ok := FIELDS[field]; !ok {
 			return false
+		}
+	}
+	return true
+}
+
+func validNoTags(tags, notags []string) bool {
+	for _, tag := range tags {
+		for _, notag := range notags {
+			if tag == notag {
+				return false
+			}
 		}
 	}
 	return true
