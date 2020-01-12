@@ -198,7 +198,7 @@ func getReads(w http.ResponseWriter, r *http.Request) {
 	// build HTTP response
 	u := make([]urlJSON, 0)
 	var h *headers
-	dataEndpoint, err := getDataURL(region, fields, id, queryClass, host)
+	dataEndpoint, err := getDataURL(region, fields, tags, notags, id, queryClass, host)
 	if err != nil {
 		writeError(w, err)
 	}
@@ -257,7 +257,7 @@ func filePath(id string) string {
 	return path
 }
 
-func getDataURL(r *genomics.Region, fields []string, id, class, host string) (*url.URL, error) {
+func getDataURL(r *genomics.Region, fields, tags, notags []string, id, class, host string) (*url.URL, error) {
 	// The address of the endpoint on this server which serves the data
 	var dataEndpoint, err = url.Parse(host + "data/")
 	if err != nil {
@@ -291,6 +291,14 @@ func getDataURL(r *genomics.Region, fields []string, id, class, host string) (*u
 	if f := strings.Join(fields, ","); f != "" {
 		query.Set("fields", f)
 	}
+
+	t := strings.Join(tags, ",")
+	query.Set("tags", t)
+
+	if nt := strings.Join(notags, ","); nt != "" {
+		query.Set("notags", nt)
+	}
+
 	dataEndpoint.RawQuery = query.Encode()
 
 	return dataEndpoint, nil
