@@ -166,6 +166,21 @@ func getReads(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	tags := parseTags(params)
+
+	notags, err := parseNoTags(params, tags)
+	if err != nil {
+		htsErr := &htsgetError{
+			Code: http.StatusBadRequest,
+			Htsget: errorContainer{
+				"InvalidInput",
+				"The request parameters do not adhere to the specification",
+			},
+		}
+		writeError(w, htsErr)
+		return
+	}
+
 	region := &genomics.Region{Name: refName, Start: start, End: end}
 
 	if refName != "" && refName != "*" {
@@ -210,7 +225,7 @@ func getReads(w http.ResponseWriter, r *http.Request) {
 			Class:     "header",
 		}
 		u = append(u, urlJSON{dataEndpoint.String(), h, "header"})
-	} else if len(fields) == 0 && refName == "" {
+	} else if len(fields) == 0 && len(tags) == 0 && len(notags) == 0 && refName == "" {
 		path := dataSource + filePath(id)
 		var start, end int64 = 0, 0
 
