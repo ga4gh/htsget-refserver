@@ -1,5 +1,7 @@
 # executable file
-htsget-refserver
+cmd
+htsref
+!cmd/
 
 *.bam
 *.bai
