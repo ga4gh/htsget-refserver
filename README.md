@@ -1,4 +1,8 @@
 # HTSget Reference Server
+<p align="left">
+    <a href="http://goreportcard.com/report/github.com/xngln/htsget-refserver"><img src="http://goreportcard.com/badge/xngln/htsget-refserver" alt="Go ReportCard"></a>
+</p>
+
 This is a reference implementation of the version 1.2.0 HTSget API protocol for securely streaming genomic data. Click [here](https://academic.oup.com/bioinformatics/article/35/1/119/5040320) for a high level overview of the standard, and [here](https://github.com/samtools/hts-specs/blob/master/htsget.md) to view the specification itself. 
 
 ## Setup
