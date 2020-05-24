@@ -51,7 +51,22 @@ func getData(w http.ResponseWriter, r *http.Request) {
 
 	fields, err := parseFields(params)
 	if !strings.HasPrefix(id, "10X") {
-		fields, err = parseFields(params)
+		if err != nil {
+			htsErr := &htsgetError{
+				Code: http.StatusBadRequest,
+				Htsget: errorContainer{
+					"InvalidInput",
+					"The request parameters do not adhere to the specification",
+				},
+			}
+			writeError(w, htsErr)
+			return
+		}
+	}
+
+	tags := parseTags(params)
+	notags, err := parseNoTags(params, tags)
+	if !strings.HasPrefix(id, "10X") {
 		if err != nil {
 			htsErr := &htsgetError{
 				Code: http.StatusBadRequest,
@@ -79,7 +94,7 @@ func getData(w http.ResponseWriter, r *http.Request) {
 	class := r.Header.Get("class")
 	region := &genomics.Region{Name: refName, Start: start, End: end}
 
-	args := getCmdArgs(id, region, class, fields)
+	args := getCmdArgs(id, region, class, fields, tags, notags)
 	cmd := exec.Command("samtools", args...)
 	pipe, err := cmd.StdoutPipe()
 	if err != nil {
@@ -102,7 +117,7 @@ func getData(w http.ResponseWriter, r *http.Request) {
 		eofLen = EOF_LEN
 	}
 
-	if len(fields) == 0 || class == "header" {
+	if (len(fields) == 0 && len(tags) == 0 && len(notags) == 0) || class == "header" || !strings.HasPrefix(id, "10X") {
 		if class != "header" { // remove header
 			headerLen, err := headerLen(id)
 			w.Header().Set("header-len", strconv.FormatInt(headerLen, 10))
@@ -250,13 +265,13 @@ func getTempPath(id string, blockID int) (string, error) {
 	return tempPath, nil
 }
 
-func getCmdArgs(id string, r *genomics.Region, class string, fields []string) []string {
+func getCmdArgs(id string, r *genomics.Region, class string, fields, tags, notags []string) []string {
 	args := []string{"view", dataSource + filePath(id)}
 	if class == "header" {
 		args = append(args, "-H")
 		args = append(args, "-b")
 	} else {
-		if len(fields) == 0 {
+		if strings.HasPrefix(id, "10X") || (len(fields) == 0 && len(tags) == 0 && len(notags) == 0) {
 			args = append(args, "-b")
 		}
 		if r.String() != "" {

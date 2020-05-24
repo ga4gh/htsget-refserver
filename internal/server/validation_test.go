@@ -208,17 +208,47 @@ func TestParseFields(t *testing.T) {
 }
 
 func TestValidReadFormat(t *testing.T) {
-
+	valid := validReadFormat("BAM")
+	if !valid {
+		t.Errorf("Got false with BAM file format, expected true")
+	}
 }
 
 func TestValidClass(t *testing.T) {
+	valid := validClass("header")
+	if !valid {
+		t.Errorf("Got false with header class, expected true")
+	}
 
+	valid := validClass("body")
+	if !valid {
+		t.Errorf("Got false with body class, expected true")
+	}
 }
 
 func TestValidRange(t *testing.T) {
+	valid := validRange("100", "50", "chr10")
+	if valid {
+		t.Errorf("Got true, expected false with start > end")
+	}
 
-}
+	valid := validRange("100", "1000", "chr10")
+	if !valid {
+		t.Errorf("Got false, expected true")
+	}
 
-func TestValidFields(t *testing.T) {
+	valid := validRange("100", "100", "")
+	if valid {
+		t.Errorf("Got true, expected false")
+	}
 
+	valid := validRange("100", "100", "*")
+	if valid {
+		t.Errorf("Got true, expected false")
+	}
+
+	valid := validRange("-100", "100", "chr10")
+	if !valid {
+		t.Errorf("Got true, expected false")
+	}
 }
