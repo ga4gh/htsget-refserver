@@ -10,5 +10,6 @@ This project uses [Go modules](https://blog.golang.org/using-go-modules) to mana
 
 ## Usage
 The API is defined at https://github.com/samtools/hts-specs/blob/master/htsget.md. 
+
 This server is deployed at http://htsget.ga4gh.org/.
 
