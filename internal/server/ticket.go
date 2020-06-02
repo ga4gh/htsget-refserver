@@ -235,7 +235,7 @@ func getReads(w http.ResponseWriter, r *http.Request) {
 				end = numBytes - 1
 			}
 			h := &headers{
-				Range: strconv.FormatInt(start, 10) + "-" + strconv.FormatInt(end, 10),
+				Range: "bytes=" + strconv.FormatInt(start, 10) + "-" + strconv.FormatInt(end, 10),
 			}
 			start = end + 1
 			u = append(u, urlJSON{path, h, ""})
