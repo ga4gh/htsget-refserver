@@ -13,7 +13,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/david-xliu/htsget-refserver/internal/genomics"
+	"github.com/ga4gh/htsget-refserver/internal/genomics"
 	"github.com/go-chi/chi"
 )
 
@@ -86,7 +86,7 @@ func getReads(w http.ResponseWriter, r *http.Request) {
 	if os.Getenv("APP_ENV") == "production" {
 		host = "https://htsget.ga4gh.org/"
 	} else {
-		host = "localhost:3000/"
+		host = "http://localhost:3000/"
 	}
 
 	//send Head request to check that file exists and to get file size
@@ -280,11 +280,7 @@ func getDataURL(r *genomics.Region, fields, tags, notags []string, id, class, ho
 	}
 
 	// add id url param
-	if os.Getenv("APP_ENV") == "production" {
-		dataEndpoint.Path += id
-	} else {
-		dataEndpoint.Opaque += id
-	}
+	dataEndpoint.Path += id
 
 	// add query params
 	query := dataEndpoint.Query()
@@ -307,8 +303,8 @@ func getDataURL(r *genomics.Region, fields, tags, notags []string, id, class, ho
 		query.Set("fields", f)
 	}
 
-	t := strings.Join(tags, ",")
-	query.Set("tags", t)
+	// t := strings.Join(tags, ",")
+	// query.Set("tags", t)
 
 	if nt := strings.Join(notags, ","); nt != "" {
 		query.Set("notags", nt)

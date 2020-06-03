@@ -12,7 +12,7 @@ import (
 	"strings"
 
 	"github.com/biogo/hts/bam"
-	"github.com/david-xliu/htsget-refserver/internal/genomics"
+	"github.com/ga4gh/htsget-refserver/internal/genomics"
 	"github.com/go-chi/chi"
 )
 

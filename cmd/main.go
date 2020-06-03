@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/david-xliu/htsget-refserver/internal/server"
+	"github.com/ga4gh/htsget-refserver/internal/server"
 )
 
 func main() {
