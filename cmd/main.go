@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/ga4gh/htsget-refserver/internal/config"
 	"github.com/ga4gh/htsget-refserver/internal/server"
 )
 
@@ -12,6 +13,7 @@ func main() {
 	if err != nil {
 		panic("Problem setting up server.")
 	}
-	fmt.Println("Server started on port 3000!")
-	http.ListenAndServe(":3000", router)
+	port := config.GetConfigProp("port")
+	fmt.Printf("Server started on port %s!\n", port)
+	http.ListenAndServe(":"+port, router)
 }
