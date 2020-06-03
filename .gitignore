@@ -1,11 +1,14 @@
 # executable file
 cmd
 htsref
+htsget-refserver
 !cmd/
 
 *.bam
 *.bai
 temp/*
+!temp/.temp
 data/*
 
 .DS_Store
+cp.out

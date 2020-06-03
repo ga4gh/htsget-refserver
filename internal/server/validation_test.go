@@ -220,7 +220,7 @@ func TestValidClass(t *testing.T) {
 		t.Errorf("Got false with header class, expected true")
 	}
 
-	valid := validClass("body")
+	valid = validClass("body")
 	if !valid {
 		t.Errorf("Got false with body class, expected true")
 	}
@@ -232,23 +232,23 @@ func TestValidRange(t *testing.T) {
 		t.Errorf("Got true, expected false with start > end")
 	}
 
-	valid := validRange("100", "1000", "chr10")
+	valid = validRange("100", "1000", "chr10")
 	if !valid {
 		t.Errorf("Got false, expected true")
 	}
 
-	valid := validRange("100", "100", "")
+	valid = validRange("100", "100", "")
 	if valid {
 		t.Errorf("Got true, expected false")
 	}
 
-	valid := validRange("100", "100", "*")
+	valid = validRange("100", "100", "*")
 	if valid {
 		t.Errorf("Got true, expected false")
 	}
 
-	valid := validRange("-100", "100", "chr10")
-	if !valid {
+	valid = validRange("-100", "100", "chr10")
+	if valid {
 		t.Errorf("Got true, expected false")
 	}
 }

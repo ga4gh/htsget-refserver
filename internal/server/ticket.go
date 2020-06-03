@@ -8,12 +8,13 @@ import (
 	"math"
 	"net/http"
 	"net/url"
-	"os"
 	"os/exec"
 	"strconv"
 	"strings"
 
-	"github.com/david-xliu/htsget-refserver/internal/genomics"
+	"github.com/ga4gh/htsget-refserver/internal/config"
+	"github.com/ga4gh/htsget-refserver/internal/genomics"
+	"github.com/ga4gh/htsget-refserver/internal/htsgetutils"
 	"github.com/go-chi/chi"
 )
 
@@ -21,7 +22,7 @@ var EOF, _ = hex.DecodeString("1f8b08040000000000ff0600424302001b000300000000000
 var EOF_LEN = len(EOF)
 var HEADER_EOF_LEN = 12
 
-var dataSource = "http://s3.amazonaws.com/czbiohub-tabula-muris/"
+var dataSource = "https://s3.amazonaws.com/czbiohub-tabula-muris/"
 
 // Ticket holds the entire json ticket returned to the client
 type ticket struct {
@@ -82,12 +83,7 @@ var FIELDS map[string]int = map[string]int{
 
 func getReads(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	var host string
-	if os.Getenv("APP_ENV") == "production" {
-		host = "https://htsget.ga4gh.org/"
-	} else {
-		host = "localhost:3000/"
-	}
+	host := htsgetutils.AddTrailingSlash(config.GetConfigProp("host"))
 
 	//send Head request to check that file exists and to get file size
 	res, err := http.Head(dataSource + filePath(id))
@@ -280,11 +276,7 @@ func getDataURL(r *genomics.Region, fields, tags, notags []string, id, class, ho
 	}
 
 	// add id url param
-	if os.Getenv("APP_ENV") == "production" {
-		dataEndpoint.Path += id
-	} else {
-		dataEndpoint.Opaque += id
-	}
+	dataEndpoint.Path += id
 
 	// add query params
 	query := dataEndpoint.Query()
@@ -307,8 +299,8 @@ func getDataURL(r *genomics.Region, fields, tags, notags []string, id, class, ho
 		query.Set("fields", f)
 	}
 
-	t := strings.Join(tags, ",")
-	query.Set("tags", t)
+	// t := strings.Join(tags, ",")
+	// query.Set("tags", t)
 
 	if nt := strings.Join(notags, ","); nt != "" {
 		query.Set("notags", nt)
