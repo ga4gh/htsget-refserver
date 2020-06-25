@@ -1,28 +1,21 @@
 package server
 
 import (
-	"bufio"
-	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"math"
 	"net/http"
 	"net/url"
-	"os/exec"
 	"strconv"
 	"strings"
+
+	"github.com/ga4gh/htsget-refserver/internal/htsgetutils/htsgeterror"
 
 	"github.com/ga4gh/htsget-refserver/internal/config"
 	"github.com/ga4gh/htsget-refserver/internal/genomics"
 	"github.com/ga4gh/htsget-refserver/internal/htsgetutils"
-	"github.com/go-chi/chi"
+	"github.com/ga4gh/htsget-refserver/internal/htsgetutils/htsgethttp/htsgetrequest"
+	"github.com/ga4gh/htsget-refserver/internal/htsgetutils/htsgetparameters"
 )
-
-var EOF, _ = hex.DecodeString("1f8b08040000000000ff0600424302001b0003000000000000000000")
-var EOF_LEN = len(EOF)
-var HEADER_EOF_LEN = 12
-
-var dataSource = "https://s3.amazonaws.com/czbiohub-tabula-muris/"
 
 // Ticket holds the entire json ticket returned to the client
 type ticket struct {
@@ -52,156 +45,29 @@ type headers struct {
 	Class     string `json:"class,omitempty"`
 }
 
-// htsgetError holds errors defined in the htsget protocol
-type htsgetError struct {
-	Code   int
-	Htsget errorContainer `json:"htsget"`
-}
+func getReads(writer http.ResponseWriter, request *http.Request) {
 
-type errorContainer struct {
-	Error   string `json:"error"`
-	Message string `json:"message"`
-}
-
-func (err *htsgetError) Error() string {
-	return fmt.Sprint(err.Htsget.Error + ": " + err.Htsget.Message)
-}
-
-var FIELDS map[string]int = map[string]int{
-	"QNAME": 1,  // read names
-	"FLAG":  2,  // read bit flags
-	"RNAME": 3,  // reference sequence name
-	"POS":   4,  // alignment position
-	"MAPQ":  5,  // mapping quality score
-	"CIGAR": 6,  // CIGAR string
-	"RNEXT": 7,  // reference sequence name of the next fragment template
-	"PNEXT": 8,  // alignment position of the next fragment in the template
-	"TLEN":  9,  // inferred template size
-	"SEQ":   10, // read bases
-	"QUAL":  11, // base quality scores
-}
-
-func getReads(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
+	params := request.URL.Query()
 	host := htsgetutils.AddTrailingSlash(config.GetConfigProp("host"))
+	htsgetReq, err := htsgetparameters.ReadsEndpointSetAllParameters(request, writer, params)
 
-	//send Head request to check that file exists and to get file size
-	res, err := http.Head(dataSource + filePath(id))
 	if err != nil {
-		writeError(w, err)
-		return
-	}
-	res.Body.Close()
-	if res.Status == "404 Not Found" {
-		htsErr := &htsgetError{
-			Code: http.StatusNotFound,
-			Htsget: errorContainer{
-				"NotFound",
-				"The resource requested was not found",
-			},
-		}
-		writeError(w, htsErr)
 		return
 	}
 
-	// *** Parse query params ***
-	params := r.URL.Query()
-	format, err := parseFormat(params)
-	if err != nil {
-		htsErr := &htsgetError{
-			Code: http.StatusBadRequest,
-			Htsget: errorContainer{
-				"UnsupportedFormat",
-				"The requested file format is not supported by the server",
-			},
-		}
-		writeError(w, htsErr)
-		return
+	region := &genomics.Region{
+		Name:  htsgetReq.GetScalar("referenceName"),
+		Start: htsgetReq.GetScalar("start"),
+		End:   htsgetReq.GetScalar("end"),
 	}
-
-	queryClass, err := parseQueryClass(params)
-	if err != nil {
-		htsErr := &htsgetError{
-			Code: http.StatusBadRequest,
-			Htsget: errorContainer{
-				"InvalidInput",
-				"The request parameters do not adhere to the specification",
-			},
-		}
-		writeError(w, htsErr)
-		return
-	}
-
-	refName := parseRefName(params)
-	start, end, err := parseRange(params, refName)
-	if err != nil {
-		htsErr := &htsgetError{
-			Code: http.StatusBadRequest,
-			Htsget: errorContainer{
-				"InvalidRange",
-				"The request range cannot be satisfied",
-			},
-		}
-		writeError(w, htsErr)
-		return
-	}
-
-	var fields []string
-	if !strings.HasPrefix(id, "10X") {
-		fields, err = parseFields(params)
-		if err != nil {
-			htsErr := &htsgetError{
-				Code: http.StatusBadRequest,
-				Htsget: errorContainer{
-					"InvalidInput",
-					"The request parameters do not adhere to the specification",
-				},
-			}
-			writeError(w, htsErr)
-			return
-		}
-	}
-
-	tags := parseTags(params)
-
-	notags, err := parseNoTags(params, tags)
-	if err != nil {
-		htsErr := &htsgetError{
-			Code: http.StatusBadRequest,
-			Htsget: errorContainer{
-				"InvalidInput",
-				"The request parameters do not adhere to the specification",
-			},
-		}
-		writeError(w, htsErr)
-		return
-	}
-
-	region := &genomics.Region{Name: refName, Start: start, End: end}
-
-	if refName != "" && refName != "*" {
-		if ok, err := referenceExists(id, refName); !ok {
-			htsErr := &htsgetError{
-				Code: http.StatusNotFound,
-				Htsget: errorContainer{
-					"NotFound",
-					"The resource requested was not found",
-				},
-			}
-			writeError(w, htsErr)
-			return
-		} else if err != nil {
-			writeError(w, err)
-		}
-	}
-
+	res, _ := http.Head(config.DATA_SOURCE_URL + htsgetutils.FilePath(htsgetReq.GetScalar("id")))
 	numBytes := res.ContentLength
 	var numBlocks int
 	var blockSize int64 = 1e9
-	if refName != "" {
+	if htsgetReq.GetScalar("referenceName") != "" {
 		numBlocks = 1
 	} else {
-		if len(fields) == 0 {
+		if len(htsgetReq.GetList("fields")) == 0 {
 			numBlocks = int(math.Ceil(float64(numBytes) / float64(blockSize)))
 		}
 	}
@@ -209,20 +75,21 @@ func getReads(w http.ResponseWriter, r *http.Request) {
 	// build HTTP response
 	u := make([]urlJSON, 0)
 	var h *headers
-	dataEndpoint, err := getDataURL(region, fields, tags, notags, id, queryClass, host)
+	dataEndpoint, err := getDataURL(region, htsgetReq, host)
 	if err != nil {
-		writeError(w, err)
+		msg := "Could not construct data url"
+		htsgeterror.InternalServerError(writer, &msg)
 	}
 
-	if queryClass == "header" {
+	if htsgetReq.GetScalar("class") == "header" {
 		h = &headers{
 			BlockID:   "1",
 			NumBlocks: "1",
 			Class:     "header",
 		}
 		u = append(u, urlJSON{dataEndpoint.String(), h, "header"})
-	} else if len(fields) == 0 && len(tags) == 0 && len(notags) == 0 && refName == "" {
-		path := dataSource + filePath(id)
+	} else if len(htsgetReq.GetList("fields")) == 0 && len(htsgetReq.GetList("tags")) == 0 && len(htsgetReq.GetList("notags")) == 0 && htsgetReq.GetScalar("referenceName") == "*" {
+		path := config.DATA_SOURCE_URL + htsgetutils.FilePath(htsgetReq.GetScalar("id"))
 		var start, end int64 = 0, 0
 
 		for i := 1; i <= numBlocks; i++ {
@@ -251,24 +118,14 @@ func getReads(w http.ResponseWriter, r *http.Request) {
 		u = append(u, urlJSON{dataEndpoint.String(), h, "body"})
 	}
 
-	c := container{format, u, ""}
+	c := container{htsgetReq.GetScalar("format"), u, ""}
 	ticket := ticket{HTSget: c}
 	ct := "application/vnd.ga4gh.htsget.v1.2.0+json; charset=utf-8"
-	w.Header().Set("Content-Type", ct)
-	json.NewEncoder(w).Encode(ticket)
+	writer.Header().Set("Content-Type", ct)
+	json.NewEncoder(writer).Encode(ticket)
 }
 
-func filePath(id string) string {
-	var path string
-	if strings.HasPrefix(id, "10X") {
-		path = "10x_bam_files/" + id
-	} else {
-		path = "facs_bam_files/" + id
-	}
-	return path
-}
-
-func getDataURL(r *genomics.Region, fields, tags, notags []string, id, class, host string) (*url.URL, error) {
+func getDataURL(r *genomics.Region, htsgetReq *htsgetrequest.HtsgetRequest, host string) (*url.URL, error) {
 	// The address of the endpoint on this server which serves the data
 	var dataEndpoint, err = url.Parse(host + "data/")
 	if err != nil {
@@ -276,12 +133,12 @@ func getDataURL(r *genomics.Region, fields, tags, notags []string, id, class, ho
 	}
 
 	// add id url param
-	dataEndpoint.Path += id
+	dataEndpoint.Path += htsgetReq.GetScalar("id")
 
 	// add query params
 	query := dataEndpoint.Query()
-	if class == "header" {
-		query.Set("class", class)
+	if htsgetReq.GetScalar("class") == "header" {
+		query.Set("class", htsgetReq.GetScalar("class"))
 	}
 	if r != nil {
 		if r.Name != "" {
@@ -295,50 +152,18 @@ func getDataURL(r *genomics.Region, fields, tags, notags []string, id, class, ho
 		}
 	}
 
-	if f := strings.Join(fields, ","); f != "" {
+	if f := strings.Join(htsgetReq.GetList("fields"), ","); f != "" {
 		query.Set("fields", f)
 	}
 
 	// t := strings.Join(tags, ",")
 	// query.Set("tags", t)
 
-	if nt := strings.Join(notags, ","); nt != "" {
+	if nt := strings.Join(htsgetReq.GetList("notags"), ","); nt != "" {
 		query.Set("notags", nt)
 	}
 
 	dataEndpoint.RawQuery = query.Encode()
 
 	return dataEndpoint, nil
-}
-
-func referenceExists(id string, refName string) (bool, error) {
-	cmd := exec.Command("samtools", "view", "-H", dataSource+filePath(id))
-	pipe, err := cmd.StdoutPipe()
-	if err != nil {
-		return false, err
-	}
-	cmd.Start()
-	reader := bufio.NewReader(pipe)
-	l, _, err := reader.ReadLine()
-
-	for ; err == nil; l, _, err = reader.ReadLine() {
-		if strings.Contains(string(l), "SN:"+refName) {
-			return true, nil
-		}
-	}
-	cmd.Wait()
-	return false, nil
-}
-
-func writeError(w http.ResponseWriter, err error) {
-	if err, ok := err.(*htsgetError); ok {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(err.Code)
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"htsget": err.Htsget,
-		})
-		return
-	}
-
-	http.Error(w, err.Error(), 500)
 }

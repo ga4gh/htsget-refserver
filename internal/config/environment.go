@@ -20,6 +20,5 @@ func getEnvironment() map[string]string {
 			environment[configKey] = value
 		}
 	}
-
 	return environment
 }
