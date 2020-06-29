@@ -34,6 +34,9 @@ var readsDataEndpointSetParamsOrder = []string{
 	"fields",
 	"tags",
 	"notags",
+	"HtsgetBlockClass",
+	"HtsgetBlockId",
+	"HtsgetNumBlocks",
 }
 
 // parses, validates, and sets valid parameter to the HtsgetRequest object.
@@ -44,18 +47,21 @@ func setSingleParameter(request *http.Request, paramKey string,
 	var value string
 	// map lookup to determine if parameter is found on path/query string,
 	// and if a scalar or list is expected
-	isPath := isPathByParam[paramKey]
-	isScalar := isScalarByParam[paramKey]
+	paramLocation := paramLocations[paramKey]
+	paramType := paramTypes[paramKey]
 
-	// parse the request parameter by path or query string
-	if isPath {
+	// parse the request parameter by path, query string, or header
+	switch paramLocation {
+	case ParamLocPath:
 		value = parsePathParam(request, paramKey)
-	} else {
+	case ParamLocQuery:
 		v, err := parseQueryParam(params, paramKey)
 		value = v
 		if err != nil {
 			return err
 		}
+	case ParamLocHeader:
+		value = parseHeaderParam(request, paramKey)
 	}
 
 	// if a value is found, then
@@ -69,25 +75,25 @@ func setSingleParameter(request *http.Request, paramKey string,
 
 		// if valid, transform the param value and set it to the
 		// HtsgetRequest map
-		if isScalar {
+		switch paramType {
+		case ParamTypeScalar:
 			transformFunc := transformationScalarByParam[paramKey]
 			htsgetReq.AddScalarParam(paramKey, transformFunc(value))
-		} else {
+		case ParamTypeList:
 			transformFunc := transformationListByParam[paramKey]
 			htsgetReq.AddListParam(paramKey, transformFunc(value))
 		}
-
 		return nil
 	}
 
 	// if no param value is found, set the default value to the HtsgetRequest
 	// map
-	if isScalar {
+	switch paramType {
+	case ParamTypeScalar:
 		htsgetReq.AddScalarParam(paramKey, defaultScalarParameterValues[paramKey])
-	} else {
+	case ParamTypeList:
 		htsgetReq.AddListParam(paramKey, defaultListParameterValues[paramKey])
 	}
-
 	return nil
 }
 

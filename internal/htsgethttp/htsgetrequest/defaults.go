@@ -15,7 +15,7 @@ var defaultScalarParameterValues = map[string]string{
 
 // default values for list params if param is not specified in request
 var defaultListParameterValues = map[string][]string{
-	"fields": {},
-	"tags":   {},
-	"notags": {},
+	"fields": {"ALL"},
+	"tags":   {"ALL"},
+	"notags": {"NONE"},
 }

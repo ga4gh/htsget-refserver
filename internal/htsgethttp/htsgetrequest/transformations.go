@@ -10,12 +10,15 @@ import (
 // the correct transformation function for each scalar parameter (transforms the
 // raw param string into a mature value usable by downstream htsget functions)
 var transformationScalarByParam = map[string]func(string) string{
-	"id":            noTransform,
-	"format":        strings.ToUpper,
-	"class":         strings.ToLower,
-	"referenceName": noTransform,
-	"start":         noTransform,
-	"end":           noTransform,
+	"id":               noTransform,
+	"format":           strings.ToUpper,
+	"class":            strings.ToLower,
+	"referenceName":    noTransform,
+	"start":            noTransform,
+	"end":              noTransform,
+	"HtsgetBlockClass": strings.ToLower,
+	"HtsgetBlockId":    noTransform,
+	"HtsgetNumBlocks":  noTransform,
 }
 
 // the correct transformation function for each list parameter

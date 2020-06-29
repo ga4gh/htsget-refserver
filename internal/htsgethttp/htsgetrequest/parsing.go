@@ -11,32 +11,58 @@ import (
 	"github.com/go-chi/chi"
 )
 
+// ParamLoc (ParameterLocation) enum of where an htsget parameter can be found
+// in an HTTP request
+type ParamLoc int
+
+// enum values of ParamLoc: Path, Query (string), Header
+const (
+	ParamLocPath ParamLoc = iota
+	ParamLocQuery
+	ParamLocHeader
+)
+
+// ParamType enum of the final data type of an htsget parameter
+type ParamType int
+
+// enum values of ParamType: Scalar, List
+const (
+	ParamTypeScalar ParamType = iota
+	ParamTypeList
+)
+
 // indicates whether each htsget parameter is found on the url path,
 // if false, it is found in the query string
-var isPathByParam = map[string]bool{
-	"id":            true,
-	"format":        false,
-	"class":         false,
-	"referenceName": false,
-	"start":         false,
-	"end":           false,
-	"fields":        false,
-	"tags":          false,
-	"notags":        false,
+var paramLocations = map[string]ParamLoc{
+	"id":               ParamLocPath,
+	"format":           ParamLocQuery,
+	"class":            ParamLocQuery,
+	"referenceName":    ParamLocQuery,
+	"start":            ParamLocQuery,
+	"end":              ParamLocQuery,
+	"fields":           ParamLocQuery,
+	"tags":             ParamLocQuery,
+	"notags":           ParamLocQuery,
+	"HtsgetBlockClass": ParamLocHeader,
+	"HtsgetBlockId":    ParamLocHeader,
+	"HtsgetNumBlocks":  ParamLocHeader,
 }
 
 // indicates whether each htsget parameter is expected to contain a scalar
 // value, if false, it contains a list value
-var isScalarByParam = map[string]bool{
-	"id":            true,
-	"format":        true,
-	"class":         true,
-	"referenceName": true,
-	"start":         true,
-	"end":           true,
-	"fields":        false,
-	"tags":          false,
-	"notags":        false,
+var paramTypes = map[string]ParamType{
+	"id":               ParamTypeScalar,
+	"format":           ParamTypeScalar,
+	"class":            ParamTypeScalar,
+	"referenceName":    ParamTypeScalar,
+	"start":            ParamTypeScalar,
+	"end":              ParamTypeScalar,
+	"fields":           ParamTypeList,
+	"tags":             ParamTypeList,
+	"notags":           ParamTypeList,
+	"HtsgetBlockClass": ParamTypeScalar,
+	"HtsgetBlockId":    ParamTypeScalar,
+	"HtsgetNumBlocks":  ParamTypeScalar,
 }
 
 // parse a single url path parameter as a string
@@ -54,4 +80,9 @@ func parseQueryParam(params url.Values, key string) (string, error) {
 		return "", errors.New("too many values specified for parameter: " + key)
 	}
 	return "", nil
+}
+
+// parse a single header parameter as a string
+func parseHeaderParam(request *http.Request, key string) string {
+	return request.Header.Get(key)
 }

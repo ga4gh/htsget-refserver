@@ -37,10 +37,10 @@ type urlJSON struct {
 
 // Headers contains any headers needed by the server from the client
 type headers struct {
-	BlockID   string `json:"block-id,omitempty"`   // id of current block
-	NumBlocks string `json:"num-blocks,omitempty"` // total number of blocks
-	Range     string `json:"range,omitempty"`
-	Class     string `json:"class,omitempty"`
+	BlockID   string `json:"HtsgetBlockId,omitempty"`   // id of current block
+	NumBlocks string `json:"HtsgetNumBlocks,omitempty"` // total number of blocks
+	Range     string `json:"Range,omitempty"`
+	Class     string `json:"HtsgetBlockClass,omitempty"`
 }
 
 func getReadsTicket(writer http.ResponseWriter, request *http.Request) {
@@ -54,18 +54,18 @@ func getReadsTicket(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	region := &genomics.Region{
-		Name:  htsgetReq.Get("referenceName"),
-		Start: htsgetReq.Get("start"),
-		End:   htsgetReq.Get("end"),
+		Name:  htsgetReq.ReferenceName(),
+		Start: htsgetReq.Start(),
+		End:   htsgetReq.End(),
 	}
-	res, _ := http.Head(config.DATA_SOURCE_URL + htsgetutils.FilePath(htsgetReq.Get("id")))
+	res, _ := http.Head(config.DATA_SOURCE_URL + htsgetutils.FilePath(htsgetReq.ID()))
 	numBytes := res.ContentLength
 	var numBlocks int
 	var blockSize int64 = 1e9
-	if htsgetReq.Get("referenceName") != "" {
+	if htsgetReq.ReferenceName() != "" {
 		numBlocks = 1
 	} else {
-		if len(htsgetReq.GetList("fields")) == 0 {
+		if len(htsgetReq.Fields()) == 0 {
 			numBlocks = int(math.Ceil(float64(numBytes) / float64(blockSize)))
 		}
 	}
@@ -79,15 +79,15 @@ func getReadsTicket(writer http.ResponseWriter, request *http.Request) {
 		htsgeterror.InternalServerError(writer, &msg)
 	}
 
-	if htsgetReq.Get("class") == "header" {
+	if htsgetReq.Class() == "header" {
 		h = &headers{
 			BlockID:   "1",
 			NumBlocks: "1",
 			Class:     "header",
 		}
 		u = append(u, urlJSON{dataEndpoint.String(), h, "header"})
-	} else if len(htsgetReq.GetList("fields")) == 0 && len(htsgetReq.GetList("tags")) == 0 && len(htsgetReq.GetList("notags")) == 0 && htsgetReq.Get("referenceName") == "*" {
-		path := config.DATA_SOURCE_URL + htsgetutils.FilePath(htsgetReq.Get("id"))
+	} else if htsgetReq.AllFieldsRequested() && htsgetReq.AllTagsRequested() && htsgetReq.ReferenceName() == "*" {
+		path := config.DATA_SOURCE_URL + htsgetutils.FilePath(htsgetReq.ID())
 		var start, end int64 = 0, 0
 
 		for i := 1; i <= numBlocks; i++ {
@@ -116,7 +116,7 @@ func getReadsTicket(writer http.ResponseWriter, request *http.Request) {
 		u = append(u, urlJSON{dataEndpoint.String(), h, "body"})
 	}
 
-	c := container{htsgetReq.Get("format"), u, ""}
+	c := container{htsgetReq.Format(), u, ""}
 	ticket := ticket{HTSget: c}
 	ct := "application/vnd.ga4gh.htsget.v1.2.0+json; charset=utf-8"
 	writer.Header().Set("Content-Type", ct)
@@ -131,12 +131,12 @@ func getDataURL(r *genomics.Region, htsgetReq *htsgetrequest.HtsgetRequest, host
 	}
 
 	// add id url param
-	dataEndpoint.Path += htsgetReq.Get("id")
+	dataEndpoint.Path += htsgetReq.ID()
 
 	// add query params
 	query := dataEndpoint.Query()
-	if htsgetReq.Get("class") == "header" {
-		query.Set("class", htsgetReq.Get("class"))
+	if htsgetReq.Class() == "header" {
+		query.Set("class", htsgetReq.Class())
 	}
 	if r != nil {
 		if r.Name != "" {
@@ -150,15 +150,17 @@ func getDataURL(r *genomics.Region, htsgetReq *htsgetrequest.HtsgetRequest, host
 		}
 	}
 
-	if f := strings.Join(htsgetReq.GetList("fields"), ","); f != "" {
+	if !htsgetReq.AllFieldsRequested() {
+		f := strings.Join(htsgetReq.Fields(), ",")
 		query.Set("fields", f)
 	}
 
-	if t := strings.Join(htsgetReq.GetList("tags"), ","); t != "" {
-		query.Set("tags", t)
-	}
+	//if t := strings.Join(htsgetReq.Tags(), ","); t != "" {
+	//	query.Set("tags", t)
+	//}
 
-	if nt := strings.Join(htsgetReq.GetList("notags"), ","); nt != "" {
+	if !htsgetReq.AllTagsRequested() {
+		nt := strings.Join(htsgetReq.NoTags(), ",")
 		query.Set("notags", nt)
 	}
 

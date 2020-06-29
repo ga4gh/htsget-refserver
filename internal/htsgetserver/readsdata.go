@@ -1,15 +1,26 @@
 package htsgetserver
 
 import (
+	"bufio"
 	"fmt"
+	"io"
 	"net/http"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strconv"
 
+	"github.com/biogo/hts/bam"
+	"github.com/ga4gh/htsget-refserver/internal/config"
+	"github.com/ga4gh/htsget-refserver/internal/genomics"
+	"github.com/ga4gh/htsget-refserver/internal/htsgeterror"
 	"github.com/ga4gh/htsget-refserver/internal/htsgethttp/htsgetrequest"
+	"github.com/ga4gh/htsget-refserver/internal/htsgetutils"
+	"github.com/ga4gh/htsget-refserver/internal/htsgetutils/htsgetformats"
 )
 
 // getReadsData serves the actual data from AWS back to client
 func getReadsData(writer http.ResponseWriter, request *http.Request) {
-	fmt.Println("You hit the /reads/data endpoint")
 
 	params := request.URL.Query()
 	htsgetReq, err := htsgetrequest.ReadsDataEndpointSetAllParameters(request, writer, params)
@@ -18,270 +29,198 @@ func getReadsData(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	fmt.Println(htsgetReq.Get("id"))
+	region := &genomics.Region{
+		Name:  htsgetReq.ReferenceName(),
+		Start: htsgetReq.Start(),
+		End:   htsgetReq.End(),
+	}
 
-	/*
-			id := chi.URLParam(r, "id")
+	args := getSamtoolsCmdArgs(region, htsgetReq)
+	cmd := exec.Command("samtools", args...)
+	pipe, err := cmd.StdoutPipe()
 
-			// *** Parse query params ***
-			params := r.URL.Query()
-			_, err := parseFormat(params) // server currently only supports BAM
+	if err != nil {
+		msg := err.Error()
+		htsgeterror.InternalServerError(writer, &msg)
+		return
+	}
+
+	err = cmd.Start()
+	if err != nil {
+		msg := err.Error()
+		htsgeterror.InternalServerError(writer, &msg)
+		return
+	}
+
+	reader := bufio.NewReader(pipe)
+
+	var eofLen int
+	if htsgetReq.HtsgetBlockClass() == "header" {
+		eofLen = config.BAM_HEADER_EOF_LEN
+	} else {
+		eofLen = config.BAM_EOF_LEN
+	}
+
+	if (htsgetReq.AllFieldsRequested() && htsgetReq.AllTagsRequested()) || htsgetReq.HtsgetBlockClass() == "header" {
+		if htsgetReq.HtsgetBlockClass() != "header" { // remove header
+			headerLen, err := headerLen(htsgetReq.ID())
+			writer.Header().Set("header-len", strconv.FormatInt(headerLen, 10))
 			if err != nil {
-				fmt.Println("you hit an error from the data route!")
-				htsErr := &htsgetError{
-					Code: http.StatusBadRequest,
-					Htsget: errorContainer{
-						"UnsupportedFormat",
-						"The requested file format is not supported by the server",
-					},
-				}
-				writeError(w, htsErr)
+				msg := err.Error()
+				htsgeterror.InternalServerError(writer, &msg)
+				return
+			}
+			headerBuf := make([]byte, headerLen)
+			io.ReadFull(reader, headerBuf)
+		}
+		if htsgetReq.HtsgetBlockId() != htsgetReq.HtsgetNumBlocks() { // remove EOF if current block is not the last block
+			bufSize := 65536
+			buf := make([]byte, bufSize)
+			n, err := io.ReadFull(reader, buf)
+			if err != nil && err.Error() != "unexpected EOF" {
+				msg := err.Error()
+				htsgeterror.InternalServerError(writer, &msg)
 				return
 			}
 
-			refName := parseRefName(params)
-			start, end, err := parseRange(params, refName)
-			if err != nil {
-				htsErr := &htsgetError{
-					Code: http.StatusBadRequest,
-					Htsget: errorContainer{
-						"InvalidRange",
-						"The request range cannot be satisfied",
-					},
-				}
-				writeError(w, htsErr)
-				return
-			}
-
-			fields, err := parseFields(params)
-			if !strings.HasPrefix(id, "10X") {
-				if err != nil {
-					htsErr := &htsgetError{
-						Code: http.StatusBadRequest,
-						Htsget: errorContainer{
-							"InvalidInput",
-							"The request parameters do not adhere to the specification",
-						},
-					}
-					writeError(w, htsErr)
+			eofBuf := make([]byte, eofLen)
+			for n == bufSize {
+				copy(eofBuf, buf[n-eofLen:])
+				writer.Write(buf[:n-eofLen])
+				n, err = io.ReadFull(reader, buf)
+				if err != nil && err.Error() != "unexpected EOF" {
+					msg := err.Error()
+					htsgeterror.InternalServerError(writer, &msg)
 					return
 				}
-			}
-
-			tags := parseTags(params)
-			notags, err := parseNoTags(params, tags)
-			if !strings.HasPrefix(id, "10X") {
-				if err != nil {
-					htsErr := &htsgetError{
-						Code: http.StatusBadRequest,
-						Htsget: errorContainer{
-							"InvalidInput",
-							"The request parameters do not adhere to the specification",
-						},
-					}
-					writeError(w, htsErr)
-					return
+				if n == bufSize {
+					writer.Write(eofBuf)
 				}
 			}
 
-			blockID, err := strconv.Atoi(r.Header.Get("block-id"))
-			if err != nil {
-				writeError(w, err)
-				return
-			}
-			numBlocks, err := strconv.Atoi(r.Header.Get("num-blocks"))
-			if err != nil {
-				writeError(w, err)
-				return
-			}
-
-			class := r.Header.Get("class")
-			region := &genomics.Region{Name: refName, Start: start, End: end}
-
-			args := getCmdArgs(id, region, class, fields, tags, notags)
-			cmd := exec.Command("samtools", args...)
-			pipe, err := cmd.StdoutPipe()
-			if err != nil {
-				writeError(w, err)
-				return
-			}
-
-			err = cmd.Start()
-			if err != nil {
-				writeError(w, err)
-				return
-			}
-
-			reader := bufio.NewReader(pipe)
-
-			var eofLen int
-			if class == "header" {
-				eofLen = HEADER_EOF_LEN
+			if n >= eofLen {
+				writer.Write(buf[:n-eofLen])
 			} else {
-				eofLen = EOF_LEN
+				writer.Write(eofBuf[:eofLen-n])
 			}
-
-			if (len(fields) == 0 && len(tags) == 0 && len(notags) == 0) || class == "header" || !strings.HasPrefix(id, "10X") {
-				if class != "header" { // remove header
-					headerLen, err := headerLen(id)
-					w.Header().Set("header-len", strconv.FormatInt(headerLen, 10))
-					if err != nil {
-						writeError(w, err)
-						return
-					}
-					headerBuf := make([]byte, headerLen)
-					io.ReadFull(reader, headerBuf)
-				}
-				if blockID != numBlocks { // remove EOF if current block is not the last block
-					bufSize := 65536
-					buf := make([]byte, bufSize)
-					n, err := io.ReadFull(reader, buf)
-					if err != nil && err.Error() != "unexpected EOF" {
-						writeError(w, err)
-						return
-					}
-
-					eofBuf := make([]byte, eofLen)
-					for n == bufSize {
-						copy(eofBuf, buf[n-eofLen:])
-						w.Write(buf[:n-eofLen])
-						n, err = io.ReadFull(reader, buf)
-						if err != nil && err.Error() != "unexpected EOF" {
-							writeError(w, err)
-							return
-						}
-						if n == bufSize {
-							w.Write(eofBuf)
-						}
-					}
-
-					if n >= eofLen {
-						w.Write(buf[:n-eofLen])
-					} else {
-						w.Write(eofBuf[:eofLen-n])
-					}
-				} else {
-					io.Copy(w, reader)
-				}
-			} else {
-				columns := make([]bool, 11)
-				for _, field := range fields {
-					columns[FIELDS[field]-1] = true
-				}
-
-				tmpDirPath, err := tmpDirPath()
-				if err != nil {
-					writeError(w, err)
-					return
-				}
-				tmpPath := tmpDirPath + id
-				tmp, err := os.Create(tmpPath)
-				if err != nil {
-					writeError(w, err)
-					return
-				}
-
-				l, _, eof := reader.ReadLine()
-				for ; eof == nil; l, _, eof = reader.ReadLine() {
-					if l[0] != 64 {
-						var output []string
-						ls := strings.Split(string(l), "\t")
-
-						for i, col := range columns {
-							if col {
-								output = append(output, ls[i])
-							} else {
-								if i == 1 || i == 3 || i == 4 || i == 7 || i == 8 {
-									output = append(output, "0")
-								} else {
-									output = append(output, "*")
-								}
-							}
-						}
-						l = []byte(strings.Join(output, "\t") + "\n")
-					} else {
-						l = append(l, "\n"...)
-					}
-					_, err = tmp.Write(l)
-					if err != nil {
-						writeError(w, err)
-						return
-					}
-				}
-				tmp.Close()
-				bamCmd := exec.Command("samtools", "view", "-b", tmpPath)
-				bamPipe, err := bamCmd.StdoutPipe()
-				if err != nil {
-					writeError(w, err)
-					return
-				}
-				err = bamCmd.Start()
-				if err != nil {
-					writeError(w, err)
-					return
-				}
-
-				emptyHeaderLen := 50
-				// remove header
-				bamReader := bufio.NewReader(bamPipe)
-				headerBuf := make([]byte, emptyHeaderLen)
-				io.ReadFull(bamReader, headerBuf)
-				io.Copy(w, bamReader)
-
-				err = bamCmd.Wait()
-				if err != nil {
-					writeError(w, err)
-					return
-				}
-
-				err = os.Remove(tmpPath)
-				if err != nil {
-					writeError(w, err)
-					return
-				}
-			}
-			cmd.Wait()
+		} else {
+			io.Copy(writer, reader)
+		}
+	} else {
+		columns := make([]bool, 11)
+		for _, field := range htsgetReq.Fields() {
+			columns[config.BAM_FIELDS[field]-1] = true
 		}
 
-		func getTempPath(id string, blockID int) (string, error) {
-			cwd, err := os.Getwd()
-			if err != nil {
-				return "", err
-			}
-			parent := filepath.Dir(cwd)
-			tempPath := parent + "/temp/" + id + "_" + strconv.Itoa(blockID)
+		tmpDirPath, err := tmpDirPath()
+		if err != nil {
+			msg := err.Error()
+			htsgeterror.InternalServerError(writer, &msg)
+			return
+		}
 
-			exists, err := fileExists(parent + "/temp")
-			if err != nil {
-				return "", err
-			}
-			if !exists {
-				os.Mkdir(parent+"/temp/", 0755)
+		tmpPath := tmpDirPath + htsgetReq.ID()
+		tmp, err := os.Create(tmpPath)
+		if err != nil {
+			msg := err.Error()
+			htsgeterror.InternalServerError(writer, &msg)
+			return
+		}
+
+		l, _, eof := reader.ReadLine()
+		for ; eof == nil; l, _, eof = reader.ReadLine() {
+			if l[0] != 64 {
+				samRecord := htsgetformats.NewSAMRecord(string(l))
+				newSamRecord := samRecord.CustomEmit(htsgetReq)
+				l = []byte(newSamRecord + "\n")
 			} else {
-				isDir, err := isDir(parent + "/temp")
-				if err != nil {
-					return "", err
-				}
-				if !isDir {
-					os.Mkdir(parent+"/temp/", 0755)
-				}
+				l = append(l, "\n"...)
 			}
-			return tempPath, nil
-	*/
+			_, err = tmp.Write(l)
+			if err != nil {
+				msg := err.Error()
+				htsgeterror.InternalServerError(writer, &msg)
+				return
+			}
+		}
+
+		tmp.Close()
+		bamCmd := exec.Command("samtools", "view", "-b", tmpPath)
+		bamPipe, err := bamCmd.StdoutPipe()
+		if err != nil {
+			msg := err.Error()
+			htsgeterror.InternalServerError(writer, &msg)
+			return
+		}
+
+		err = bamCmd.Start()
+		if err != nil {
+			msg := err.Error()
+			htsgeterror.InternalServerError(writer, &msg)
+			return
+		}
+
+		emptyHeaderLen := 50
+		// remove header
+		bamReader := bufio.NewReader(bamPipe)
+		headerBuf := make([]byte, emptyHeaderLen)
+		io.ReadFull(bamReader, headerBuf)
+		io.Copy(writer, bamReader)
+
+		err = bamCmd.Wait()
+		if err != nil {
+			msg := err.Error()
+			htsgeterror.InternalServerError(writer, &msg)
+			return
+		}
+
+		err = os.Remove(tmpPath)
+		if err != nil {
+			msg := err.Error()
+			htsgeterror.InternalServerError(writer, &msg)
+			return
+		}
+	}
+	cmd.Wait()
 }
 
-/*
-func getCmdArgs(id string, r *genomics.Region, class string, fields, tags, notags []string) []string {
-	args := []string{"view", dataSource + filePath(id)}
-	if class == "header" {
+func getTempPath(id string, blockID int) (string, error) {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+	parent := filepath.Dir(cwd)
+	tempPath := parent + "/temp/" + id + "_" + strconv.Itoa(blockID)
+
+	exists, err := fileExists(parent + "/temp")
+	if err != nil {
+		return "", err
+	}
+	if !exists {
+		os.Mkdir(parent+"/temp/", 0755)
+	} else {
+		isDir, err := isDir(parent + "/temp")
+		if err != nil {
+			return "", err
+		}
+		if !isDir {
+			os.Mkdir(parent+"/temp/", 0755)
+		}
+	}
+	return tempPath, nil
+}
+
+func getSamtoolsCmdArgs(region *genomics.Region, htsgetReq *htsgetrequest.HtsgetRequest) []string {
+	args := []string{"view", config.DATA_SOURCE_URL + htsgetutils.FilePath(htsgetReq.ID())}
+	if htsgetReq.HtsgetBlockClass() == "header" {
 		args = append(args, "-H")
 		args = append(args, "-b")
 	} else {
-		if strings.HasPrefix(id, "10X") || (len(fields) == 0 && len(tags) == 0 && len(notags) == 0) {
+		if htsgetReq.AllFieldsRequested() && htsgetReq.AllTagsRequested() {
 			args = append(args, "-b")
 		}
-		if r.String() != "" {
-			args = append(args, r.String())
+		if region.String() != "" {
+			args = append(args, region.String())
 		}
 	}
 	return args
@@ -295,7 +234,7 @@ func samToBam(tempPath string) string {
 }
 
 func headerLen(id string) (int64, error) {
-	cmd := exec.Command("samtools", "view", "-H", "-b", dataSource+filePath(id))
+	cmd := exec.Command("samtools", "view", "-H", "-b", config.DATA_SOURCE_URL+htsgetutils.FilePath(id))
 	tmpDirPath, err := tmpDirPath()
 	if err != nil {
 		return 0, err
@@ -358,7 +297,7 @@ func removeEOF(tempPath string) error {
 	return os.Truncate(tempPath, fi.Size()-28)
 }
 
-// exists returns whether the given file or directory existsi.
+// exists returns whether the given file or directory exists.
 func fileExists(path string) (bool, error) {
 	_, err := os.Stat(path)
 	if err == nil || !os.IsNotExist(err) {
@@ -388,4 +327,3 @@ func tmpDirPath() (string, error) {
 	}
 	return wd + "/temp/", nil
 }
-*/

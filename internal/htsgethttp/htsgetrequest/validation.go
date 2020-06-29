@@ -17,28 +17,34 @@ import (
 
 // the correct validation function for each request parameter name
 var validationByParam = map[string]func(string, *HtsgetRequest) (bool, string){
-	"id":            validateID,
-	"format":        validateFormat,
-	"class":         validateClass,
-	"referenceName": validateReferenceNameExists,
-	"start":         validateStart,
-	"end":           validateEnd,
-	"fields":        validateFields,
-	"tags":          noValidation,
-	"notags":        validateNoTags,
+	"id":               validateID,
+	"format":           validateFormat,
+	"class":            validateClass,
+	"referenceName":    validateReferenceNameExists,
+	"start":            validateStart,
+	"end":              validateEnd,
+	"fields":           validateFields,
+	"tags":             noValidation,
+	"notags":           validateNoTags,
+	"HtsgetBlockClass": validateClass,
+	"HtsgetBlockId":    noValidation,
+	"HtsgetNumBlocks":  noValidation,
 }
 
 // the correct error to raise for each request parameter validation
 var errorsByParam = map[string]func(http.ResponseWriter, *string){
-	"id":            htsgeterror.NotFound,
-	"format":        htsgeterror.UnsupportedFormat,
-	"class":         htsgeterror.InvalidInput,
-	"referenceName": htsgeterror.InvalidRange,
-	"start":         htsgeterror.InvalidRange,
-	"end":           htsgeterror.InvalidRange,
-	"fields":        htsgeterror.InvalidInput,
-	"tags":          htsgeterror.InvalidInput,
-	"notags":        htsgeterror.InvalidInput,
+	"id":               htsgeterror.NotFound,
+	"format":           htsgeterror.UnsupportedFormat,
+	"class":            htsgeterror.InvalidInput,
+	"referenceName":    htsgeterror.InvalidRange,
+	"start":            htsgeterror.InvalidRange,
+	"end":              htsgeterror.InvalidRange,
+	"fields":           htsgeterror.InvalidInput,
+	"tags":             htsgeterror.InvalidInput,
+	"notags":           htsgeterror.InvalidInput,
+	"HtsgetBlockClass": htsgeterror.InvalidInput,
+	"HtsgetBlockId":    htsgeterror.InternalServerError,
+	"HtsgetNumBlocks":  htsgeterror.InternalServerError,
 }
 
 // helper function, determines if a string can be parsed as an integer
@@ -112,7 +118,7 @@ func validateClass(class string, htsgetReq *HtsgetRequest) (bool, string) {
 // validates the 'referenceName' query string parameter. checks if the requested
 // reference contig/chromosome is in the BAM/CRAM header sequence dictionary
 func validateReferenceNameExists(referenceName string, htsgetReq *HtsgetRequest) (bool, string) {
-	id := htsgetReq.Get("id")
+	id := htsgetReq.ID()
 	cmd := exec.Command("samtools", "view", "-H", config.DATA_SOURCE_URL+htsgetutils.FilePath(id))
 	pipe, err := cmd.StdoutPipe()
 	if err != nil {
@@ -135,7 +141,7 @@ func validateReferenceNameExists(referenceName string, htsgetReq *HtsgetRequest)
 // non-zero integer, and that it is being used correctly in conjunction with
 // 'referenceName'
 func validateStart(start string, htsgetReq *HtsgetRequest) (bool, string) {
-	referenceName := htsgetReq.Get("referenceName")
+	referenceName := htsgetReq.ReferenceName()
 	if referenceName == "*" || referenceName == "" {
 		return false, "'start' cannot be set without 'referenceName'"
 	}
@@ -156,8 +162,8 @@ func validateStart(start string, htsgetReq *HtsgetRequest) (bool, string) {
 // 'referenceName', and that the end coordinate is greater than the start
 // coordinate
 func validateEnd(end string, htsgetReq *HtsgetRequest) (bool, string) {
-	referenceName := htsgetReq.Get("referenceName")
-	start := htsgetReq.Get("start")
+	referenceName := htsgetReq.ReferenceName()
+	start := htsgetReq.Start()
 	if referenceName == "*" || referenceName == "" {
 		return false, "'end' cannot be set without 'referenceName'"
 	}
@@ -199,7 +205,7 @@ func validateFields(fields string, htsgetReq *HtsgetRequest) (bool, string) {
 // validates the 'notags' query string parameter. checks that there is no
 // overlap between tags included by 'tags' and tags excluded by 'notags'
 func validateNoTags(notags string, htsgetReq *HtsgetRequest) (bool, string) {
-	tagsList := htsgetReq.GetList("tags")
+	tagsList := htsgetReq.Tags()
 	notagsList := splitOnComma(notags)
 
 	for _, tagItem := range tagsList {
