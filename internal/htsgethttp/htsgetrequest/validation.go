@@ -1,4 +1,7 @@
-package htsgetparameters
+// Package htsgetrequest provides operations for parsing htsget-related
+// parameters from the HTTP request, and performing validation and
+// transformation
+package htsgetrequest
 
 import (
 	"bufio"
@@ -8,12 +11,12 @@ import (
 	"strings"
 
 	"github.com/ga4gh/htsget-refserver/internal/config"
+	"github.com/ga4gh/htsget-refserver/internal/htsgeterror"
 	"github.com/ga4gh/htsget-refserver/internal/htsgetutils"
-	"github.com/ga4gh/htsget-refserver/internal/htsgetutils/htsgeterror"
-	"github.com/ga4gh/htsget-refserver/internal/htsgetutils/htsgethttp/htsgetrequest"
 )
 
-var validationByParam = map[string]func(string, *htsgetrequest.HtsgetRequest) (bool, string){
+// the correct validation function for each request parameter name
+var validationByParam = map[string]func(string, *HtsgetRequest) (bool, string){
 	"id":            validateID,
 	"format":        validateFormat,
 	"class":         validateClass,
@@ -25,6 +28,7 @@ var validationByParam = map[string]func(string, *htsgetrequest.HtsgetRequest) (b
 	"notags":        validateNoTags,
 }
 
+// the correct error to raise for each request parameter validation
 var errorsByParam = map[string]func(http.ResponseWriter, *string){
 	"id":            htsgeterror.NotFound,
 	"format":        htsgeterror.UnsupportedFormat,
@@ -37,6 +41,7 @@ var errorsByParam = map[string]func(http.ResponseWriter, *string){
 	"notags":        htsgeterror.InvalidInput,
 }
 
+// helper function, determines if a string can be parsed as an integer
 func isInteger(value string) bool {
 	_, err := strconv.Atoi(value)
 	if err != nil {
@@ -45,6 +50,8 @@ func isInteger(value string) bool {
 	return true
 }
 
+// helper function, determines if a string can be parsed as an integer, and
+// is greater than zero
 func isGreaterThanEqualToZero(value string) bool {
 	if !isInteger(value) {
 		return false
@@ -56,11 +63,15 @@ func isGreaterThanEqualToZero(value string) bool {
 	return true
 }
 
-func noValidation(empty string, htsgetReq *htsgetrequest.HtsgetRequest) (bool, string) {
+// empty validation function for request parameters that do not need to be
+// validated. always returns true
+func noValidation(empty string, htsgetReq *HtsgetRequest) (bool, string) {
 	return true, ""
 }
 
-func validateID(id string, htsgetReq *htsgetrequest.HtsgetRequest) (bool, string) {
+// validates the 'id' path parameter. checks if an object matching the 'id'
+// could be found from the data source
+func validateID(id string, htsgetReq *HtsgetRequest) (bool, string) {
 	res, err := http.Head(config.DATA_SOURCE_URL + htsgetutils.FilePath(id))
 	if err != nil {
 		return false, "The requested resource was not found"
@@ -72,7 +83,9 @@ func validateID(id string, htsgetReq *htsgetrequest.HtsgetRequest) (bool, string
 	return true, ""
 }
 
-func validateFormat(format string, htsgetReq *htsgetrequest.HtsgetRequest) (bool, string) {
+// validates the 'format' query string parameter. checks if the requested
+// format is one of the allowed options
+func validateFormat(format string, htsgetReq *HtsgetRequest) (bool, string) {
 	switch strings.ToUpper(format) {
 	case "BAM":
 		return true, ""
@@ -83,7 +96,9 @@ func validateFormat(format string, htsgetReq *htsgetrequest.HtsgetRequest) (bool
 	}
 }
 
-func validateClass(class string, htsgetReq *htsgetrequest.HtsgetRequest) (bool, string) {
+// validates the 'class' query string parameter. checks if the requested
+// class is one of the allowed options
+func validateClass(class string, htsgetReq *HtsgetRequest) (bool, string) {
 	switch strings.ToLower(class) {
 	case "header":
 		return true, ""
@@ -94,8 +109,10 @@ func validateClass(class string, htsgetReq *htsgetrequest.HtsgetRequest) (bool, 
 	}
 }
 
-func validateReferenceNameExists(referenceName string, htsgetReq *htsgetrequest.HtsgetRequest) (bool, string) {
-	id := htsgetReq.GetScalar("id")
+// validates the 'referenceName' query string parameter. checks if the requested
+// reference contig/chromosome is in the BAM/CRAM header sequence dictionary
+func validateReferenceNameExists(referenceName string, htsgetReq *HtsgetRequest) (bool, string) {
+	id := htsgetReq.Get("id")
 	cmd := exec.Command("samtools", "view", "-H", config.DATA_SOURCE_URL+htsgetutils.FilePath(id))
 	pipe, err := cmd.StdoutPipe()
 	if err != nil {
@@ -114,8 +131,11 @@ func validateReferenceNameExists(referenceName string, htsgetReq *htsgetrequest.
 	return false, "invalid 'referenceName': " + referenceName
 }
 
-func validateStart(start string, htsgetReq *htsgetrequest.HtsgetRequest) (bool, string) {
-	referenceName := htsgetReq.GetScalar("referenceName")
+// validates the 'start' query string parameter. checks that it is a valid,
+// non-zero integer, and that it is being used correctly in conjunction with
+// 'referenceName'
+func validateStart(start string, htsgetReq *HtsgetRequest) (bool, string) {
+	referenceName := htsgetReq.Get("referenceName")
 	if referenceName == "*" || referenceName == "" {
 		return false, "'start' cannot be set without 'referenceName'"
 	}
@@ -131,9 +151,13 @@ func validateStart(start string, htsgetReq *htsgetrequest.HtsgetRequest) (bool, 
 	return true, ""
 }
 
-func validateEnd(end string, htsgetReq *htsgetrequest.HtsgetRequest) (bool, string) {
-	referenceName := htsgetReq.GetScalar("referenceName")
-	start := htsgetReq.GetScalar("start")
+// validates the 'end' query string parameter. checks that it is a valid,
+// non-zero integer, that it's being used correctly in conjunction with
+// 'referenceName', and that the end coordinate is greater than the start
+// coordinate
+func validateEnd(end string, htsgetReq *HtsgetRequest) (bool, string) {
+	referenceName := htsgetReq.Get("referenceName")
+	start := htsgetReq.Get("start")
 	if referenceName == "*" || referenceName == "" {
 		return false, "'end' cannot be set without 'referenceName'"
 	}
@@ -160,7 +184,9 @@ func validateEnd(end string, htsgetReq *htsgetrequest.HtsgetRequest) (bool, stri
 	return true, ""
 }
 
-func validateFields(fields string, htsgetReq *htsgetrequest.HtsgetRequest) (bool, string) {
+// validates the 'fields' query string parameter. checks that every requested
+// field is an acceptable value (an expected BAM/CRAM field)
+func validateFields(fields string, htsgetReq *HtsgetRequest) (bool, string) {
 	fieldsList := splitAndUppercase(fields)
 	for _, fieldItem := range fieldsList {
 		if _, ok := config.BAM_FIELDS[fieldItem]; !ok {
@@ -170,7 +196,9 @@ func validateFields(fields string, htsgetReq *htsgetrequest.HtsgetRequest) (bool
 	return true, ""
 }
 
-func validateNoTags(notags string, htsgetReq *htsgetrequest.HtsgetRequest) (bool, string) {
+// validates the 'notags' query string parameter. checks that there is no
+// overlap between tags included by 'tags' and tags excluded by 'notags'
+func validateNoTags(notags string, htsgetReq *HtsgetRequest) (bool, string) {
 	tagsList := htsgetReq.GetList("tags")
 	notagsList := splitOnComma(notags)
 
@@ -181,6 +209,5 @@ func validateNoTags(notags string, htsgetReq *htsgetrequest.HtsgetRequest) (bool
 			}
 		}
 	}
-
 	return true, ""
 }

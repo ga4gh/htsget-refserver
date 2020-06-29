@@ -1,11 +1,25 @@
-package server
+package htsgetserver
 
 import (
+	"fmt"
 	"net/http"
+
+	"github.com/ga4gh/htsget-refserver/internal/htsgethttp/htsgetrequest"
 )
 
-// getData serves the actual data from AWS back to client
-func getData(w http.ResponseWriter, r *http.Request) {
+// getReadsData serves the actual data from AWS back to client
+func getReadsData(writer http.ResponseWriter, request *http.Request) {
+	fmt.Println("You hit the /reads/data endpoint")
+
+	params := request.URL.Query()
+	htsgetReq, err := htsgetrequest.ReadsDataEndpointSetAllParameters(request, writer, params)
+
+	if err != nil {
+		return
+	}
+
+	fmt.Println(htsgetReq.Get("id"))
+
 	/*
 			id := chi.URLParam(r, "id")
 

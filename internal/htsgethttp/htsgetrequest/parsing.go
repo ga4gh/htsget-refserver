@@ -1,4 +1,7 @@
-package htsgetparameters
+// Package htsgetrequest provides operations for parsing htsget-related
+// parameters from the HTTP request, and performing validation and
+// transformation
+package htsgetrequest
 
 import (
 	"errors"
@@ -8,6 +11,8 @@ import (
 	"github.com/go-chi/chi"
 )
 
+// indicates whether each htsget parameter is found on the url path,
+// if false, it is found in the query string
 var isPathByParam = map[string]bool{
 	"id":            true,
 	"format":        false,
@@ -20,6 +25,8 @@ var isPathByParam = map[string]bool{
 	"notags":        false,
 }
 
+// indicates whether each htsget parameter is expected to contain a scalar
+// value, if false, it contains a list value
 var isScalarByParam = map[string]bool{
 	"id":            true,
 	"format":        true,
@@ -32,11 +39,13 @@ var isScalarByParam = map[string]bool{
 	"notags":        false,
 }
 
+// parse a single url path parameter as a string
 func parsePathParam(request *http.Request, key string) string {
 	value := chi.URLParam(request, key)
 	return value
 }
 
+// parse a single query string parameter as a string
 func parseQueryParam(params url.Values, key string) (string, error) {
 	if len(params[key]) == 1 {
 		return params[key][0], nil

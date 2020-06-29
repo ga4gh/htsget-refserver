@@ -1,4 +1,4 @@
-package server
+package htsgetserver
 
 import (
 	"encoding/json"
@@ -8,13 +8,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/ga4gh/htsget-refserver/internal/htsgetutils/htsgeterror"
-
 	"github.com/ga4gh/htsget-refserver/internal/config"
 	"github.com/ga4gh/htsget-refserver/internal/genomics"
+	"github.com/ga4gh/htsget-refserver/internal/htsgeterror"
+	"github.com/ga4gh/htsget-refserver/internal/htsgethttp/htsgetrequest"
 	"github.com/ga4gh/htsget-refserver/internal/htsgetutils"
-	"github.com/ga4gh/htsget-refserver/internal/htsgetutils/htsgethttp/htsgetrequest"
-	"github.com/ga4gh/htsget-refserver/internal/htsgetutils/htsgetparameters"
 )
 
 // Ticket holds the entire json ticket returned to the client
@@ -45,26 +43,26 @@ type headers struct {
 	Class     string `json:"class,omitempty"`
 }
 
-func getReads(writer http.ResponseWriter, request *http.Request) {
+func getReadsTicket(writer http.ResponseWriter, request *http.Request) {
 
 	params := request.URL.Query()
 	host := htsgetutils.AddTrailingSlash(config.GetConfigProp("host"))
-	htsgetReq, err := htsgetparameters.ReadsEndpointSetAllParameters(request, writer, params)
+	htsgetReq, err := htsgetrequest.ReadsTicketEndpointSetAllParameters(request, writer, params)
 
 	if err != nil {
 		return
 	}
 
 	region := &genomics.Region{
-		Name:  htsgetReq.GetScalar("referenceName"),
-		Start: htsgetReq.GetScalar("start"),
-		End:   htsgetReq.GetScalar("end"),
+		Name:  htsgetReq.Get("referenceName"),
+		Start: htsgetReq.Get("start"),
+		End:   htsgetReq.Get("end"),
 	}
-	res, _ := http.Head(config.DATA_SOURCE_URL + htsgetutils.FilePath(htsgetReq.GetScalar("id")))
+	res, _ := http.Head(config.DATA_SOURCE_URL + htsgetutils.FilePath(htsgetReq.Get("id")))
 	numBytes := res.ContentLength
 	var numBlocks int
 	var blockSize int64 = 1e9
-	if htsgetReq.GetScalar("referenceName") != "" {
+	if htsgetReq.Get("referenceName") != "" {
 		numBlocks = 1
 	} else {
 		if len(htsgetReq.GetList("fields")) == 0 {
@@ -81,15 +79,15 @@ func getReads(writer http.ResponseWriter, request *http.Request) {
 		htsgeterror.InternalServerError(writer, &msg)
 	}
 
-	if htsgetReq.GetScalar("class") == "header" {
+	if htsgetReq.Get("class") == "header" {
 		h = &headers{
 			BlockID:   "1",
 			NumBlocks: "1",
 			Class:     "header",
 		}
 		u = append(u, urlJSON{dataEndpoint.String(), h, "header"})
-	} else if len(htsgetReq.GetList("fields")) == 0 && len(htsgetReq.GetList("tags")) == 0 && len(htsgetReq.GetList("notags")) == 0 && htsgetReq.GetScalar("referenceName") == "*" {
-		path := config.DATA_SOURCE_URL + htsgetutils.FilePath(htsgetReq.GetScalar("id"))
+	} else if len(htsgetReq.GetList("fields")) == 0 && len(htsgetReq.GetList("tags")) == 0 && len(htsgetReq.GetList("notags")) == 0 && htsgetReq.Get("referenceName") == "*" {
+		path := config.DATA_SOURCE_URL + htsgetutils.FilePath(htsgetReq.Get("id"))
 		var start, end int64 = 0, 0
 
 		for i := 1; i <= numBlocks; i++ {
@@ -118,7 +116,7 @@ func getReads(writer http.ResponseWriter, request *http.Request) {
 		u = append(u, urlJSON{dataEndpoint.String(), h, "body"})
 	}
 
-	c := container{htsgetReq.GetScalar("format"), u, ""}
+	c := container{htsgetReq.Get("format"), u, ""}
 	ticket := ticket{HTSget: c}
 	ct := "application/vnd.ga4gh.htsget.v1.2.0+json; charset=utf-8"
 	writer.Header().Set("Content-Type", ct)
@@ -127,18 +125,18 @@ func getReads(writer http.ResponseWriter, request *http.Request) {
 
 func getDataURL(r *genomics.Region, htsgetReq *htsgetrequest.HtsgetRequest, host string) (*url.URL, error) {
 	// The address of the endpoint on this server which serves the data
-	var dataEndpoint, err = url.Parse(host + "data/")
+	var dataEndpoint, err = url.Parse(host + "reads/data/")
 	if err != nil {
 		return nil, err
 	}
 
 	// add id url param
-	dataEndpoint.Path += htsgetReq.GetScalar("id")
+	dataEndpoint.Path += htsgetReq.Get("id")
 
 	// add query params
 	query := dataEndpoint.Query()
-	if htsgetReq.GetScalar("class") == "header" {
-		query.Set("class", htsgetReq.GetScalar("class"))
+	if htsgetReq.Get("class") == "header" {
+		query.Set("class", htsgetReq.Get("class"))
 	}
 	if r != nil {
 		if r.Name != "" {
@@ -156,8 +154,9 @@ func getDataURL(r *genomics.Region, htsgetReq *htsgetrequest.HtsgetRequest, host
 		query.Set("fields", f)
 	}
 
-	// t := strings.Join(tags, ",")
-	// query.Set("tags", t)
+	if t := strings.Join(htsgetReq.GetList("tags"), ","); t != "" {
+		query.Set("tags", t)
+	}
 
 	if nt := strings.Join(htsgetReq.GetList("notags"), ","); nt != "" {
 		query.Set("notags", nt)

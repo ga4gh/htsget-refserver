@@ -1,4 +1,4 @@
-package server
+package htsgetserver
 
 import (
 	"net/http"
@@ -20,8 +20,8 @@ func SetRouter() (*chi.Mux, error) {
 	router.Handle("/", fs)
 
 	// Route for "reads" resource
-	router.Get("/reads/{id}", getReads)
-	router.Get("/data/{id}", getData)
+	router.Get("/reads/{id}", getReadsTicket)
+	router.Get("/reads/data/{id}", getReadsData)
 
 	return router, err
 }

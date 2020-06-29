@@ -1,3 +1,5 @@
+// Package htsgeterror provides operations for writing various HTTP errors,
+// including different status codes and error response bodies
 package htsgeterror
 
 import (
@@ -5,12 +7,14 @@ import (
 	"strconv"
 )
 
+// HTTP status code constants by error encountered
 const codeBadRequest = http.StatusBadRequest
 const codeInvalidAuthentication = http.StatusUnauthorized
 const codePermissionDenied = http.StatusForbidden
 const codeNotFound = http.StatusNotFound
 const codeInternalServerError = http.StatusInternalServerError
 
+// canonical error names by error encountered
 const errorBadRequestUnsupportedFormat = "UnsupportedFormat"
 const errorBadRequestInvalidInput = "InvalidInput"
 const errorBadRequestInvalidRange = "InvalidRange"
@@ -19,6 +23,7 @@ const errorPermissionDenied = "PermissionDenied"
 const errorNotFound = "NotFound"
 const errorInternalServerError = "InternalServerError"
 
+// default error messages by error encountered
 const dfltMsgBadRequestUnsupportedFormat = "The requested file format is not supported by the server"
 const dfltMsgBadRequestInvalidInput = "The request parameters do not adhere to the specification"
 const dfltMsgBadRequestInvalidRange = "The requested range cannot be satisfied"
@@ -27,6 +32,7 @@ const dfltMsgPermissionDenied = "Authorization is required to access the resourc
 const dfltMsgNotFound = "The resource requested was not found"
 const dfltMsgInternalServerError = "Internal server error"
 
+// maps error type to status code and default message
 var errorInfoMap = map[string]map[string]string{
 	errorBadRequestUnsupportedFormat: {
 		"code":    strconv.Itoa(codeBadRequest),
