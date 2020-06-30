@@ -1,9 +1,12 @@
 // Package htsgetrequest provides operations for parsing htsget-related
 // parameters from the HTTP request, and performing validation and
 // transformation
+//
+// Module defaults.go contains default values for each parameter
 package htsgetrequest
 
-// default values for scalar params if param is not specified in request
+// defaultScalarParameterValues (map[string]string): values for scalar params
+// if param is not specified in request
 var defaultScalarParameterValues = map[string]string{
 	"id":            "",
 	"format":        "BAM",
@@ -13,7 +16,8 @@ var defaultScalarParameterValues = map[string]string{
 	"end":           "-1",
 }
 
-// default values for list params if param is not specified in request
+// defaultListParameterValues (map[string][]string): values for list params
+// if param is not specified in request
 var defaultListParameterValues = map[string][]string{
 	"fields": {"ALL"},
 	"tags":   {"ALL"},

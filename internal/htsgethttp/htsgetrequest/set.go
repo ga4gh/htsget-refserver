@@ -1,6 +1,10 @@
 // Package htsgetrequest provides operations for parsing htsget-related
 // parameters from the HTTP request, and performing validation and
 // transformation
+//
+// Module set.go defines operations for setting request parameters to an
+// HtsgetRequest, which first involves correct parsing, validation, and
+// transformation. Sets parameters correctly based on request route
 package htsgetrequest
 
 import (
@@ -9,9 +13,10 @@ import (
 	"net/url"
 )
 
-// the order in which parameters (path or query) are parsed, validated, and
-// set in. the validation of parameter later in the order may be dependent
-// on previously validated parameters (e.g. 'tags' and 'notags')
+// readsTicketEndpointSetParamsOrder ([]string): the order in which parameters
+// (path, query, or header) are parsed, validated, and set in for the
+// /reads/{id} endpoint. validation of later parameters may be dependent on
+// previously validated parameters
 var readsTicketEndpointSetParamsOrder = []string{
 	"id",
 	"format",
@@ -24,7 +29,9 @@ var readsTicketEndpointSetParamsOrder = []string{
 	"notags",
 }
 
-// for the  the order in which parameters (path or query) are parsed, validated, and set in
+// readsDataEndpointSetParamsOrder ([]string): the order in which parameters
+// (path, query, or header) are parsed, validated, and set in for the
+// /reads/data/{id} endpoint.
 var readsDataEndpointSetParamsOrder = []string{
 	"id",
 	"format",
@@ -39,14 +46,22 @@ var readsDataEndpointSetParamsOrder = []string{
 	"HtsgetNumBlocks",
 }
 
-// parses, validates, and sets valid parameter to the HtsgetRequest object.
-// if the parameter value is not valid, returns an error
+// setSingleParameter parses, validates, and sets a valid parameter to the
+// HtsgetRequest object. if the parameter value is not valid, returns an error
+//
+// Arguments
+//	request (*http.Request): HTTP request object
+//	paramKey (string): parameter name to parse, validate, etc.
+//	params (url.Values): query string parameters from HTTP request
+// 	htsgetReq (*HtsgetRequest): object to set transformed parameter value to
+// Returns
+//	(error): client-side error if any parameters fail validation
 func setSingleParameter(request *http.Request, paramKey string,
 	params url.Values, htsgetReq *HtsgetRequest) error {
 
 	var value string
 	var found bool
-	// map lookup to determine if parameter is found on path/query string,
+	// lookup if parameter is found on path/query/header,
 	// and if a scalar or list is expected
 	paramLocation := paramLocations[paramKey]
 	paramType := paramTypes[paramKey]
@@ -99,9 +114,17 @@ func setSingleParameter(request *http.Request, paramKey string,
 	return nil
 }
 
-// setAllParameters for a given ordered list of expected request parameters,
-// parse, set, validate, and transform all parameters in order, setting them
-// to an HtsgetRequest
+// setAllParameters parses, validates, transforms, and sets all parameters to
+// an HtsgetRequest for a given ordered list of expected request parameters
+//
+// Arguments
+//	orderedParams ([]string): route-specific order to parse parameters in
+//	request (*http.Request): HTTP request
+//	writer (http.ResponseWriter): HTTP response writer (to write error if necessary)
+//	params (url.Values): query string parameters
+// Returns
+//	(*HtsgetRequest): object with mature parameters set to it
+//	(error): client-side error if any parameters fail validation
 func setAllParameters(orderedParams []string, request *http.Request, writer http.ResponseWriter, params url.Values) (*HtsgetRequest, error) {
 	htsgetReq := NewHtsgetRequest()
 
@@ -120,12 +143,28 @@ func setAllParameters(orderedParams []string, request *http.Request, writer http
 
 // ReadsTicketEndpointSetAllParameters sets all parameters expected in the
 // reads ticket endpoint to an HtsgetRequest
+//
+// Arguments
+//	request (*http.Request): HTTP request
+//	writer (http.ResponseWriter): HTTP response writer (to write error if necessary)
+//	params (url.Values): query string parameters
+// Returns
+//	(*HtsgetRequest): object with mature parameters set to it
+//	(error): client-side error if any parameters fail validation
 func ReadsTicketEndpointSetAllParameters(request *http.Request, writer http.ResponseWriter, params url.Values) (*HtsgetRequest, error) {
 	return setAllParameters(readsTicketEndpointSetParamsOrder, request, writer, params)
 }
 
 // ReadsDataEndpointSetAllParameters sets all parameters expected in the
 // reads data endpoint to an HtsgetRequest
+//
+// Arguments
+//	request (*http.Request): HTTP request
+//	writer (http.ResponseWriter): HTTP response writer (to write error if necessary)
+//	params (url.Values): query string parameters
+// Returns
+//	(*HtsgetRequest): object with mature parameters set to it
+//	(error): client-side error if any parameters fail validation
 func ReadsDataEndpointSetAllParameters(request *http.Request, writer http.ResponseWriter, params url.Values) (*HtsgetRequest, error) {
 	return setAllParameters(readsDataEndpointSetParamsOrder, request, writer, params)
 }

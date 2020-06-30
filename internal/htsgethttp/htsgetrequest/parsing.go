@@ -1,6 +1,9 @@
 // Package htsgetrequest provides operations for parsing htsget-related
 // parameters from the HTTP request, and performing validation and
 // transformation
+//
+// Module parsing.go contains operations for parsing various parameter types
+// from an HTTP request
 package htsgetrequest
 
 import (
@@ -32,8 +35,8 @@ const (
 	ParamTypeList
 )
 
-// indicates whether each htsget parameter is found on the url path,
-// if false, it is found in the query string
+// paramLocations (map[string]ParamLoc): indicates whether each htsget parameter
+// is found on the url path, query string, or header
 var paramLocations = map[string]ParamLoc{
 	"id":               ParamLocPath,
 	"format":           ParamLocQuery,
@@ -49,8 +52,8 @@ var paramLocations = map[string]ParamLoc{
 	"HtsgetNumBlocks":  ParamLocHeader,
 }
 
-// indicates whether each htsget parameter is expected to contain a scalar
-// value, if false, it contains a list value
+// paramTypes (map[string]ParamType): indicates whether each htsget parameter is
+// expected to contain a scalar or list value
 var paramTypes = map[string]ParamType{
 	"id":               ParamTypeScalar,
 	"format":           ParamTypeScalar,
@@ -66,7 +69,14 @@ var paramTypes = map[string]ParamType{
 	"HtsgetNumBlocks":  ParamTypeScalar,
 }
 
-// parse a single url path parameter as a string
+// parsePathParam parses a single url path parameter as a string
+//
+// Arguments
+//	request (*http.Request): the HTTP request
+//	key (string): the parameter name/field
+// Returns
+//	(string): the value of the path parameter by specified name
+//	(bool): true if the parameter was specified by client
 func parsePathParam(request *http.Request, key string) (string, bool) {
 	value := chi.URLParam(request, key)
 	found := false
@@ -76,7 +86,15 @@ func parsePathParam(request *http.Request, key string) (string, bool) {
 	return value, found
 }
 
-// parse a single query string parameter as a string
+// parseQueryParam parses a single query string parameter as a string
+//
+// Arguments
+//	params (url.Values): query string parameters from HTTP request
+//	key (string): the parameter name/field
+// Returns
+//	(string): the value of the query parameter by specified name
+//	(bool): true if the parameter was specified by client
+//	(error): encountered if the parameter was specified by client incorrectly
 func parseQueryParam(params url.Values, key string) (string, bool, error) {
 
 	if len(params[key]) == 1 {
@@ -88,7 +106,14 @@ func parseQueryParam(params url.Values, key string) (string, bool, error) {
 	return "", false, nil
 }
 
-// parse a single header parameter as a string
+// parseHeaderParam parses a single header parameter as a string
+//
+// Arguments
+//	request (*http.Request): the HTTP request
+//	key (string): the parameter name/field
+// Returns
+//	(string): the value of the header parameter by specified name
+//	(bool): true if the parameter was specified by client
 func parseHeaderParam(request *http.Request, key string) (string, bool) {
 
 	value := request.Header.Get(key)
