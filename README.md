@@ -11,7 +11,7 @@ This is a reference implementation of the version 1.2.0 htsget API protocol for 
 
 This project uses [Go modules](https://blog.golang.org/using-go-modules) to manage packages and dependencies.
 
-`$ go build -o ./htsget-refserver ./cmd & ./htsget-refserver` from root directory to start the server on the specified port (`3000` by default, see Configuration section).
+`$ go build -o ./htsget-refserver ./cmd && ./htsget-refserver` from root directory to start the server on the specified port (`3000` by default, see Configuration section).
 
 ## Usage
 The API is defined at https://github.com/samtools/hts-specs/blob/master/htsget.md. 

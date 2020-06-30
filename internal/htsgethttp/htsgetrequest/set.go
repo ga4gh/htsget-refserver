@@ -45,6 +45,7 @@ func setSingleParameter(request *http.Request, paramKey string,
 	params url.Values, htsgetReq *HtsgetRequest) error {
 
 	var value string
+	var found bool
 	// map lookup to determine if parameter is found on path/query string,
 	// and if a scalar or list is expected
 	paramLocation := paramLocations[paramKey]
@@ -53,19 +54,20 @@ func setSingleParameter(request *http.Request, paramKey string,
 	// parse the request parameter by path, query string, or header
 	switch paramLocation {
 	case ParamLocPath:
-		value = parsePathParam(request, paramKey)
+		value, found = parsePathParam(request, paramKey)
 	case ParamLocQuery:
-		v, err := parseQueryParam(params, paramKey)
+		v, f, err := parseQueryParam(params, paramKey)
 		value = v
+		found = f
 		if err != nil {
 			return err
 		}
 	case ParamLocHeader:
-		value = parseHeaderParam(request, paramKey)
+		value, found = parseHeaderParam(request, paramKey)
 	}
 
 	// if a value is found, then
-	if value != "" {
+	if found {
 		// run the validation function, return an error if invalid
 		validationFunc := validationByParam[paramKey]
 		validationResult, validationMsg := validationFunc(value, htsgetReq)

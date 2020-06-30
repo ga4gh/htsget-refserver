@@ -20,3 +20,25 @@ func FilePath(id string) string {
 	}
 	return path
 }
+
+func GetTagName(tag string) string {
+	return strings.Split(tag, ":")[0]
+}
+
+func IsItemInArray(item string, array []string) bool {
+
+	for i := 0; i < len(array); i++ {
+		if item == array[i] {
+			return true
+		}
+	}
+	return false
+}
+
+func StringIsEmpty(item string) bool {
+
+	if item == "" {
+		return true
+	}
+	return false
+}

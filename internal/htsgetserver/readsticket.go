@@ -155,11 +155,12 @@ func getDataURL(r *genomics.Region, htsgetReq *htsgetrequest.HtsgetRequest, host
 		query.Set("fields", f)
 	}
 
-	//if t := strings.Join(htsgetReq.Tags(), ","); t != "" {
-	//	query.Set("tags", t)
-	//}
+	if !htsgetReq.TagsNotSpecified() {
+		t := strings.Join(htsgetReq.Tags(), ",")
+		query.Set("tags", t)
+	}
 
-	if !htsgetReq.AllTagsRequested() {
+	if !htsgetReq.NoTagsNotSpecified() {
 		nt := strings.Join(htsgetReq.NoTags(), ",")
 		query.Set("notags", nt)
 	}

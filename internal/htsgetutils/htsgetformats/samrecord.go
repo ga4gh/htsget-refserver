@@ -1,11 +1,11 @@
 package htsgetformats
 
 import (
-	"fmt"
 	"strings"
 
-	"github.com/ga4gh/htsget-refserver/internal/config"
+	"github.com/ga4gh/htsget-refserver/internal/htsgetutils"
 
+	"github.com/ga4gh/htsget-refserver/internal/config"
 	"github.com/ga4gh/htsget-refserver/internal/htsgethttp/htsgetrequest"
 )
 
@@ -46,10 +46,36 @@ func (samRecord *SAMRecord) emitCustomFields(fields []string) []string {
 	return emittedFields
 }
 
-func (samRecord *SAMRecord) emitCustomTags(tags []string, notags []string) []string {
-	return []string{
-		"TAG",
+func (samRecord *SAMRecord) emitCustomTags(htsgetReq *htsgetrequest.HtsgetRequest) []string {
+
+	tags := htsgetReq.Tags()
+	notags := htsgetReq.NoTags()
+
+	n := config.N_BAM_FIELDS
+	emittedTags := make([]string, 0)
+
+	for i := n; i < len(samRecord.columns); i++ {
+		tag := samRecord.columns[i]
+		tagName := htsgetutils.GetTagName(tag)
+		toEmit := false
+		if htsgetReq.TagsNotSpecified() {
+			toEmit = true
+		}
+
+		if htsgetutils.IsItemInArray(tagName, tags) {
+			toEmit = true
+		}
+
+		if htsgetutils.IsItemInArray(tagName, notags) {
+			toEmit = false
+		}
+
+		if toEmit {
+			emittedTags = append(emittedTags, tag)
+		}
 	}
+
+	return emittedTags
 }
 
 func (samRecord *SAMRecord) CustomEmit(htsgetReq *htsgetrequest.HtsgetRequest) string {
@@ -63,12 +89,10 @@ func (samRecord *SAMRecord) CustomEmit(htsgetReq *htsgetrequest.HtsgetRequest) s
 		emittedFields = samRecord.emitCustomFields(htsgetReq.Fields())
 	}
 
-	fmt.Println(emittedFields)
-
 	if htsgetReq.AllTagsRequested() {
 		emittedTags = samRecord.columns[11:]
 	} else {
-		emittedTags = samRecord.emitCustomTags(htsgetReq.Tags(), htsgetReq.NoTags())
+		emittedTags = samRecord.emitCustomTags(htsgetReq)
 	}
 
 	for i := 0; i < len(emittedTags); i++ {

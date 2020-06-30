@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/ga4gh/htsget-refserver/internal/htsgetutils"
 	"github.com/go-chi/chi"
 )
 
@@ -66,23 +67,34 @@ var paramTypes = map[string]ParamType{
 }
 
 // parse a single url path parameter as a string
-func parsePathParam(request *http.Request, key string) string {
+func parsePathParam(request *http.Request, key string) (string, bool) {
 	value := chi.URLParam(request, key)
-	return value
+	found := false
+	if !htsgetutils.StringIsEmpty(value) {
+		found = true
+	}
+	return value, found
 }
 
 // parse a single query string parameter as a string
-func parseQueryParam(params url.Values, key string) (string, error) {
+func parseQueryParam(params url.Values, key string) (string, bool, error) {
+
 	if len(params[key]) == 1 {
-		return params[key][0], nil
+		return params[key][0], true, nil
 	}
 	if len(params[key]) > 1 {
-		return "", errors.New("too many values specified for parameter: " + key)
+		return "", true, errors.New("too many values specified for parameter: " + key)
 	}
-	return "", nil
+	return "", false, nil
 }
 
 // parse a single header parameter as a string
-func parseHeaderParam(request *http.Request, key string) string {
-	return request.Header.Get(key)
+func parseHeaderParam(request *http.Request, key string) (string, bool) {
+
+	value := request.Header.Get(key)
+	found := false
+	if !htsgetutils.StringIsEmpty(value) {
+		found = true
+	}
+	return value, found
 }
