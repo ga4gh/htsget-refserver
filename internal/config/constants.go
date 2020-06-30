@@ -1,12 +1,19 @@
+// Package config allows the program to be configured with modifiable
+// properties, affecting runtime properties. also contains program constants
+//
+// Module constants.go contains program constants
 package config
 
 import "encoding/hex"
 
-var DATA_SOURCE_URL = "https://s3.amazonaws.com/czbiohub-tabula-muris/"
+// DataSourceURL (string): base url to AWS S3 bucket
+var DataSourceURL = "https://s3.amazonaws.com/czbiohub-tabula-muris/"
 
-var N_BAM_FIELDS = 11
+// BamFieldsN (int): canonical number of fields in SAM/BAM (excluding tags)
+var BamFieldsN = 11
 
-var BAM_FIELDS map[string]int = map[string]int{
+// BamFields (map[string]int): ordered map of canonical column name to position
+var BamFields map[string]int = map[string]int{
 	"QNAME": 0,  // read names
 	"FLAG":  1,  // read bit flags
 	"RNAME": 2,  // reference sequence name
@@ -19,7 +26,9 @@ var BAM_FIELDS map[string]int = map[string]int{
 	"SEQ":   9,  // read bases
 	"QUAL":  10, // base quality scores
 }
-var BAM_EXCLUDED_VALUES []string = []string{
+
+// BamExcludedValues ([]string): correct values when column is removed by column
+var BamExcludedValues []string = []string{
 	"*",   // QNAME
 	"0",   // FLAG
 	"*",   // RNAME
@@ -33,6 +42,11 @@ var BAM_EXCLUDED_VALUES []string = []string{
 	"*",   // QUAL
 }
 
-var BAM_EOF, _ = hex.DecodeString("1f8b08040000000000ff0600424302001b0003000000000000000000")
-var BAM_EOF_LEN = len(BAM_EOF)
-var BAM_HEADER_EOF_LEN = 12
+// BamEOF ([]byte): BAM end of file byte sequence
+var BamEOF, _ = hex.DecodeString("1f8b08040000000000ff0600424302001b0003000000000000000000")
+
+// BamEOFLen (int): length (number of bytes) of BAM end of file byte sequence
+var BamEOFLen = len(BamEOF)
+
+// BamHeaderEOFLen (int): length (number of bytes) of BAM header end marker
+var BamHeaderEOFLen = 12
