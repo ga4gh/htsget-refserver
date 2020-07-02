@@ -139,7 +139,7 @@ func getDataURL(r *genomics.Region, htsgetReq *htsgetrequest.HtsgetRequest, host
 		query.Set("class", htsgetReq.Class())
 	}
 	if r != nil {
-		if r.Name != "" {
+		if r.Name != "" && r.Name != "*" {
 			query.Set("referenceName", r.Name)
 		}
 		if r.Start != "-1" {
