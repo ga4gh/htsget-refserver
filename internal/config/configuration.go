@@ -14,7 +14,8 @@ import (
 // Attributes
 // 	props (map[string]string): runtime properties dictionary
 type Configuration struct {
-	props map[string]string
+	props                   map[string]string
+	readsDataSourceRegistry *DataSourceRegistry
 }
 
 // config (Configuration): singleton of config to be used throughout the program
@@ -38,6 +39,8 @@ func loadConfig() {
 	for k, v := range environment {
 		newConfig.props[k] = v
 	}
+
+	newConfig.readsDataSourceRegistry = getDefaultReadsSourcesRegistry()
 	config = newConfig
 }
 
@@ -61,4 +64,8 @@ func getConfig() *Configuration {
 func GetConfigProp(key string) string {
 	c := getConfig()
 	return c.props[key]
+}
+
+func GetReadsDataSourceRegistry() *DataSourceRegistry {
+	return getConfig().readsDataSourceRegistry
 }

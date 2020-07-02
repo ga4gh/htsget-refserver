@@ -8,6 +8,7 @@ package htsgetrequest
 
 import (
 	"bufio"
+	"fmt"
 	"net/http"
 	"os/exec"
 	"strconv"
@@ -109,6 +110,12 @@ func noValidation(value string, htsgetReq *HtsgetRequest) (bool, string) {
 //	(bool): true if a resource matching id could be found from the data source
 //	(string): diagnostic message if error encountered
 func validateID(id string, htsgetReq *HtsgetRequest) (bool, string) {
+
+	fmt.Println("validating ID")
+	registry := config.GetReadsDataSourceRegistry()
+	fmt.Println(registry)
+	registry.FindFirstMatch(id)
+
 	res, err := http.Head(config.DataSourceURL + htsgetutils.FilePath(id))
 	if err != nil {
 		return false, "The requested resource was not found"

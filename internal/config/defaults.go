@@ -16,3 +16,22 @@ func getDefaults() map[string]string {
 	}
 	return defaults
 }
+
+func getDefaultReadsSourcesRegistry() *DataSourceRegistry {
+	sources := []map[string]string{
+		{
+			"pattern": "^10X",
+			"path":    "https://s3.amazonaws.com/czbiohub-tabula-muris/10x_bam_files/{id[0:2]}",
+		},
+		{
+			"pattern": "tabulamuris\\..*",
+			"path":    "https://s3.amazonaws.com/czbiohub-tabula-muris/facs_bam_files/{id[0:2]}",
+		},
+	}
+
+	registry := newDataSourceRegistry()
+	for i := 0; i < len(sources); i++ {
+		registry.addDataSource(newDataSource(sources[i]["pattern"], sources[i]["path"]))
+	}
+	return registry
+}
