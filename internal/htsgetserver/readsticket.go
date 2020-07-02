@@ -58,7 +58,7 @@ func getReadsTicket(writer http.ResponseWriter, request *http.Request) {
 		Start: htsgetReq.Start(),
 		End:   htsgetReq.End(),
 	}
-	res, _ := http.Head(config.DATA_SOURCE_URL + htsgetutils.FilePath(htsgetReq.ID()))
+	res, _ := http.Head(config.DataSourceURL + htsgetutils.FilePath(htsgetReq.ID()))
 	numBytes := res.ContentLength
 	var numBlocks int
 	var blockSize int64 = 1e9
@@ -87,7 +87,7 @@ func getReadsTicket(writer http.ResponseWriter, request *http.Request) {
 		}
 		u = append(u, urlJSON{dataEndpoint.String(), h, "header"})
 	} else if htsgetReq.AllFieldsRequested() && htsgetReq.AllTagsRequested() && htsgetReq.ReferenceName() == "*" {
-		path := config.DATA_SOURCE_URL + htsgetutils.FilePath(htsgetReq.ID())
+		path := config.DataSourceURL + htsgetutils.FilePath(htsgetReq.ID())
 		var start, end int64 = 0, 0
 
 		for i := 1; i <= numBlocks; i++ {

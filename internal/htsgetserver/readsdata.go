@@ -56,9 +56,9 @@ func getReadsData(writer http.ResponseWriter, request *http.Request) {
 
 	var eofLen int
 	if htsgetReq.HtsgetBlockClass() == "header" {
-		eofLen = config.BAM_HEADER_EOF_LEN
+		eofLen = config.BamHeaderEOFLen
 	} else {
-		eofLen = config.BAM_EOF_LEN
+		eofLen = config.BamEOFLen
 	}
 
 	if (htsgetReq.AllFieldsRequested() && htsgetReq.AllTagsRequested()) || htsgetReq.HtsgetBlockClass() == "header" {
@@ -73,7 +73,7 @@ func getReadsData(writer http.ResponseWriter, request *http.Request) {
 			headerBuf := make([]byte, headerLen)
 			io.ReadFull(reader, headerBuf)
 		}
-		if htsgetReq.HtsgetBlockId() != htsgetReq.HtsgetNumBlocks() { // remove EOF if current block is not the last block
+		if htsgetReq.HtsgetBlockID() != htsgetReq.HtsgetNumBlocks() { // remove EOF if current block is not the last block
 			bufSize := 65536
 			buf := make([]byte, bufSize)
 			n, err := io.ReadFull(reader, buf)
@@ -109,7 +109,7 @@ func getReadsData(writer http.ResponseWriter, request *http.Request) {
 	} else {
 		columns := make([]bool, 11)
 		for _, field := range htsgetReq.Fields() {
-			columns[config.BAM_FIELDS[field]-1] = true
+			columns[config.BamFields[field]] = true
 		}
 
 		tmpDirPath, err := tmpDirPath()
@@ -127,6 +127,26 @@ func getReadsData(writer http.ResponseWriter, request *http.Request) {
 			return
 		}
 
+		/* Write the BAM Header to the temporary SAM file */
+		headerCmd := exec.Command("samtools", "view", "-H", config.DataSourceURL+htsgetutils.FilePath(htsgetReq.ID()))
+		headerPipe, err := headerCmd.StdoutPipe()
+		if err != nil {
+			msg := err.Error()
+			htsgeterror.InternalServerError(writer, &msg)
+		}
+		err = headerCmd.Start()
+		headerReader := bufio.NewReader(headerPipe)
+		hl, _, eof := headerReader.ReadLine()
+		for ; eof == nil; hl, _, eof = headerReader.ReadLine() {
+			_, err = tmp.Write([]byte(string(hl) + "\n"))
+			if err != nil {
+				msg := err.Error()
+				htsgeterror.InternalServerError(writer, &msg)
+				return
+			}
+		}
+
+		/* Write the custom SAM Records to the temporary SAM file */
 		l, _, eof := reader.ReadLine()
 		for ; eof == nil; l, _, eof = reader.ReadLine() {
 			if l[0] != 64 {
@@ -160,10 +180,10 @@ func getReadsData(writer http.ResponseWriter, request *http.Request) {
 			return
 		}
 
-		emptyHeaderLen := 50
-		// remove header
+		// remove header bytes from 'body' class data streams
+		headerByteCount, _ := headerLen(htsgetReq.ID())
 		bamReader := bufio.NewReader(bamPipe)
-		headerBuf := make([]byte, emptyHeaderLen)
+		headerBuf := make([]byte, headerByteCount)
 		io.ReadFull(bamReader, headerBuf)
 		io.Copy(writer, bamReader)
 
@@ -211,7 +231,7 @@ func getTempPath(id string, blockID int) (string, error) {
 }
 
 func getSamtoolsCmdArgs(region *genomics.Region, htsgetReq *htsgetrequest.HtsgetRequest) []string {
-	args := []string{"view", config.DATA_SOURCE_URL + htsgetutils.FilePath(htsgetReq.ID())}
+	args := []string{"view", config.DataSourceURL + htsgetutils.FilePath(htsgetReq.ID())}
 	if htsgetReq.HtsgetBlockClass() == "header" {
 		args = append(args, "-H")
 		args = append(args, "-b")
@@ -234,7 +254,7 @@ func samToBam(tempPath string) string {
 }
 
 func headerLen(id string) (int64, error) {
-	cmd := exec.Command("samtools", "view", "-H", "-b", config.DATA_SOURCE_URL+htsgetutils.FilePath(id))
+	cmd := exec.Command("samtools", "view", "-H", "-b", config.DataSourceURL+htsgetutils.FilePath(id))
 	tmpDirPath, err := tmpDirPath()
 	if err != nil {
 		return 0, err
