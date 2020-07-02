@@ -9,9 +9,11 @@
 package config
 
 import (
-	"fmt"
+	"errors"
 	"regexp"
 	"strings"
+
+	"github.com/ga4gh/htsget-refserver/internal/htsgetutils"
 )
 
 type DataSourceRegistry struct {
@@ -28,8 +30,22 @@ func newDataSourceRegistry() *DataSourceRegistry {
 }
 
 func (dataSource *DataSource) evaluatePatternMatch(id string) (bool, error) {
-	fmt.Println("pattern: " + dataSource.Pattern + "\tid: " + id)
 	return regexp.MatchString(dataSource.Pattern, id)
+}
+
+func (dataSource *DataSource) evaluatePath(id string) (string, error) {
+
+	// create match map, map of named control groups parsed from the regex
+	// evaluation of pattern on id
+	idParameterMap := htsgetutils.CreateRegexNamedParameterMap(dataSource.Pattern, id)
+	parameterNamesMap := htsgetutils.CreateRegexNamedParameterMap("\\{(?P<paramName>.+?)\\}", dataSource.Path)
+
+	finalPath := dataSource.Path
+	for i := 0; i < len(parameterNamesMap["paramName"]); i++ {
+		paramName := parameterNamesMap["paramName"][i]
+		finalPath = strings.Replace(finalPath, "{"+paramName+"}", idParameterMap[paramName][0], -1)
+	}
+	return finalPath, nil
 }
 
 func newDataSource(pattern string, path string) *DataSource {
@@ -43,7 +59,7 @@ func (registry *DataSourceRegistry) addDataSource(dataSource *DataSource) {
 	registry.sources = append(registry.sources, dataSource)
 }
 
-func (registry *DataSourceRegistry) FindFirstMatch(id string) (*DataSource, error) {
+func (registry *DataSourceRegistry) findFirstMatch(id string) (*DataSource, error) {
 
 	for i := 0; i < len(registry.sources); i++ {
 		match, err := registry.sources[i].evaluatePatternMatch(id)
@@ -54,15 +70,19 @@ func (registry *DataSourceRegistry) FindFirstMatch(id string) (*DataSource, erro
 			return registry.sources[i], nil
 		}
 	}
-	return nil, nil
-}
-
-func (registry *DataSourceRegistry) evaluatePath(id string) (string, error) {
-	return "", nil
+	return nil, errors.New("id: " + id + " did not match any registered data sources")
 }
 
 func (registry *DataSourceRegistry) GetMatchingPath(id string) (string, error) {
-	return "", nil
+	matchingDataSource, err := registry.findFirstMatch(id)
+	if matchingDataSource == nil || err != nil {
+		return "", err
+	}
+	path, err := matchingDataSource.evaluatePath(id)
+	if path == "" || err != nil {
+		return "", err
+	}
+	return path, err
 }
 
 func (registry *DataSourceRegistry) String() string {

@@ -69,3 +69,7 @@ func GetConfigProp(key string) string {
 func GetReadsDataSourceRegistry() *DataSourceRegistry {
 	return getConfig().readsDataSourceRegistry
 }
+
+func GetReadsPathForID(id string) (string, error) {
+	return GetReadsDataSourceRegistry().GetMatchingPath(id)
+}

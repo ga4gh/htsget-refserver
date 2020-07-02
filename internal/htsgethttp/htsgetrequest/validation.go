@@ -8,7 +8,6 @@ package htsgetrequest
 
 import (
 	"bufio"
-	"fmt"
 	"net/http"
 	"os/exec"
 	"strconv"
@@ -16,7 +15,6 @@ import (
 
 	"github.com/ga4gh/htsget-refserver/internal/config"
 	"github.com/ga4gh/htsget-refserver/internal/htsgeterror"
-	"github.com/ga4gh/htsget-refserver/internal/htsgetutils"
 )
 
 // validationByParam (map[string]func(string, *HtsgetRequest) (bool, string)):
@@ -111,12 +109,12 @@ func noValidation(value string, htsgetReq *HtsgetRequest) (bool, string) {
 //	(string): diagnostic message if error encountered
 func validateID(id string, htsgetReq *HtsgetRequest) (bool, string) {
 
-	fmt.Println("validating ID")
-	registry := config.GetReadsDataSourceRegistry()
-	fmt.Println(registry)
-	registry.FindFirstMatch(id)
+	fileURL, err := config.GetReadsPathForID(id)
+	if err != nil {
+		return false, "The requested resource could not be associated with a registered data source"
+	}
 
-	res, err := http.Head(config.DataSourceURL + htsgetutils.FilePath(id))
+	res, err := http.Head(fileURL)
 	if err != nil {
 		return false, "The requested resource was not found"
 	}
@@ -178,8 +176,12 @@ func validateClass(class string, htsgetReq *HtsgetRequest) (bool, string) {
 //	(bool): true if requested reference sequence name is in sequence dictionary
 //	(string): diagnostic message if error encountered
 func validateReferenceNameExists(referenceName string, htsgetReq *HtsgetRequest) (bool, string) {
-	id := htsgetReq.ID()
-	cmd := exec.Command("samtools", "view", "-H", config.DataSourceURL+htsgetutils.FilePath(id))
+
+	fileURL, err := config.GetReadsPathForID(htsgetReq.ID())
+	if err != nil {
+		return false, err.Error()
+	}
+	cmd := exec.Command("samtools", "view", "-H", fileURL)
 	pipe, err := cmd.StdoutPipe()
 	if err != nil {
 		return false, "Could not access requested file"

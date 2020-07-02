@@ -20,12 +20,12 @@ func getDefaults() map[string]string {
 func getDefaultReadsSourcesRegistry() *DataSourceRegistry {
 	sources := []map[string]string{
 		{
-			"pattern": "^10X",
-			"path":    "https://s3.amazonaws.com/czbiohub-tabula-muris/10x_bam_files/{id[0:2]}",
+			"pattern": "^tabulamuris\\.(?P<accession>10X.*)$",
+			"path":    "https://s3.amazonaws.com/czbiohub-tabula-muris/10x_bam_files/{accession}_possorted_genome.bam",
 		},
 		{
-			"pattern": "tabulamuris\\..*",
-			"path":    "https://s3.amazonaws.com/czbiohub-tabula-muris/facs_bam_files/{id[0:2]}",
+			"pattern": "^tabulamuris\\.(?P<accession>.*)$",
+			"path":    "https://s3.amazonaws.com/czbiohub-tabula-muris/facs_bam_files/{accession}.mus.Aligned.out.sorted.bam",
 		},
 	}
 

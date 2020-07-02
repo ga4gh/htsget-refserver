@@ -4,6 +4,7 @@
 package htsgetutils
 
 import (
+	"regexp"
 	"strings"
 )
 
@@ -76,4 +77,15 @@ func StringIsEmpty(item string) bool {
 		return true
 	}
 	return false
+}
+
+func CreateRegexNamedParameterMap(pattern string, s string) map[string][]string {
+	var regex = regexp.MustCompile(pattern)
+	match := regex.FindStringSubmatch(s)
+	matchMap := make(map[string][]string)
+	for i, name := range regex.SubexpNames() {
+		matchMap[name] = make([]string, 0)
+		matchMap[name] = append(matchMap[name], match[i])
+	}
+	return matchMap
 }
