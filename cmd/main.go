@@ -5,11 +5,11 @@ import (
 	"net/http"
 
 	"github.com/ga4gh/htsget-refserver/internal/config"
-	"github.com/ga4gh/htsget-refserver/internal/server"
+	"github.com/ga4gh/htsget-refserver/internal/htsgetserver"
 )
 
 func main() {
-	router, err := server.SetRouter()
+	router, err := htsgetserver.SetRouter()
 	if err != nil {
 		panic("Problem setting up server.")
 	}
