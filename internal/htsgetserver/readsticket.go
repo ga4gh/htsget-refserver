@@ -62,7 +62,7 @@ func getReadsTicket(writer http.ResponseWriter, request *http.Request) {
 	numBytes := res.ContentLength
 	var numBlocks int
 	var blockSize int64 = 1e9
-	if htsgetReq.ReferenceName() != "" {
+	if htsgetReq.AllRegionsRequested() {
 		numBlocks = 1
 	} else {
 		if len(htsgetReq.Fields()) == 0 {
@@ -86,7 +86,8 @@ func getReadsTicket(writer http.ResponseWriter, request *http.Request) {
 			Class:     "header",
 		}
 		u = append(u, urlJSON{dataEndpoint.String(), h, "header"})
-	} else if htsgetReq.AllFieldsRequested() && htsgetReq.AllTagsRequested() && htsgetReq.ReferenceName() == "*" {
+	} else if htsgetReq.AllFieldsRequested() && htsgetReq.AllTagsRequested() && htsgetReq.AllRegionsRequested() {
+
 		path := config.DataSourceURL + htsgetutils.FilePath(htsgetReq.ID())
 		var start, end int64 = 0, 0
 
@@ -139,7 +140,7 @@ func getDataURL(r *genomics.Region, htsgetReq *htsgetrequest.HtsgetRequest, host
 		query.Set("class", htsgetReq.Class())
 	}
 	if r != nil {
-		if r.Name != "" && r.Name != "*" {
+		if r.Name != "" {
 			query.Set("referenceName", r.Name)
 		}
 		if r.Start != "-1" {

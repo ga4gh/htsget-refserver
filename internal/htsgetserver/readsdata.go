@@ -128,14 +128,17 @@ func getReadsData(writer http.ResponseWriter, request *http.Request) {
 		}
 
 		/* Write the BAM Header to the temporary SAM file */
-		headerCmd := exec.Command("samtools", "view", "-H", config.DataSourceURL+htsgetutils.FilePath(htsgetReq.ID()))
-		headerPipe, err := headerCmd.StdoutPipe()
+		tmpHeaderPath := tmpDirPath + htsgetReq.ID() + ".header.bam"
+		headerCmd := exec.Command("samtools", "view", "-H", "-O", "SAM", "-o", tmpHeaderPath, config.DataSourceURL+htsgetutils.FilePath(htsgetReq.ID()))
+
 		if err != nil {
 			msg := err.Error()
 			htsgeterror.InternalServerError(writer, &msg)
 		}
 		err = headerCmd.Start()
-		headerReader := bufio.NewReader(headerPipe)
+		headerCmd.Wait()
+		f, err := os.Open(tmpHeaderPath)
+		headerReader := bufio.NewReader(f)
 		hl, _, eof := headerReader.ReadLine()
 		for ; eof == nil; hl, _, eof = headerReader.ReadLine() {
 			_, err = tmp.Write([]byte(string(hl) + "\n"))
@@ -232,6 +235,7 @@ func getTempPath(id string, blockID int) (string, error) {
 
 func getSamtoolsCmdArgs(region *genomics.Region, htsgetReq *htsgetrequest.HtsgetRequest) []string {
 	args := []string{"view", config.DataSourceURL + htsgetutils.FilePath(htsgetReq.ID())}
+
 	if htsgetReq.HtsgetBlockClass() == "header" {
 		args = append(args, "-H")
 		args = append(args, "-b")

@@ -214,6 +214,35 @@ func (htsgetReq *HtsgetRequest) isDefaultList(key string) bool {
 	return true
 }
 
+// HeaderOnlyRequested checks if the client request is only for the header
+//
+// Type: HtsgetRequest
+// Returns
+//	(bool): true if only the header was requested
+func (htsgetReq *HtsgetRequest) HeaderOnlyRequested() bool {
+	return htsgetReq.Class() == "header"
+}
+
+// UnplacedUnmappedReadsRequested checks if the client request is for unplaced,
+// unmapped reads
+//
+// Type: HtsgetRequest
+// Returns
+//	(bool): true if unplaced, unmapped reads were requested
+func (htsgetReq *HtsgetRequest) UnplacedUnmappedReadsRequested() bool {
+	return htsgetReq.ReferenceName() == "*"
+}
+
+// AllRegionsRequested checks if the client request is for all chromosomal
+// regions in the file (ie. referenceName not specified)
+//
+// Type: HtsgetRequest
+// Returns
+//	(bool): true if all chromosomal regions requested
+func (htsgetReq *HtsgetRequest) AllRegionsRequested() bool {
+	return htsgetReq.isDefaultScalar("referenceName")
+}
+
 // AllFieldsRequested checks if all fields were requested by the client. all
 // fields are requested if the client does not specify the 'fields' parameter
 //

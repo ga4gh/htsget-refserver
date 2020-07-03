@@ -26,11 +26,11 @@ var validationByParam = map[string]func(string, *HtsgetRequest) (bool, string){
 	"id":               validateID,
 	"format":           validateFormat,
 	"class":            validateClass,
-	"referenceName":    validateReferenceNameExists,
+	"referenceName":    validateReferenceName,
 	"start":            validateStart,
 	"end":              validateEnd,
 	"fields":           validateFields,
-	"tags":             noValidation,
+	"tags":             validateTags,
 	"notags":           validateNoTags,
 	"HtsgetBlockClass": validateClass,
 	"HtsgetBlockId":    noValidation,
@@ -160,9 +160,10 @@ func validateClass(class string, htsgetReq *HtsgetRequest) (bool, string) {
 	}
 }
 
-// validateReferenceNameExists validates the 'referenceName' query string
+// validateReferenceName validates the 'referenceName' query string
 // parameter. checks if the requested reference contig/chromosome is in the
-// BAM/CRAM header sequence dictionary
+// BAM/CRAM header sequence dictionary. if unplaced unmapped reads are requested
+// (*), do not perform validation
 //
 // Arguments
 //	referenceName (string): referenceName parameter value
@@ -170,8 +171,19 @@ func validateClass(class string, htsgetReq *HtsgetRequest) (bool, string) {
 // Returns
 //	(bool): true if requested reference sequence name is in sequence dictionary
 //	(string): diagnostic message if error encountered
-func validateReferenceNameExists(referenceName string, htsgetReq *HtsgetRequest) (bool, string) {
+func validateReferenceName(referenceName string, htsgetReq *HtsgetRequest) (bool, string) {
 	id := htsgetReq.ID()
+
+	// incompatible with header only request
+	if htsgetReq.HeaderOnlyRequested() {
+		return false, "'referenceName' incompatible with header-only request"
+	}
+
+	// no validation if '*' was requested
+	if referenceName == "*" {
+		return true, ""
+	}
+
 	cmd := exec.Command("samtools", "view", "-H", config.DataSourceURL+htsgetutils.FilePath(id))
 	pipe, err := cmd.StdoutPipe()
 	if err != nil {
@@ -201,10 +213,19 @@ func validateReferenceNameExists(referenceName string, htsgetReq *HtsgetRequest)
 //	(bool): true if start is correctly specified
 //	(string): diagnostic message if error encountered
 func validateStart(start string, htsgetReq *HtsgetRequest) (bool, string) {
-	referenceName := htsgetReq.ReferenceName()
+
+	// incompatible with header only request
+	if htsgetReq.HeaderOnlyRequested() {
+		return false, "'start' incompatible with header-only request"
+	}
+
+	// start requires referenceName to specify a true chromosome
+	if htsgetReq.UnplacedUnmappedReadsRequested() {
+		return false, "'start' cannot be requested with unplaced, unmapped reads"
+	}
 
 	// start requires referenceName to be specified as well
-	if referenceName == "*" || referenceName == "" {
+	if htsgetReq.AllRegionsRequested() {
 		return false, "'start' cannot be set without 'referenceName'"
 	}
 
@@ -233,11 +254,21 @@ func validateStart(start string, htsgetReq *HtsgetRequest) (bool, string) {
 //	(bool): true if end is correctly specified
 //	(string): diagnostic message if error encountered
 func validateEnd(end string, htsgetReq *HtsgetRequest) (bool, string) {
-	referenceName := htsgetReq.ReferenceName()
+
+	// incompatible with header only request
+	if htsgetReq.HeaderOnlyRequested() {
+		return false, "'end' incompatible with header-only request"
+	}
+
 	start := htsgetReq.Start()
 
-	// end required referenceName to be specified as well
-	if referenceName == "*" || referenceName == "" {
+	// end requires referenceName to specify a true chromosome
+	if htsgetReq.UnplacedUnmappedReadsRequested() {
+		return false, "'end' cannot be requested with unplaced, unmapped reads"
+	}
+
+	// end requires referenceName to be specified as well
+	if htsgetReq.AllRegionsRequested() {
 		return false, "'end' cannot be set without 'referenceName'"
 	}
 
@@ -276,11 +307,33 @@ func validateEnd(end string, htsgetReq *HtsgetRequest) (bool, string) {
 //	(bool): true if all requested fields are canonical field names
 //	(string): diagnostic message if error encountered
 func validateFields(fields string, htsgetReq *HtsgetRequest) (bool, string) {
+
+	// incompatible with header only request
+	if htsgetReq.HeaderOnlyRequested() {
+		return false, "'fields' incompatible with header-only request"
+	}
+
 	fieldsList := splitAndUppercase(fields)
 	for _, fieldItem := range fieldsList {
 		if _, ok := config.BamFields[fieldItem]; !ok {
 			return false, "'" + fieldItem + "' not an acceptable field"
 		}
+	}
+	return true, ""
+}
+
+// validateTags only validates that tags hasn't been requested alongside
+// a header only request
+//
+// Arguments
+//	tags (string): unsplit tags parameter value
+//	htsgetReq (*HtsgetRequest): htsget request object
+// Returns
+//	(bool): true if tags has been requested for a header and body request
+//	(string): diagnostic message if error encountered
+func validateTags(tags string, htsgetReq *HtsgetRequest) (bool, string) {
+	if htsgetReq.HeaderOnlyRequested() {
+		return false, "'tags' incompatible with header-only request"
 	}
 	return true, ""
 }
@@ -296,6 +349,12 @@ func validateFields(fields string, htsgetReq *HtsgetRequest) (bool, string) {
 //	(bool): true if there is no overlap between tags and notags
 //	(string): diagnostic message if error encountered
 func validateNoTags(notags string, htsgetReq *HtsgetRequest) (bool, string) {
+
+	// incompatible with header only request
+	if htsgetReq.HeaderOnlyRequested() {
+		return false, "'notags' incompatible with header-only request"
+	}
+
 	tagsList := htsgetReq.Tags()
 	notagsList := splitOnComma(notags)
 

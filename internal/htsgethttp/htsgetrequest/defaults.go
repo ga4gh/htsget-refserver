@@ -11,7 +11,7 @@ var defaultScalarParameterValues = map[string]string{
 	"id":            "",
 	"format":        "BAM",
 	"class":         "",
-	"referenceName": "*",
+	"referenceName": "",
 	"start":         "-1",
 	"end":           "-1",
 }
