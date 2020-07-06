@@ -15,7 +15,6 @@ import (
 
 	"github.com/ga4gh/htsget-refserver/internal/config"
 	"github.com/ga4gh/htsget-refserver/internal/htsgeterror"
-	"github.com/ga4gh/htsget-refserver/internal/htsgetutils"
 )
 
 // validationByParam (map[string]func(string, *HtsgetRequest) (bool, string)):
@@ -109,7 +108,13 @@ func noValidation(value string, htsgetReq *HtsgetRequest) (bool, string) {
 //	(bool): true if a resource matching id could be found from the data source
 //	(string): diagnostic message if error encountered
 func validateID(id string, htsgetReq *HtsgetRequest) (bool, string) {
-	res, err := http.Head(config.DataSourceURL + htsgetutils.FilePath(id))
+
+	fileURL, err := config.GetReadsPathForID(id)
+	if err != nil {
+		return false, "The requested resource could not be associated with a registered data source"
+	}
+
+	res, err := http.Head(fileURL)
 	if err != nil {
 		return false, "The requested resource was not found"
 	}
@@ -172,19 +177,20 @@ func validateClass(class string, htsgetReq *HtsgetRequest) (bool, string) {
 //	(bool): true if requested reference sequence name is in sequence dictionary
 //	(string): diagnostic message if error encountered
 func validateReferenceName(referenceName string, htsgetReq *HtsgetRequest) (bool, string) {
-	id := htsgetReq.ID()
-
+	fileURL, err := config.GetReadsPathForID(htsgetReq.ID())
+	if err != nil {
+		return false, err.Error()
+	}
 	// incompatible with header only request
 	if htsgetReq.HeaderOnlyRequested() {
 		return false, "'referenceName' incompatible with header-only request"
 	}
-
 	// no validation if '*' was requested
 	if referenceName == "*" {
 		return true, ""
 	}
-
-	cmd := exec.Command("samtools", "view", "-H", config.DataSourceURL+htsgetutils.FilePath(id))
+	// otherwise, check that referenceName is in the header
+	cmd := exec.Command("samtools", "view", "-H", fileURL)
 	pipe, err := cmd.StdoutPipe()
 	if err != nil {
 		return false, "Could not access requested file"
