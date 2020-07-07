@@ -1,4 +1,4 @@
-// Package config allows the program to be configured with modifiable
+// Package htsgetconfig allows the program to be configured with modifiable
 // properties, affecting runtime properties. also contains program constants
 //
 // Module datasources.go allows the program to be configured with multiple
@@ -6,7 +6,7 @@
 // endpoints, allowing the htsget service to point to many different sources in
 // a structured, predictable manner
 
-package config
+package htsgetconfig
 
 import (
 	"errors"

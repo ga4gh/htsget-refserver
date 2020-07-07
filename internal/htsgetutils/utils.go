@@ -4,7 +4,9 @@
 package htsgetutils
 
 import (
+	"net/url"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -88,4 +90,32 @@ func CreateRegexNamedParameterMap(pattern string, s string) map[string][]string 
 		matchMap[name] = append(matchMap[name], match[i])
 	}
 	return matchMap
+}
+
+func IsValidUrl(toTest string) bool {
+	_, err := url.ParseRequestURI(toTest)
+	if err != nil {
+		return false
+	}
+
+	u, err := url.Parse(toTest)
+	if err != nil || u.Scheme == "" || u.Host == "" {
+		return false
+	}
+
+	return true
+}
+
+func ParseRangeHeader(rangeHeader string) (int64, int64, error) {
+	pattern := "bytes=(?P<start>\\d+)-(?P<end>\\d+)"
+	matchMap := CreateRegexNamedParameterMap(pattern, rangeHeader)
+	start, err := strconv.Atoi(matchMap["start"][0])
+	if err != nil {
+		return 0, 0, err
+	}
+	end, err := strconv.Atoi(matchMap["end"][0])
+	if err != nil {
+		return 0, 0, err
+	}
+	return int64(start), int64(end), nil
 }

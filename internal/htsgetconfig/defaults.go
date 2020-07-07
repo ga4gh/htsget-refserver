@@ -1,9 +1,9 @@
-// Package config allows the program to be configured with modifiable
+// Package htsgetconfig allows the program to be configured with modifiable
 // properties, affecting runtime properties. also contains program constants
 //
 // Module defaults.go contains default runtime properties when not overriden
 // by environment properties
-package config
+package htsgetconfig
 
 // getDefaults gets all default properties
 //
@@ -26,6 +26,10 @@ func getDefaultReadsSourcesRegistry() *DataSourceRegistry {
 		{
 			"pattern": "^tabulamuris\\.(?P<accession>.*)$",
 			"path":    "https://s3.amazonaws.com/czbiohub-tabula-muris/facs_bam_files/{accession}.mus.Aligned.out.sorted.bam",
+		},
+		{
+			"pattern": "^gcp\\.gatk\\.wgs\\.(?P<accession>.*)$",
+			"path":    "./data/gcp/gatk-test-data/wgs_bam/{accession}.bam",
 		},
 	}
 

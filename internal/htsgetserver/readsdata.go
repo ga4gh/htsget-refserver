@@ -11,8 +11,9 @@ import (
 	"strconv"
 
 	"github.com/biogo/hts/bam"
-	"github.com/ga4gh/htsget-refserver/internal/config"
 	"github.com/ga4gh/htsget-refserver/internal/genomics"
+	"github.com/ga4gh/htsget-refserver/internal/htsgetconfig"
+	"github.com/ga4gh/htsget-refserver/internal/htsgetconfig/htsgetconstants"
 	"github.com/ga4gh/htsget-refserver/internal/htsgeterror"
 	"github.com/ga4gh/htsget-refserver/internal/htsgethttp/htsgetrequest"
 	"github.com/ga4gh/htsget-refserver/internal/htsgetutils/htsgetformats"
@@ -27,7 +28,7 @@ func getReadsData(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	fileURL, err := config.GetReadsPathForID(htsgetReq.ID())
+	fileURL, err := htsgetconfig.GetReadsPathForID(htsgetReq.ID())
 	if err != nil {
 		return
 	}
@@ -59,9 +60,9 @@ func getReadsData(writer http.ResponseWriter, request *http.Request) {
 
 	var eofLen int
 	if htsgetReq.HtsgetBlockClass() == "header" {
-		eofLen = config.BamHeaderEOFLen
+		eofLen = htsgetconstants.BamHeaderEOFLen
 	} else {
-		eofLen = config.BamEOFLen
+		eofLen = htsgetconstants.BamEOFLen
 	}
 
 	if (htsgetReq.AllFieldsRequested() && htsgetReq.AllTagsRequested()) || htsgetReq.HtsgetBlockClass() == "header" {
@@ -112,7 +113,7 @@ func getReadsData(writer http.ResponseWriter, request *http.Request) {
 	} else {
 		columns := make([]bool, 11)
 		for _, field := range htsgetReq.Fields() {
-			columns[config.BamFields[field]] = true
+			columns[htsgetconstants.BamFields[field]] = true
 		}
 
 		tmpDirPath, err := tmpDirPath()

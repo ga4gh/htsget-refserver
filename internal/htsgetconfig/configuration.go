@@ -1,12 +1,14 @@
-// Package config allows the program to be configured with modifiable
+// Package htsgetconfig allows the program to be configured with modifiable
 // properties, affecting runtime properties. also contains program constants
 //
 // Module configuration.go contains operations for setting runtime properties
 // from the environment, config file, and defaults
-package config
+package htsgetconfig
 
 import (
 	"sync"
+
+	"github.com/ga4gh/htsget-refserver/internal/htsgetutils"
 )
 
 // Configuration contains runtime properties loaded from env, config, or default
@@ -55,15 +57,23 @@ func getConfig() *Configuration {
 	return config
 }
 
-// GetConfigProp get a single runtime property by its key
+// getConfigProp get a single runtime property by its key
 //
 // Arguments
 // 	key (string): property key
 // Returns
 //	(string): value for the specified property
-func GetConfigProp(key string) string {
+func getConfigProp(key string) string {
 	c := getConfig()
 	return c.props[key]
+}
+
+func GetPort() string {
+	return getConfigProp("port")
+}
+
+func GetHost() string {
+	return htsgetutils.AddTrailingSlash(getConfigProp("host"))
 }
 
 func GetReadsDataSourceRegistry() *DataSourceRegistry {

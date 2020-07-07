@@ -1,9 +1,9 @@
-// Package config allows the program to be configured with modifiable
+// Package htsgetconfig allows the program to be configured with modifiable
 // properties, affecting runtime properties. also contains program constants
 //
 // Module environment.go contains operations for parsing runtime properties
 // from various environment variables
-package config
+package htsgetconfig
 
 import (
 	"os"

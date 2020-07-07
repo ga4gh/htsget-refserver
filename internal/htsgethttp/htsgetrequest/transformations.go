@@ -22,6 +22,8 @@ var transformationScalarByParam = map[string]func(string) string{
 	"HtsgetBlockClass": strings.ToLower,
 	"HtsgetBlockId":    noTransform,
 	"HtsgetNumBlocks":  noTransform,
+	"HtsgetFilePath":   noTransform,
+	"Range":            noTransform,
 }
 
 // transformationScalarByParam (map[string]func(string) []string): map of

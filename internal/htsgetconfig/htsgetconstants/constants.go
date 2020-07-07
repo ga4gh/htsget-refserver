@@ -1,13 +1,16 @@
-// Package config allows the program to be configured with modifiable
+// Package htsgetconstants allows the program to be configured with modifiable
 // properties, affecting runtime properties. also contains program constants
 //
 // Module constants.go contains program constants
-package config
+package htsgetconstants
 
 import "encoding/hex"
 
 // DataSourceURL (string): base url to AWS S3 bucket
 var DataSourceURL = "https://s3.amazonaws.com/czbiohub-tabula-muris/"
+
+// var SingleBlockByteSize = int64(1e9)
+var SingleBlockByteSize = int64(1e7)
 
 // BamFieldsN (int): canonical number of fields in SAM/BAM (excluding tags)
 var BamFieldsN = 11
@@ -50,3 +53,15 @@ var BamEOFLen = len(BamEOF)
 
 // BamHeaderEOFLen (int): length (number of bytes) of BAM header end marker
 var BamHeaderEOFLen = 12
+
+var ReadsDataURLPath = "reads/data/"
+
+var FileByteRangeURLPath = "file-bytes"
+
+var FormatBam = "BAM"
+
+var FormatCram = "CRAM"
+
+var ClassHeader = "header"
+
+var ClassBody = "body"
