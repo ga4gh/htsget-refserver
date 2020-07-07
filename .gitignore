@@ -5,7 +5,9 @@ htsget-refserver
 !cmd/
 
 *.bam
+!data/**/*.bam
 *.bai
+!data/**/*.bai
 temp/*
 !temp/.temp
 
