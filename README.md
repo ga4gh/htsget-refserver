@@ -27,6 +27,14 @@ The web service can be configured with modifiable runtime parameters via environ
 | port | the port on which the service will run | HTSGET_PORT | 3000 | 
 | host | web service hostname. The JSON ticket returned by the server will reference other endpoints, using this hostname/base url to provide a complete url. | HTSGET_HOST | http://localhost:3000 | 
 
+## Todo
+
+* Configurable data sources (local files and urls) instead of hardcoding tabula muris dataset
+* Correct handling of `referenceName=*` requests (unmapped, unplaced reads)
+* Remove `samtools` dependency, as `samtools view` sometimes automatically fills placeholder values
+* Implement `/variants/{id}` endpoint
+* Implement `POST` request functionality 
+
 ## Issues
 
 Bugs and issues can be submitted via the [Github Issue Tracker](https://github.com/ga4gh/htsget-refserver/issues)

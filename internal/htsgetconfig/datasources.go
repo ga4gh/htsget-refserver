@@ -17,12 +17,12 @@ import (
 )
 
 type DataSourceRegistry struct {
-	sources []*DataSource
+	Sources []*DataSource `json:"sources"`
 }
 
 type DataSource struct {
-	Pattern string
-	Path    string
+	Pattern string `json:"pattern"`
+	Path    string `json:"path"`
 }
 
 func newDataSourceRegistry() *DataSourceRegistry {
@@ -56,18 +56,18 @@ func newDataSource(pattern string, path string) *DataSource {
 }
 
 func (registry *DataSourceRegistry) addDataSource(dataSource *DataSource) {
-	registry.sources = append(registry.sources, dataSource)
+	registry.Sources = append(registry.Sources, dataSource)
 }
 
 func (registry *DataSourceRegistry) findFirstMatch(id string) (*DataSource, error) {
 
-	for i := 0; i < len(registry.sources); i++ {
-		match, err := registry.sources[i].evaluatePatternMatch(id)
+	for i := 0; i < len(registry.Sources); i++ {
+		match, err := registry.Sources[i].evaluatePatternMatch(id)
 		if err != nil {
 			return nil, err
 		}
 		if match {
-			return registry.sources[i], nil
+			return registry.Sources[i], nil
 		}
 	}
 	return nil, errors.New("id: " + id + " did not match any registered data sources")
@@ -87,10 +87,10 @@ func (registry *DataSourceRegistry) GetMatchingPath(id string) (string, error) {
 
 func (registry *DataSourceRegistry) String() string {
 	var builder strings.Builder
-	for i := 0; i < len(registry.sources); i++ {
+	for i := 0; i < len(registry.Sources); i++ {
 		builder.WriteString(
-			"Path: " + registry.sources[i].Path + "\t" +
-				"Pattern: " + registry.sources[i].Pattern + "\n",
+			"Path: " + registry.Sources[i].Path + "\t" +
+				"Pattern: " + registry.Sources[i].Pattern + "\n",
 		)
 	}
 

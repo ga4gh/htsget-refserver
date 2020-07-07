@@ -8,7 +8,6 @@ htsget-refserver
 *.bai
 temp/*
 !temp/.temp
-data/*
 
 .DS_Store
 cp.out
