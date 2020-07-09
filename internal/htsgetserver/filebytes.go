@@ -2,7 +2,6 @@ package htsgetserver
 
 import (
 	"bufio"
-	"fmt"
 	"io"
 	"math"
 	"net/http"
@@ -46,7 +45,6 @@ func getFileBytes(writer http.ResponseWriter, request *http.Request) {
 		// up to the exact remaining needed to fulfill the range request
 		nBytesRead += int64(n)
 		if i == nChunks-2 {
-			fmt.Println("second to last chunk")
 			bytesRemaining := nBytes - nBytesRead
 			buffer = make([]byte, bytesRemaining)
 		} else {

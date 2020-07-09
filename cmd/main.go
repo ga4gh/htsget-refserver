@@ -1,3 +1,6 @@
+// Package main contains the main method/entrypoint
+//
+// Module main.go contains the main method/entrypoint
 package main
 
 import (
@@ -8,8 +11,8 @@ import (
 	"github.com/ga4gh/htsget-refserver/internal/htsgetserver"
 )
 
+// main program entrypoint
 func main() {
-
 	// load configuration object
 	htsgetconfig.LoadAndValidateConfig()
 	configLoadError := htsgetconfig.GetConfigLoadError()

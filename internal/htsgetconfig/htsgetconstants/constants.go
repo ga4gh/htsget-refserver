@@ -6,11 +6,8 @@ package htsgetconstants
 
 import "encoding/hex"
 
-// DataSourceURL (string): base url to AWS S3 bucket
-var DataSourceURL = "https://s3.amazonaws.com/czbiohub-tabula-muris/"
-
-// var SingleBlockByteSize = int64(1e9)
-var SingleBlockByteSize = int64(1e7)
+// SingleBlockByteSize (int64) suggested byte size of response from a single ticket url
+var SingleBlockByteSize = int64(5e8)
 
 // BamFieldsN (int): canonical number of fields in SAM/BAM (excluding tags)
 var BamFieldsN = 11
@@ -54,14 +51,20 @@ var BamEOFLen = len(BamEOF)
 // BamHeaderEOFLen (int): length (number of bytes) of BAM header end marker
 var BamHeaderEOFLen = 12
 
+// ReadsDataURLPath (string): path to reads data endpoint
 var ReadsDataURLPath = "reads/data/"
 
+// FileByteRangeURLPath (string): path to local file bytestream endpoint
 var FileByteRangeURLPath = "file-bytes"
 
+// FormatBam (string): canonical htsget format string for .bam files
 var FormatBam = "BAM"
 
+// FormatCram (string): canonical htsget format string for .cram files
 var FormatCram = "CRAM"
 
+// ClassHeader (string): canonical htsget class string for header segment
 var ClassHeader = "header"
 
+// ClassBody (string): canonical htsget class string for body segment
 var ClassBody = "body"

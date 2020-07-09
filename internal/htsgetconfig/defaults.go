@@ -17,6 +17,10 @@ func getDefaults() map[string]string {
 	return defaults
 }
 
+// getDefaultReadsSourcesRegistry gets the default source registry for 'reads' endpoint
+//
+// Returns
+//	(*DataSourceRegistry): default reads source registry. points to tabula muris and local test files
 func getDefaultReadsSourcesRegistry() *DataSourceRegistry {
 	sources := []map[string]string{
 		{
@@ -26,10 +30,6 @@ func getDefaultReadsSourcesRegistry() *DataSourceRegistry {
 		{
 			"pattern": "^tabulamuris\\.(?P<accession>.*)$",
 			"path":    "https://s3.amazonaws.com/czbiohub-tabula-muris/facs_bam_files/{accession}.mus.Aligned.out.sorted.bam",
-		},
-		{
-			"pattern": "^gcp\\.gatk\\.wgs\\.(?P<accession>.*)$",
-			"path":    "./data/gcp/gatk-test-data/wgs_bam/{accession}.bam",
 		},
 	}
 
