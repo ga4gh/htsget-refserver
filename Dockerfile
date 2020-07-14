@@ -9,9 +9,11 @@ RUN apt-get update \
 
 RUN apt-get --yes install autoconf automake make gcc perl zlib1g-dev libbz2-dev liblzma-dev libcurl4-gnutls-dev libssl-dev libncurses5-dev
 
-COPY go.mod go.sum ./
+COPY go.mod go.sum index.html ./
+COPY cmd cmd
+COPY internal internal
+RUN mkdir temp
 RUN go mod download
-COPY . .
 
 RUN cd /tmp \
     && wget https://github.com/samtools/samtools/releases/download/${SAMTOOLS_VERSION}/samtools-${SAMTOOLS_VERSION}.tar.bz2 \
