@@ -13,6 +13,11 @@ import (
 	"net/url"
 )
 
+var fileBytesEndpointSetParamsOrder = []string{
+	"HtsgetFilePath",
+	"Range",
+}
+
 // readsTicketEndpointSetParamsOrder ([]string): the order in which parameters
 // (path, query, or header) are parsed, validated, and set in for the
 // /reads/{id} endpoint. validation of later parameters may be dependent on
@@ -139,6 +144,10 @@ func setAllParameters(orderedParams []string, request *http.Request, writer http
 		}
 	}
 	return htsgetReq, nil
+}
+
+func FileBytesEndpointSetAllParameters(request *http.Request, writer http.ResponseWriter, params url.Values) (*HtsgetRequest, error) {
+	return setAllParameters(fileBytesEndpointSetParamsOrder, request, writer, params)
 }
 
 // ReadsTicketEndpointSetAllParameters sets all parameters expected in the

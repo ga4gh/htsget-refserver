@@ -25,7 +25,6 @@ func (r *Region) String() string {
 	}
 	if r.End == "-1" {
 		return r.Name + ":" + r.Start
-	} else {
-		return r.Name + ":" + r.Start + "-" + r.End
 	}
+	return r.Name + ":" + r.Start + "-" + r.End
 }

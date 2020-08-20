@@ -9,13 +9,16 @@ package htsgetrequest
 import (
 	"bufio"
 	"net/http"
+	"os"
 	"os/exec"
 	"strconv"
 	"strings"
 
-	"github.com/ga4gh/htsget-refserver/internal/config"
-	"github.com/ga4gh/htsget-refserver/internal/htsgeterror"
+	"github.com/ga4gh/htsget-refserver/internal/htsgetconfig"
+	"github.com/ga4gh/htsget-refserver/internal/htsgetconfig/htsgetconstants"
 	"github.com/ga4gh/htsget-refserver/internal/htsgetutils"
+
+	"github.com/ga4gh/htsget-refserver/internal/htsgeterror"
 )
 
 // validationByParam (map[string]func(string, *HtsgetRequest) (bool, string)):
@@ -35,6 +38,8 @@ var validationByParam = map[string]func(string, *HtsgetRequest) (bool, string){
 	"HtsgetBlockClass": validateClass,
 	"HtsgetBlockId":    noValidation,
 	"HtsgetNumBlocks":  noValidation,
+	"HtsgetFilePath":   noValidation,
+	"Range":            noValidation,
 }
 
 // errorsByParam (map[string]func(http.ResponseWriter, *string)): the correct
@@ -52,6 +57,8 @@ var errorsByParam = map[string]func(http.ResponseWriter, *string){
 	"HtsgetBlockClass": htsgeterror.InvalidInput,
 	"HtsgetBlockId":    htsgeterror.InternalServerError,
 	"HtsgetNumBlocks":  htsgeterror.InternalServerError,
+	"HtsgetFilePath":   htsgeterror.InternalServerError,
+	"Range":            htsgeterror.InternalServerError,
 }
 
 // isInteger determines if a string can be parsed as an integer
@@ -109,13 +116,28 @@ func noValidation(value string, htsgetReq *HtsgetRequest) (bool, string) {
 //	(bool): true if a resource matching id could be found from the data source
 //	(string): diagnostic message if error encountered
 func validateID(id string, htsgetReq *HtsgetRequest) (bool, string) {
-	res, err := http.Head(config.DataSourceURL + htsgetutils.FilePath(id))
+
+	objPath, err := htsgetconfig.GetReadsPathForID(id)
 	if err != nil {
-		return false, "The requested resource was not found"
+		return false, "The requested resource could not be associated with a registered data source"
 	}
-	res.Body.Close()
-	if res.Status == "404 Not Found" {
-		return false, "The requested resource was not found"
+
+	// attempt to locate the object by http request (if url) or on local file
+	// path
+	if htsgetutils.IsValidUrl(objPath) {
+		res, err := http.Head(objPath)
+		if err != nil {
+			return false, "The requested resource was not found"
+		}
+		res.Body.Close()
+		if res.Status == "404 Not Found" {
+			return false, "The requested resource was not found"
+		}
+	} else {
+		_, err := os.Stat(objPath)
+		if os.IsNotExist(err) {
+			return false, "The requested resource was not found"
+		}
 	}
 	return true, ""
 }
@@ -131,9 +153,9 @@ func validateID(id string, htsgetReq *HtsgetRequest) (bool, string) {
 //	(string): diagnostic message if error encountered
 func validateFormat(format string, htsgetReq *HtsgetRequest) (bool, string) {
 	switch strings.ToUpper(format) {
-	case "BAM":
+	case htsgetconstants.FormatBam:
 		return true, ""
-	case "CRAM":
+	case htsgetconstants.FormatCram:
 		return false, "CRAM not supported" // currently not supported
 	default:
 		return false, "file format: '" + format + "' not supported"
@@ -151,9 +173,9 @@ func validateFormat(format string, htsgetReq *HtsgetRequest) (bool, string) {
 //	(string): diagnostic message if error encountered
 func validateClass(class string, htsgetReq *HtsgetRequest) (bool, string) {
 	switch strings.ToLower(class) {
-	case "header":
+	case htsgetconstants.ClassHeader:
 		return true, ""
-	case "body":
+	case htsgetconstants.ClassBody:
 		return false, "'body' only requests currently not supported" // currently not supported
 	default:
 		return false, "class: '" + class + "' not supported"
@@ -172,19 +194,20 @@ func validateClass(class string, htsgetReq *HtsgetRequest) (bool, string) {
 //	(bool): true if requested reference sequence name is in sequence dictionary
 //	(string): diagnostic message if error encountered
 func validateReferenceName(referenceName string, htsgetReq *HtsgetRequest) (bool, string) {
-	id := htsgetReq.ID()
-
+	fileURL, err := htsgetconfig.GetReadsPathForID(htsgetReq.ID())
+	if err != nil {
+		return false, err.Error()
+	}
 	// incompatible with header only request
 	if htsgetReq.HeaderOnlyRequested() {
 		return false, "'referenceName' incompatible with header-only request"
 	}
-
 	// no validation if '*' was requested
 	if referenceName == "*" {
 		return true, ""
 	}
-
-	cmd := exec.Command("samtools", "view", "-H", config.DataSourceURL+htsgetutils.FilePath(id))
+	// otherwise, check that referenceName is in the header
+	cmd := exec.Command("samtools", "view", "-H", fileURL)
 	pipe, err := cmd.StdoutPipe()
 	if err != nil {
 		return false, "Could not access requested file"
@@ -315,7 +338,7 @@ func validateFields(fields string, htsgetReq *HtsgetRequest) (bool, string) {
 
 	fieldsList := splitAndUppercase(fields)
 	for _, fieldItem := range fieldsList {
-		if _, ok := config.BamFields[fieldItem]; !ok {
+		if _, ok := htsgetconstants.BamFields[fieldItem]; !ok {
 			return false, "'" + fieldItem + "' not an acceptable field"
 		}
 	}

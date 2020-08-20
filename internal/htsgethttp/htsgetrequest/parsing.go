@@ -50,6 +50,8 @@ var paramLocations = map[string]ParamLoc{
 	"HtsgetBlockClass": ParamLocHeader,
 	"HtsgetBlockId":    ParamLocHeader,
 	"HtsgetNumBlocks":  ParamLocHeader,
+	"HtsgetFilePath":   ParamLocHeader,
+	"Range":            ParamLocHeader,
 }
 
 // paramTypes (map[string]ParamType): indicates whether each htsget parameter is
@@ -67,6 +69,8 @@ var paramTypes = map[string]ParamType{
 	"HtsgetBlockClass": ParamTypeScalar,
 	"HtsgetBlockId":    ParamTypeScalar,
 	"HtsgetNumBlocks":  ParamTypeScalar,
+	"HtsgetFilePath":   ParamTypeScalar,
+	"Range":            ParamTypeScalar,
 }
 
 // parsePathParam parses a single url path parameter as a string

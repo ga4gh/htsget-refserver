@@ -22,6 +22,7 @@ func SetRouter() (*chi.Mux, error) {
 	// Route for "reads" resource
 	router.Get("/reads/{id}", getReadsTicket)
 	router.Get("/reads/data/{id}", getReadsData)
+	router.Get("/file-bytes", getFileBytes)
 
 	return router, err
 }

@@ -11,11 +11,11 @@ import (
 	"strconv"
 
 	"github.com/biogo/hts/bam"
-	"github.com/ga4gh/htsget-refserver/internal/config"
 	"github.com/ga4gh/htsget-refserver/internal/genomics"
+	"github.com/ga4gh/htsget-refserver/internal/htsgetconfig"
+	"github.com/ga4gh/htsget-refserver/internal/htsgetconfig/htsgetconstants"
 	"github.com/ga4gh/htsget-refserver/internal/htsgeterror"
 	"github.com/ga4gh/htsget-refserver/internal/htsgethttp/htsgetrequest"
-	"github.com/ga4gh/htsget-refserver/internal/htsgetutils"
 	"github.com/ga4gh/htsget-refserver/internal/htsgetutils/htsgetformats"
 )
 
@@ -24,7 +24,11 @@ func getReadsData(writer http.ResponseWriter, request *http.Request) {
 
 	params := request.URL.Query()
 	htsgetReq, err := htsgetrequest.ReadsDataEndpointSetAllParameters(request, writer, params)
+	if err != nil {
+		return
+	}
 
+	fileURL, err := htsgetconfig.GetReadsPathForID(htsgetReq.ID())
 	if err != nil {
 		return
 	}
@@ -35,7 +39,7 @@ func getReadsData(writer http.ResponseWriter, request *http.Request) {
 		End:   htsgetReq.End(),
 	}
 
-	args := getSamtoolsCmdArgs(region, htsgetReq)
+	args := getSamtoolsCmdArgs(region, htsgetReq, fileURL)
 	cmd := exec.Command("samtools", args...)
 	pipe, err := cmd.StdoutPipe()
 
@@ -56,14 +60,14 @@ func getReadsData(writer http.ResponseWriter, request *http.Request) {
 
 	var eofLen int
 	if htsgetReq.HtsgetBlockClass() == "header" {
-		eofLen = config.BamHeaderEOFLen
+		eofLen = htsgetconstants.BamHeaderEOFLen
 	} else {
-		eofLen = config.BamEOFLen
+		eofLen = htsgetconstants.BamEOFLen
 	}
 
 	if (htsgetReq.AllFieldsRequested() && htsgetReq.AllTagsRequested()) || htsgetReq.HtsgetBlockClass() == "header" {
 		if htsgetReq.HtsgetBlockClass() != "header" { // remove header
-			headerLen, err := headerLen(htsgetReq.ID())
+			headerLen, err := headerLen(htsgetReq.ID(), fileURL)
 			writer.Header().Set("header-len", strconv.FormatInt(headerLen, 10))
 			if err != nil {
 				msg := err.Error()
@@ -109,7 +113,7 @@ func getReadsData(writer http.ResponseWriter, request *http.Request) {
 	} else {
 		columns := make([]bool, 11)
 		for _, field := range htsgetReq.Fields() {
-			columns[config.BamFields[field]] = true
+			columns[htsgetconstants.BamFields[field]] = true
 		}
 
 		tmpDirPath, err := tmpDirPath()
@@ -129,8 +133,7 @@ func getReadsData(writer http.ResponseWriter, request *http.Request) {
 
 		/* Write the BAM Header to the temporary SAM file */
 		tmpHeaderPath := tmpDirPath + htsgetReq.ID() + ".header.bam"
-		headerCmd := exec.Command("samtools", "view", "-H", "-O", "SAM", "-o", tmpHeaderPath, config.DataSourceURL+htsgetutils.FilePath(htsgetReq.ID()))
-
+		headerCmd := exec.Command("samtools", "view", "-H", "-O", "SAM", "-o", tmpHeaderPath, fileURL)
 		if err != nil {
 			msg := err.Error()
 			htsgeterror.InternalServerError(writer, &msg)
@@ -184,7 +187,7 @@ func getReadsData(writer http.ResponseWriter, request *http.Request) {
 		}
 
 		// remove header bytes from 'body' class data streams
-		headerByteCount, _ := headerLen(htsgetReq.ID())
+		headerByteCount, _ := headerLen(htsgetReq.ID(), fileURL)
 		bamReader := bufio.NewReader(bamPipe)
 		headerBuf := make([]byte, headerByteCount)
 		io.ReadFull(bamReader, headerBuf)
@@ -233,9 +236,8 @@ func getTempPath(id string, blockID int) (string, error) {
 	return tempPath, nil
 }
 
-func getSamtoolsCmdArgs(region *genomics.Region, htsgetReq *htsgetrequest.HtsgetRequest) []string {
-	args := []string{"view", config.DataSourceURL + htsgetutils.FilePath(htsgetReq.ID())}
-
+func getSamtoolsCmdArgs(region *genomics.Region, htsgetReq *htsgetrequest.HtsgetRequest, fileURL string) []string {
+	args := []string{"view", fileURL}
 	if htsgetReq.HtsgetBlockClass() == "header" {
 		args = append(args, "-H")
 		args = append(args, "-b")
@@ -257,8 +259,8 @@ func samToBam(tempPath string) string {
 	return bamPath
 }
 
-func headerLen(id string) (int64, error) {
-	cmd := exec.Command("samtools", "view", "-H", "-b", config.DataSourceURL+htsgetutils.FilePath(id))
+func headerLen(id string, fileURL string) (int64, error) {
+	cmd := exec.Command("samtools", "view", "-H", "-b", fileURL)
 	tmpDirPath, err := tmpDirPath()
 	if err != nil {
 		return 0, err

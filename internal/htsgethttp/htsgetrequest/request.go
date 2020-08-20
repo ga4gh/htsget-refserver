@@ -7,6 +7,10 @@
 // what information was requested by the client
 package htsgetrequest
 
+import (
+	"github.com/ga4gh/htsget-refserver/internal/htsgetconfig/htsgetconstants"
+)
+
 // HtsgetRequest contains htsget-related parameters
 //
 // Attributes
@@ -151,6 +155,14 @@ func (htsgetReq *HtsgetRequest) HtsgetNumBlocks() string {
 	return htsgetReq.get("HtsgetNumBlocks")
 }
 
+func (htsgetReq *HtsgetRequest) HtsgetFilePath() string {
+	return htsgetReq.get("HtsgetFilePath")
+}
+
+func (htsgetReq *HtsgetRequest) Range() string {
+	return htsgetReq.get("Range")
+}
+
 // Fields gets value of 'fields' param
 //
 // Type: HtsgetRequest
@@ -220,7 +232,7 @@ func (htsgetReq *HtsgetRequest) isDefaultList(key string) bool {
 // Returns
 //	(bool): true if only the header was requested
 func (htsgetReq *HtsgetRequest) HeaderOnlyRequested() bool {
-	return htsgetReq.Class() == "header"
+	return htsgetReq.Class() == htsgetconstants.ClassHeader
 }
 
 // UnplacedUnmappedReadsRequested checks if the client request is for unplaced,
@@ -231,6 +243,18 @@ func (htsgetReq *HtsgetRequest) HeaderOnlyRequested() bool {
 //	(bool): true if unplaced, unmapped reads were requested
 func (htsgetReq *HtsgetRequest) UnplacedUnmappedReadsRequested() bool {
 	return htsgetReq.ReferenceName() == "*"
+}
+
+func (htsgetReq *HtsgetRequest) ReferenceNameRequested() bool {
+	return !htsgetReq.isDefaultScalar("referenceName")
+}
+
+func (htsgetReq *HtsgetRequest) StartRequested() bool {
+	return !htsgetReq.isDefaultScalar("start")
+}
+
+func (htsgetReq *HtsgetRequest) EndRequested() bool {
+	return !htsgetReq.isDefaultScalar("end")
 }
 
 // AllRegionsRequested checks if the client request is for all chromosomal

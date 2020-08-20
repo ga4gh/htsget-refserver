@@ -118,7 +118,7 @@ func UnsupportedFormat(writer http.ResponseWriter, msgPtr *string) {
 //
 // Arguments
 //	writer (http.ResponseWriter): HTTP response writer, sets response code and body
-// msgPtr (*string): pointer to message string, if nil, use the default message
+//	msgPtr (*string): pointer to message string, if nil, use the default message
 func InvalidInput(writer http.ResponseWriter, msgPtr *string) {
 	htsgetErrorTemplate(writer, errorBadRequestInvalidInput, msgPtr)
 }
@@ -127,7 +127,7 @@ func InvalidInput(writer http.ResponseWriter, msgPtr *string) {
 //
 // Arguments
 //	writer (http.ResponseWriter): HTTP response writer, sets response code and body
-// msgPtr (*string): pointer to message string, if nil, use the default message
+//	msgPtr (*string): pointer to message string, if nil, use the default message
 func InvalidRange(writer http.ResponseWriter, msgPtr *string) {
 	htsgetErrorTemplate(writer, errorBadRequestInvalidRange, msgPtr)
 }
@@ -136,7 +136,7 @@ func InvalidRange(writer http.ResponseWriter, msgPtr *string) {
 //
 // Arguments
 //	writer (http.ResponseWriter): HTTP response writer, sets response code and body
-// msgPtr (*string): pointer to message string, if nil, use the default message
+//	msgPtr (*string): pointer to message string, if nil, use the default message
 func InvalidAuthentication(writer http.ResponseWriter, msgPtr *string) {
 	htsgetErrorTemplate(writer, errorInvalidAuthentication, msgPtr)
 }
@@ -145,7 +145,7 @@ func InvalidAuthentication(writer http.ResponseWriter, msgPtr *string) {
 //
 // Arguments
 //	writer (http.ResponseWriter): HTTP response writer, sets response code and body
-// msgPtr (*string): pointer to message string, if nil, use the default message
+//	msgPtr (*string): pointer to message string, if nil, use the default message
 func PermissionDenied(writer http.ResponseWriter, msgPtr *string) {
 	htsgetErrorTemplate(writer, errorPermissionDenied, msgPtr)
 }
@@ -154,7 +154,7 @@ func PermissionDenied(writer http.ResponseWriter, msgPtr *string) {
 //
 // Arguments
 //	writer (http.ResponseWriter): HTTP response writer, sets response code and body
-// msgPtr (*string): pointer to message string, if nil, use the default message
+// 	msgPtr (*string): pointer to message string, if nil, use the default message
 func NotFound(writer http.ResponseWriter, msgPtr *string) {
 	htsgetErrorTemplate(writer, errorNotFound, msgPtr)
 }
@@ -163,7 +163,7 @@ func NotFound(writer http.ResponseWriter, msgPtr *string) {
 //
 // Arguments
 //	writer (http.ResponseWriter): HTTP response writer, sets response code and body
-// msgPtr (*string): pointer to message string, if nil, use the default message
+//	msgPtr (*string): pointer to message string, if nil, use the default message
 func InternalServerError(writer http.ResponseWriter, msgPtr *string) {
 	htsgetErrorTemplate(writer, errorInternalServerError, msgPtr)
 }

@@ -9,7 +9,7 @@ package htsgetformats
 import (
 	"strings"
 
-	"github.com/ga4gh/htsget-refserver/internal/config"
+	"github.com/ga4gh/htsget-refserver/internal/htsgetconfig/htsgetconstants"
 	"github.com/ga4gh/htsget-refserver/internal/htsgethttp/htsgetrequest"
 	"github.com/ga4gh/htsget-refserver/internal/htsgetutils"
 )
@@ -48,7 +48,7 @@ func NewSAMRecord(line string) *SAMRecord {
 //	([]string): new SAM columns, with values included/excluded based on request
 func (samRecord *SAMRecord) emitCustomFields(fields []string) []string {
 
-	n := config.BamFieldsN
+	n := htsgetconstants.BamFieldsN
 	emittedFields := make([]string, n)
 	toEmitByField := make([]bool, n)
 
@@ -60,16 +60,16 @@ func (samRecord *SAMRecord) emitCustomFields(fields []string) []string {
 	// set each column in the fields list to 'true,' ie. the true value will
 	// be included
 	for i := 0; i < len(fields); i++ {
-		toEmitByField[config.BamFields[fields[i]]] = true
+		toEmitByField[htsgetconstants.BamFields[fields[i]]] = true
 	}
 
 	// if the value for a column is true, add the true value to the list,
 	// otherwise add the correct excluded value for that column
-	for i := 0; i < config.BamFieldsN; i++ {
+	for i := 0; i < htsgetconstants.BamFieldsN; i++ {
 		if toEmitByField[i] {
 			emittedFields[i] = samRecord.columns[i]
 		} else {
-			emittedFields[i] = config.BamExcludedValues[i]
+			emittedFields[i] = htsgetconstants.BamExcludedValues[i]
 		}
 	}
 
@@ -88,7 +88,7 @@ func (samRecord *SAMRecord) emitCustomTags(htsgetReq *htsgetrequest.HtsgetReques
 
 	tags := htsgetReq.Tags()
 	notags := htsgetReq.NoTags()
-	n := config.BamFieldsN
+	n := htsgetconstants.BamFieldsN
 	emittedTags := make([]string, 0)
 
 	// for each tag column:
