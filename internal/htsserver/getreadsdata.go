@@ -19,124 +19,126 @@ import (
 	"github.com/ga4gh/htsget-refserver/internal/htsrequest"
 )
 
-// getReadsData serves the actual data from AWS back to client
 func getReadsData(writer http.ResponseWriter, request *http.Request) {
+	newRequestHandler(
+		htsconstants.GetMethod,
+		htsconstants.ReadsData,
+		getReadsDataHandler,
+	).handleRequest(writer, request)
+}
 
-	params := request.URL.Query()
-	htsgetReq, err := htsrequest.ReadsDataEndpointSetAllParameters(request, writer, params)
-	if err != nil {
-		return
-	}
+// getReadsData serves the actual data from AWS back to client
+func getReadsDataHandler(handler *requestHandler) {
 
-	fileURL, err := htsconfig.GetReadsPathForID(htsgetReq.ID())
+	fileURL, err := htsconfig.GetPathForID(handler.HtsReq.GetEndpoint(), handler.HtsReq.ID())
 	if err != nil {
 		return
 	}
 
 	region := &genomics.Region{
-		Name:  htsgetReq.ReferenceName(),
-		Start: htsgetReq.Start(),
-		End:   htsgetReq.End(),
+		Name:  handler.HtsReq.ReferenceName(),
+		Start: handler.HtsReq.Start(),
+		End:   handler.HtsReq.End(),
 	}
 
-	args := getSamtoolsCmdArgs(region, htsgetReq, fileURL)
+	args := getSamtoolsCmdArgs(region, handler.HtsReq, fileURL)
 	cmd := exec.Command("samtools", args...)
 	pipe, err := cmd.StdoutPipe()
 
 	if err != nil {
 		msg := err.Error()
-		htserror.InternalServerError(writer, &msg)
+		htserror.InternalServerError(handler.Writer, &msg)
 		return
 	}
 
 	err = cmd.Start()
 	if err != nil {
 		msg := err.Error()
-		htserror.InternalServerError(writer, &msg)
+		htserror.InternalServerError(handler.Writer, &msg)
 		return
 	}
 
 	reader := bufio.NewReader(pipe)
 
 	var eofLen int
-	if htsgetReq.HtsgetBlockClass() == "header" {
+	if handler.HtsReq.HtsgetBlockClass() == "header" {
 		eofLen = htsconstants.BamHeaderEOFLen
 	} else {
 		eofLen = htsconstants.BamEOFLen
 	}
 
-	if (htsgetReq.AllFieldsRequested() && htsgetReq.AllTagsRequested()) || htsgetReq.HtsgetBlockClass() == "header" {
-		if htsgetReq.HtsgetBlockClass() != "header" { // remove header
-			headerLen, err := headerLen(htsgetReq.ID(), fileURL)
-			writer.Header().Set("header-len", strconv.FormatInt(headerLen, 10))
+	if (handler.HtsReq.AllFieldsRequested() && handler.HtsReq.AllTagsRequested()) || handler.HtsReq.HtsgetBlockClass() == "header" {
+		if handler.HtsReq.HtsgetBlockClass() != "header" { // remove header
+			headerLen, err := headerLen(handler.HtsReq.ID(), fileURL)
+			handler.Writer.Header().Set("header-len", strconv.FormatInt(headerLen, 10))
 			if err != nil {
 				msg := err.Error()
-				htserror.InternalServerError(writer, &msg)
+				htserror.InternalServerError(handler.Writer, &msg)
 				return
 			}
 			headerBuf := make([]byte, headerLen)
 			io.ReadFull(reader, headerBuf)
 		}
-		if htsgetReq.HtsgetBlockID() != htsgetReq.HtsgetNumBlocks() { // remove EOF if current block is not the last block
+		if handler.HtsReq.HtsgetBlockID() != handler.HtsReq.HtsgetNumBlocks() { // remove EOF if current block is not the last block
 			bufSize := 65536
 			buf := make([]byte, bufSize)
 			n, err := io.ReadFull(reader, buf)
 			if err != nil && err.Error() != "unexpected EOF" {
 				msg := err.Error()
-				htserror.InternalServerError(writer, &msg)
+				htserror.InternalServerError(handler.Writer, &msg)
 				return
 			}
 
 			eofBuf := make([]byte, eofLen)
 			for n == bufSize {
 				copy(eofBuf, buf[n-eofLen:])
-				writer.Write(buf[:n-eofLen])
+				handler.Writer.Write(buf[:n-eofLen])
 				n, err = io.ReadFull(reader, buf)
 				if err != nil && err.Error() != "unexpected EOF" {
 					msg := err.Error()
-					htserror.InternalServerError(writer, &msg)
+					htserror.InternalServerError(handler.Writer, &msg)
 					return
 				}
 				if n == bufSize {
-					writer.Write(eofBuf)
+					handler.Writer.Write(eofBuf)
 				}
 			}
 
 			if n >= eofLen {
-				writer.Write(buf[:n-eofLen])
+				handler.Writer.Write(buf[:n-eofLen])
 			} else {
-				writer.Write(eofBuf[:eofLen-n])
+				handler.Writer.Write(eofBuf[:eofLen-n])
 			}
 		} else {
-			io.Copy(writer, reader)
+			io.Copy(handler.Writer, reader)
 		}
 	} else {
 		columns := make([]bool, 11)
-		for _, field := range htsgetReq.Fields() {
+		for _, field := range handler.HtsReq.Fields() {
 			columns[htsconstants.BamFields[field]] = true
 		}
 
 		tmpDirPath, err := tmpDirPath()
 		if err != nil {
 			msg := err.Error()
-			htserror.InternalServerError(writer, &msg)
+			htserror.InternalServerError(handler.Writer, &msg)
 			return
 		}
 
-		tmpPath := tmpDirPath + htsgetReq.ID()
+		tmpPath := tmpDirPath + handler.HtsReq.ID()
 		tmp, err := os.Create(tmpPath)
 		if err != nil {
 			msg := err.Error()
-			htserror.InternalServerError(writer, &msg)
+			htserror.InternalServerError(handler.Writer, &msg)
 			return
 		}
 
 		/* Write the BAM Header to the temporary SAM file */
-		tmpHeaderPath := tmpDirPath + htsgetReq.ID() + ".header.bam"
+		tmpHeaderPath := tmpDirPath + handler.HtsReq.ID() + ".header.bam"
 		headerCmd := exec.Command("samtools", "view", "-H", "-O", "SAM", "-o", tmpHeaderPath, fileURL)
 		if err != nil {
 			msg := err.Error()
-			htserror.InternalServerError(writer, &msg)
+			htserror.InternalServerError(handler.Writer, &msg)
 		}
 		err = headerCmd.Start()
 		headerCmd.Wait()
@@ -147,7 +149,7 @@ func getReadsData(writer http.ResponseWriter, request *http.Request) {
 			_, err = tmp.Write([]byte(string(hl) + "\n"))
 			if err != nil {
 				msg := err.Error()
-				htserror.InternalServerError(writer, &msg)
+				htserror.InternalServerError(handler.Writer, &msg)
 				return
 			}
 		}
@@ -157,7 +159,7 @@ func getReadsData(writer http.ResponseWriter, request *http.Request) {
 		for ; eof == nil; l, _, eof = reader.ReadLine() {
 			if l[0] != 64 {
 				samRecord := htsformats.NewSAMRecord(string(l))
-				newSamRecord := samRecord.CustomEmit(htsgetReq)
+				newSamRecord := samRecord.CustomEmit(handler.HtsReq)
 				l = []byte(newSamRecord + "\n")
 			} else {
 				l = append(l, "\n"...)
@@ -165,7 +167,7 @@ func getReadsData(writer http.ResponseWriter, request *http.Request) {
 			_, err = tmp.Write(l)
 			if err != nil {
 				msg := err.Error()
-				htserror.InternalServerError(writer, &msg)
+				htserror.InternalServerError(handler.Writer, &msg)
 				return
 			}
 		}
@@ -175,35 +177,35 @@ func getReadsData(writer http.ResponseWriter, request *http.Request) {
 		bamPipe, err := bamCmd.StdoutPipe()
 		if err != nil {
 			msg := err.Error()
-			htserror.InternalServerError(writer, &msg)
+			htserror.InternalServerError(handler.Writer, &msg)
 			return
 		}
 
 		err = bamCmd.Start()
 		if err != nil {
 			msg := err.Error()
-			htserror.InternalServerError(writer, &msg)
+			htserror.InternalServerError(handler.Writer, &msg)
 			return
 		}
 
 		// remove header bytes from 'body' class data streams
-		headerByteCount, _ := headerLen(htsgetReq.ID(), fileURL)
+		headerByteCount, _ := headerLen(handler.HtsReq.ID(), fileURL)
 		bamReader := bufio.NewReader(bamPipe)
 		headerBuf := make([]byte, headerByteCount)
 		io.ReadFull(bamReader, headerBuf)
-		io.Copy(writer, bamReader)
+		io.Copy(handler.Writer, bamReader)
 
 		err = bamCmd.Wait()
 		if err != nil {
 			msg := err.Error()
-			htserror.InternalServerError(writer, &msg)
+			htserror.InternalServerError(handler.Writer, &msg)
 			return
 		}
 
 		err = os.Remove(tmpPath)
 		if err != nil {
 			msg := err.Error()
-			htserror.InternalServerError(writer, &msg)
+			htserror.InternalServerError(handler.Writer, &msg)
 			return
 		}
 	}

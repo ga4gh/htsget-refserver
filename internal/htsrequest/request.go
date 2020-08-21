@@ -17,6 +17,7 @@ import (
 //	ScalarParams (map[string]string): map holding scalar parameter values
 //	ListParams (map[string][]string): map holding list parameter values
 type HtsgetRequest struct {
+	endpoint     htsconstants.ServerEndpoint
 	ScalarParams map[string]string
 	ListParams   map[string][]string
 }
@@ -30,6 +31,14 @@ func NewHtsgetRequest() *HtsgetRequest {
 	htsgetReq.ScalarParams = make(map[string]string)
 	htsgetReq.ListParams = make(map[string][]string)
 	return htsgetReq
+}
+
+func (htsgetReq *HtsgetRequest) SetEndpoint(endpoint htsconstants.ServerEndpoint) {
+	htsgetReq.endpoint = endpoint
+}
+
+func (htsgetReq *HtsgetRequest) GetEndpoint() htsconstants.ServerEndpoint {
+	return htsgetReq.endpoint
 }
 
 // AddScalarParam adds a key-value pair to HtsgetRequest scalar parameter map

@@ -115,8 +115,7 @@ func noValidation(value string, htsgetReq *HtsgetRequest) (bool, string) {
 //	(bool): true if a resource matching id could be found from the data source
 //	(string): diagnostic message if error encountered
 func validateID(id string, htsgetReq *HtsgetRequest) (bool, string) {
-
-	objPath, err := htsconfig.GetReadsPathForID(id)
+	objPath, err := htsconfig.GetPathForID(htsgetReq.GetEndpoint(), id)
 	if err != nil {
 		return false, "The requested resource could not be associated with a registered data source"
 	}
@@ -193,7 +192,8 @@ func validateClass(class string, htsgetReq *HtsgetRequest) (bool, string) {
 //	(bool): true if requested reference sequence name is in sequence dictionary
 //	(string): diagnostic message if error encountered
 func validateReferenceName(referenceName string, htsgetReq *HtsgetRequest) (bool, string) {
-	fileURL, err := htsconfig.GetReadsPathForID(htsgetReq.ID())
+
+	fileURL, err := htsconfig.GetPathForID(htsgetReq.GetEndpoint(), htsgetReq.ID())
 	if err != nil {
 		return false, err.Error()
 	}

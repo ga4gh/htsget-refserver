@@ -23,6 +23,13 @@ func AddTrailingSlash(url string) string {
 	return url
 }
 
+func RemoveTrailingSlash(url string) string {
+	if strings.HasSuffix(url, "/") {
+		url = url[:len(url)-1]
+	}
+	return url
+}
+
 // FilePath gets the correct S3 directory path based on the id of the requested
 // file
 //

@@ -15,36 +15,36 @@ import (
 )
 
 func getReadsTicket(writer http.ResponseWriter, request *http.Request) {
+	newRequestHandler(
+		htsconstants.GetMethod,
+		htsconstants.ReadsTicket,
+		getReadsTicketHandler,
+	).handleRequest(writer, request)
+}
 
-	params := request.URL.Query()
+func getReadsTicketHandler(handler *requestHandler) {
 	host := htsconfig.GetHost()
-	htsgetReq, err := htsrequest.ReadsTicketEndpointSetAllParameters(request, writer, params)
-
-	if err != nil {
-		return
-	}
-
-	dao, err := htsdao.GetReadsDaoForID(htsgetReq.ID())
+	dao, err := htsdao.GetReadsDaoForID(handler.HtsReq.ID())
 
 	if err != nil {
 		msg := "Could not determine data source path/url from request id"
-		htserror.InternalServerError(writer, &msg)
+		htserror.InternalServerError(handler.Writer, &msg)
 		return
 	}
 
 	// build HTTP response
 	var urls []*htsticket.URL
-	dataEndpoint, err := getDataURL(htsgetReq, host)
+	dataEndpoint, err := getReadsDataURL(handler.HtsReq, host)
 	if err != nil {
 		msg := "Could not construct data url"
-		htserror.InternalServerError(writer, &msg)
+		htserror.InternalServerError(handler.Writer, &msg)
 	}
 
-	if htsgetReq.HeaderOnlyRequested() {
+	if handler.HtsReq.HeaderOnlyRequested() {
 		headers := htsticket.NewHeaders().SetBlockID("1").SetNumBlocks("1").SetClassHeader()
 		url := htsticket.NewURL().SetURL(dataEndpoint.String()).SetHeaders(headers).SetClassHeader()
 		urls = append(urls, url)
-	} else if htsgetReq.AllFieldsRequested() && htsgetReq.AllTagsRequested() && htsgetReq.AllRegionsRequested() {
+	} else if handler.HtsReq.AllFieldsRequested() && handler.HtsReq.AllTagsRequested() && handler.HtsReq.AllRegionsRequested() {
 		urls = dao.GetByteRangeUrls()
 	} else {
 		headersBlock1 := htsticket.NewHeaders().SetBlockID("1").SetNumBlocks("2").SetClassHeader()
@@ -57,12 +57,11 @@ func getReadsTicket(writer http.ResponseWriter, request *http.Request) {
 
 	container := htsticket.NewContainer().SetFormatBam().SetURLS(urls)
 	ticket := htsticket.NewTicket().SetContainer(container)
-	ct := "application/vnd.ga4gh.htsget.v1.2.0+json; charset=utf-8"
-	writer.Header().Set("Content-Type", ct)
-	json.NewEncoder(writer).Encode(ticket)
+	handler.Writer.Header().Set(htsconstants.ContentTypeHeader.String(), htsconstants.ContentTypeHeaderHtsgetJSON.String())
+	json.NewEncoder(handler.Writer).Encode(ticket)
 }
 
-func getDataURL(htsgetReq *htsrequest.HtsgetRequest, host string) (*url.URL, error) {
+func getReadsDataURL(htsgetReq *htsrequest.HtsgetRequest, host string) (*url.URL, error) {
 	// The address of the endpoint on this server which serves the data
 	var dataEndpoint, err = url.Parse(host + htsconstants.ReadsDataURLPath)
 	if err != nil {

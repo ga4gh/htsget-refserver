@@ -9,6 +9,7 @@ const (
 	VariantsTicket      ServerEndpoint = 3
 	VariantsData        ServerEndpoint = 4
 	VariantsServiceInfo ServerEndpoint = 5
+	FileBytes           ServerEndpoint = 6
 )
 
 const (
@@ -18,6 +19,7 @@ const (
 	VariantsTicketS      string = "/variants/{id}"
 	VariantsDataS        string = "/variants/data/{id}"
 	VariantsServiceInfoS string = "/variants/service-info"
+	FileBytesS           string = "/file-bytes"
 )
 
 var htsEndpointStringMap = map[ServerEndpoint]string{
@@ -27,6 +29,7 @@ var htsEndpointStringMap = map[ServerEndpoint]string{
 	VariantsTicket:      VariantsTicketS,
 	VariantsData:        VariantsDataS,
 	VariantsServiceInfo: VariantsServiceInfoS,
+	FileBytes:           FileBytesS,
 }
 
 func (e ServerEndpoint) String() string {

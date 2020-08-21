@@ -43,7 +43,7 @@ func getDefaultReadsSourcesRegistry() *DataSourceRegistry {
 func getDefaultVariantsSourcesRegistry() *DataSourceRegistry {
 	sources := []map[string]string{
 		{
-			"pattern": "^1000genomes\\.{?P<accession>.*}$",
+			"pattern": "^1000genomes\\.(?P<accession>.*)$",
 			"path":    "https://ftp-trace.ncbi.nih.gov/1000genomes/ftp/phase1/analysis_results/integrated_call_sets/{accession}.vcf.gz",
 		},
 	}

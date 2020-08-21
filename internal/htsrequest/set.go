@@ -11,56 +11,52 @@ import (
 	"errors"
 	"net/http"
 	"net/url"
+
+	"github.com/ga4gh/htsget-refserver/internal/htsconstants"
 )
 
-var fileBytesEndpointSetParamsOrder = []string{
-	"HtsgetFilePath",
-	"Range",
-}
-
-// readsTicketEndpointSetParamsOrder ([]string): the order in which parameters
-// (path, query, or header) are parsed, validated, and set in for the
-// /reads/{id} endpoint. validation of later parameters may be dependent on
-// previously validated parameters
-var readsTicketEndpointSetParamsOrder = []string{
-	"id",
-	"format",
-	"class",
-	"referenceName",
-	"start",
-	"end",
-	"fields",
-	"tags",
-	"notags",
-}
-
-// readsDataEndpointSetParamsOrder ([]string): the order in which parameters
-// (path, query, or header) are parsed, validated, and set in for the
-// /reads/data/{id} endpoint.
-var readsDataEndpointSetParamsOrder = []string{
-	"id",
-	"format",
-	"referenceName",
-	"start",
-	"end",
-	"fields",
-	"tags",
-	"notags",
-	"HtsgetBlockClass",
-	"HtsgetBlockId",
-	"HtsgetNumBlocks",
-}
-
-var variantsTicketEndpointSetParamsOrder = []string{
-	"id",
-	"format",
-	"class",
-	"referenceName",
-	"start",
-	"end",
-	"fields",
-	"tags",
-	"notags",
+var orderedParametersByMethodAndEndpoint = map[htsconstants.HttpMethod]map[htsconstants.ServerEndpoint][]string{
+	htsconstants.GetMethod: map[htsconstants.ServerEndpoint][]string{
+		htsconstants.ReadsTicket: []string{
+			"id",
+			"format",
+			"class",
+			"referenceName",
+			"start",
+			"end",
+			"fields",
+			"tags",
+			"notags",
+		},
+		htsconstants.ReadsData: []string{
+			"id",
+			"format",
+			"referenceName",
+			"start",
+			"end",
+			"fields",
+			"tags",
+			"notags",
+			"HtsgetBlockClass",
+			"HtsgetBlockId",
+			"HtsgetNumBlocks",
+		},
+		htsconstants.VariantsTicket: []string{
+			"id",
+			"format",
+			"class",
+			"referenceName",
+			"start",
+			"end",
+			"fields",
+			"tags",
+			"notags",
+		},
+		htsconstants.FileBytes: []string{
+			"HtsgetFilePath",
+			"Range",
+		},
+	},
 }
 
 // setSingleParameter parses, validates, and sets a valid parameter to the
@@ -131,7 +127,7 @@ func setSingleParameter(request *http.Request, paramKey string,
 	return nil
 }
 
-// setAllParameters parses, validates, transforms, and sets all parameters to
+// SetAllParameters parses, validates, transforms, and sets all parameters to
 // an HtsgetRequest for a given ordered list of expected request parameters
 //
 // Arguments
@@ -142,9 +138,12 @@ func setSingleParameter(request *http.Request, paramKey string,
 // Returns
 //	(*HtsgetRequest): object with mature parameters set to it
 //	(error): client-side error if any parameters fail validation
-func setAllParameters(orderedParams []string, request *http.Request, writer http.ResponseWriter, params url.Values) (*HtsgetRequest, error) {
-	htsgetReq := NewHtsgetRequest()
+func SetAllParameters(method htsconstants.HttpMethod, endpoint htsconstants.ServerEndpoint, writer http.ResponseWriter, request *http.Request) (*HtsgetRequest, error) {
 
+	orderedParams := orderedParametersByMethodAndEndpoint[method][endpoint]
+	htsgetReq := NewHtsgetRequest()
+	htsgetReq.SetEndpoint(endpoint)
+	params := request.URL.Query()
 	for i := 0; i < len(orderedParams); i++ {
 		paramKey := orderedParams[i]
 		err := setSingleParameter(request, paramKey, params, htsgetReq)
@@ -156,40 +155,4 @@ func setAllParameters(orderedParams []string, request *http.Request, writer http
 		}
 	}
 	return htsgetReq, nil
-}
-
-func FileBytesEndpointSetAllParameters(request *http.Request, writer http.ResponseWriter, params url.Values) (*HtsgetRequest, error) {
-	return setAllParameters(fileBytesEndpointSetParamsOrder, request, writer, params)
-}
-
-// ReadsTicketEndpointSetAllParameters sets all parameters expected in the
-// reads ticket endpoint to an HtsgetRequest
-//
-// Arguments
-//	request (*http.Request): HTTP request
-//	writer (http.ResponseWriter): HTTP response writer (to write error if necessary)
-//	params (url.Values): query string parameters
-// Returns
-//	(*HtsgetRequest): object with mature parameters set to it
-//	(error): client-side error if any parameters fail validation
-func ReadsTicketEndpointSetAllParameters(request *http.Request, writer http.ResponseWriter, params url.Values) (*HtsgetRequest, error) {
-	return setAllParameters(readsTicketEndpointSetParamsOrder, request, writer, params)
-}
-
-// ReadsDataEndpointSetAllParameters sets all parameters expected in the
-// reads data endpoint to an HtsgetRequest
-//
-// Arguments
-//	request (*http.Request): HTTP request
-//	writer (http.ResponseWriter): HTTP response writer (to write error if necessary)
-//	params (url.Values): query string parameters
-// Returns
-//	(*HtsgetRequest): object with mature parameters set to it
-//	(error): client-side error if any parameters fail validation
-func ReadsDataEndpointSetAllParameters(request *http.Request, writer http.ResponseWriter, params url.Values) (*HtsgetRequest, error) {
-	return setAllParameters(readsDataEndpointSetParamsOrder, request, writer, params)
-}
-
-func VariantsTicketEndpointSetAllParameters(request *http.Request, writer http.ResponseWriter, params url.Values) (*HtsgetRequest, error) {
-	return setAllParameters(variantsTicketEndpointSetParamsOrder, request, writer, params)
 }

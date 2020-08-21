@@ -23,6 +23,11 @@ func (container *Container) SetFormatBam() *Container {
 	return container
 }
 
+func (container *Container) SetFormatVcf() *Container {
+	container.setFormat("VCF")
+	return container
+}
+
 func (container *Container) SetURLS(urls []*URL) *Container {
 	container.URLS = urls
 	return container

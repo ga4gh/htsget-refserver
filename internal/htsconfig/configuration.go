@@ -125,7 +125,7 @@ func GetVariantsDataSourceRegistry() *DataSourceRegistry {
 	return getConfig().variantsDataSourceRegistry
 }
 
-// GetReadsPathForID gets a complete url or file path for a given ID
+// getReadsPathForID gets a complete url or file path for a given ID
 // given the request ID, this function looks up the 'reads' data source registry
 // and finds the first data source matching the pattern. The id is then used to
 // populate the path to the resource based on the data source's 'path' attribute
@@ -135,21 +135,21 @@ func GetVariantsDataSourceRegistry() *DataSourceRegistry {
 // Returns
 //	(string): path to the object for the given id
 //	(error): no match was found, or another error was encountered
-func GetReadsPathForID(id string) (string, error) {
+func getReadsPathForID(id string) (string, error) {
 	return GetReadsDataSourceRegistry().GetMatchingPath(id)
 }
 
-func GetVariantsPathForID(id string) (string, error) {
+func getVariantsPathForID(id string) (string, error) {
 	return GetVariantsDataSourceRegistry().GetMatchingPath(id)
 }
 
 func GetPathForID(endpoint htsconstants.ServerEndpoint, id string) (string, error) {
 	functionsByEndpoint := [6]func(string) (string, error){
-		GetReadsPathForID,
-		GetReadsPathForID,
+		getReadsPathForID,
+		getReadsPathForID,
 		nil,
-		GetVariantsPathForID,
-		GetVariantsPathForID,
+		getVariantsPathForID,
+		getVariantsPathForID,
 		nil,
 	}
 	return functionsByEndpoint[endpoint](id)

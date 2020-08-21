@@ -7,24 +7,27 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/ga4gh/htsget-refserver/internal/htsrequest"
+	"github.com/ga4gh/htsget-refserver/internal/htsconstants"
+
 	"github.com/ga4gh/htsget-refserver/internal/htsutils"
 )
 
 func getFileBytes(writer http.ResponseWriter, request *http.Request) {
+	newRequestHandler(
+		htsconstants.GetMethod,
+		htsconstants.FileBytes,
+		getFileBytesHandler,
+	).handleRequest(writer, request)
+}
 
-	params := request.URL.Query()
-	htsgetReq, err := htsrequest.FileBytesEndpointSetAllParameters(request, writer, params)
+func getFileBytesHandler(handler *requestHandler) {
+
+	start, end, err := htsutils.ParseRangeHeader(handler.HtsReq.Range())
 	if err != nil {
 		return
 	}
 
-	start, end, err := htsutils.ParseRangeHeader(htsgetReq.Range())
-	if err != nil {
-		return
-	}
-
-	file, err := os.Open(htsgetReq.HtsgetFilePath())
+	file, err := os.Open(handler.HtsReq.HtsgetFilePath())
 	reader := bufio.NewReader(file)
 	reader.Discard(int(start))
 
@@ -40,7 +43,7 @@ func getFileBytes(writer http.ResponseWriter, request *http.Request) {
 		if err != nil {
 
 		}
-		writer.Write(buffer)
+		handler.Writer.Write(buffer)
 		// at the second last chunk, create a buffer that will only read bytes
 		// up to the exact remaining needed to fulfill the range request
 		nBytesRead += int64(n)
