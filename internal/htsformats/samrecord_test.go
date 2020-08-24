@@ -1,6 +1,6 @@
 // Package htsformats manipulates bioinformatic data encountered by htsget
 //
-// Module samrecord_test tests region samrecord
+// Module samrecord_test tests samrecord
 package htsformats
 
 import (
