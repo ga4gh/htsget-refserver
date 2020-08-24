@@ -33,6 +33,10 @@ The web service can be configured with modifiable runtime parameters via environ
 | port | the port on which the service will run | HTSGET_PORT | 3000 | 
 | host | web service hostname. The JSON ticket returned by the server will reference other endpoints, using this hostname/base url to provide a complete url. | HTSGET_HOST | http://localhost:3000 | 
 
+## Testing
+
+`go test ./... -coverprofile=cp.out`
+
 ## Todo
 
 * Configurable data sources (local files and urls) instead of hardcoding tabula muris dataset

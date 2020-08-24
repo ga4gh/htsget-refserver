@@ -13,22 +13,15 @@ import (
 	"github.com/ga4gh/htsget-refserver/internal/htsutils"
 )
 
-// SAMRecord contains all columnar data found in a single SAM/BAM file record
-//
-// Attributes
-//	line (string): the record string as it appears in the SAM/BAM file
-//	columns ([]string): record data split according to column in the expected order
+// SAMRecord contains all columnar data found in a single SAM/BAM file record,
+// as both the raw string (line) and separated into individual columns (columns)
 type SAMRecord struct {
 	line    string
 	columns []string
 }
 
-// NewSAMRecord instantiates a new SAMRecord instance
-//
-// Arguments
-//	line (string): the original sam record line
-// Returns
-//	(*SAMRecord): new SAMRecord instance
+// NewSAMRecord instantiates and returns a SAMRecord object from a single line
+// of a SAM/BAM file
 func NewSAMRecord(line string) *SAMRecord {
 	samRecord := new(SAMRecord)
 	samRecord.line = line
@@ -36,15 +29,9 @@ func NewSAMRecord(line string) *SAMRecord {
 	return samRecord
 }
 
-// emitCustomFields includes/excludes fields based on the 'fields' parameter
-// of the HTTP request. excluded fields are replaced with the appropriate
-// exclusion/missing data values
-//
-// Type: SAMRecord
-// Arguments
-//	fields ([]string): requested fields to include
-// Returns
-//	([]string): new SAM columns, with values included/excluded based on request
+// emitCustomFields includes/excludes fields based on the custom inclusion
+// criteria. excluded fields are replaced with the appropriate exclusion/missing
+// data values. The fields list indicates what fields to emit
 func (samRecord *SAMRecord) emitCustomFields(fields []string) []string {
 
 	n := htsconstants.BamFieldsN
@@ -75,14 +62,8 @@ func (samRecord *SAMRecord) emitCustomFields(fields []string) []string {
 	return emittedFields
 }
 
-// emitCustomTags includes/excludes tags based on the 'tags' and 'notags'
-// parameters of the HTTP request. exluded tags are removed from the output
-//
-// Type: SAMRecord
-// Arguments
-//	htsgetReq (*HtsgetReqest): the htsget request object
-// Returns
-//	([]string): new SAM tag columns, only including those requested
+// emitCustomTags includes/excludes tags based on custom criteria (ie. tags and
+// notags parameters of HTTP request). exluded tags are removed from the output
 func (samRecord *SAMRecord) emitCustomTags(htsgetReq *htsrequest.HtsgetRequest) []string {
 
 	tags := htsgetReq.Tags()
@@ -121,12 +102,6 @@ func (samRecord *SAMRecord) emitCustomTags(htsgetReq *htsrequest.HtsgetRequest) 
 
 // CustomEmit emits a new SAM record from an existing record, with only the
 // requested fields and tags included
-//
-// Type: SAMRecord
-// Arguments
-//	htsgetReq (*HtsgetRequest): the htsget request object
-// Returns
-//	(string): the custom representation of the record based on requested fields and tags
 func (samRecord *SAMRecord) CustomEmit(htsgetReq *htsrequest.HtsgetRequest) string {
 
 	var emittedFields []string

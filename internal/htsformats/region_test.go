@@ -7,22 +7,50 @@ import (
 	"testing"
 )
 
+var regionStringTC = []struct {
+	name, start, end, exp string
+}{
+	{"chr10", "-1", "-1", "chr10"},
+	{"chr22", "100", "-1", "chr22:100"},
+	{"chr5", "-1", "250000", "chr5:0-250000"},
+	{"chr1", "0", "100", "chr1:0-100"},
+}
+
+var regionExportBcftoolsTC = []struct {
+	name, start, end, exp string
+}{
+	{"chr10", "-1", "-1", "chr10"},
+	{"chr22", "100", "-1", "chr22:100-"},
+	{"chr5", "-1", "250000", "chr5:0-250000"},
+	{"chr1", "0", "100", "chr1:0-100"},
+}
+
 func TestString(t *testing.T) {
-	r := &Region{Name: "chr1", Start: "0", End: "100"}
-	s := r.String()
-	if s != "chr1:0-100" {
-		t.Errorf("Got: %v, expected: chr1:0-100", s)
+	for _, tc := range regionStringTC {
+		r := &Region{Name: tc.name, Start: tc.start, End: tc.end}
+		s := r.String()
+		if s != tc.exp {
+			t.Errorf("Expected: %s, Actual: %s", tc.exp, s)
+		}
 	}
+}
 
-	r = &Region{Name: "chr1", Start: "-1"}
-	s = r.String()
-	if s != "chr1" {
-		t.Errorf("Got: %v, expected: chr1", s)
+func TestExportSamtools(t *testing.T) {
+	for _, tc := range regionStringTC {
+		r := &Region{Name: tc.name, Start: tc.start, End: tc.end}
+		s := r.ExportSamtools()
+		if s != tc.exp {
+			t.Errorf("Expected: %s, Actual: %s", tc.exp, s)
+		}
 	}
+}
 
-	r = &Region{Name: "chr1", Start: "100", End: "-1"}
-	s = r.String()
-	if s != "chr1:100" {
-		t.Errorf("Got: %v, expected: chr1:100", s)
+func TestExportBcftools(t *testing.T) {
+	for _, tc := range regionExportBcftoolsTC {
+		r := &Region{Name: tc.name, Start: tc.start, End: tc.end}
+		s := r.ExportBcftools()
+		if s != tc.exp {
+			t.Errorf("Expected: %s, Actual: %s", tc.exp, s)
+		}
 	}
 }

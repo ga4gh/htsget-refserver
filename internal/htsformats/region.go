@@ -10,11 +10,14 @@ type Region struct {
 
 // String gets a representation of a genomic region
 func (r *Region) String() string {
-	if r.Name == "" || r.Name == "*" || r.Start == "-1" {
+	if r.Start == "-1" && r.End == "-1" {
 		return r.Name
 	}
-	if r.End == "-1" {
+	if r.Start != "-1" && r.End == "-1" {
 		return r.Name + ":" + r.Start
+	}
+	if r.Start == "-1" && r.End != "-1" {
+		return r.Name + ":" + "0-" + r.End
 	}
 	return r.Name + ":" + r.Start + "-" + r.End
 }
@@ -31,14 +34,11 @@ func (r *Region) ExportBcftools() string {
 	if r.Start == "-1" && r.End == "-1" {
 		return r.Name
 	}
-
 	if r.Start != "-1" && r.End == "-1" {
 		return r.Name + ":" + r.Start + "-"
 	}
-
 	if r.Start == "-1" && r.End != "-1" {
 		return r.Name + ":" + "0-" + r.End
 	}
-
 	return r.Name + ":" + r.Start + "-" + r.End
 }
