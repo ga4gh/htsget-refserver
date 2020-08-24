@@ -26,6 +26,7 @@ func SetRouter() (*chi.Mux, error) {
 	router.Get(htsconstants.ReadsTicket.String(), getReadsTicket)
 	router.Get(htsconstants.ReadsData.String(), getReadsData)
 	router.Get(htsconstants.VariantsTicket.String(), getVariantsTicket)
+	router.Get(htsconstants.VariantsData.String(), getVariantsData)
 	router.Get(htsconstants.FileBytes.String(), getFileBytes)
 
 	return router, err

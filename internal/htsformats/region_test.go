@@ -1,4 +1,7 @@
-package genomics
+// Package htsformats manipulates bioinformatic data encountered by htsget
+//
+// Module region_test tests region module
+package htsformats
 
 import (
 	"testing"

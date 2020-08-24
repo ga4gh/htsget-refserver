@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/ga4gh/htsget-refserver/internal/htsconfig"
 	"github.com/ga4gh/htsget-refserver/internal/htsconstants"
@@ -57,9 +58,36 @@ func getVariantsTicketHandler(handler *requestHandler) {
 }
 
 func getVariantsDataURL(htsgetReq *htsrequest.HtsgetRequest, host string) (*url.URL, error) {
-	var dataEndpoint, err = url.Parse(htsutils.RemoveTrailingSlash(host) + htsconstants.VariantsData.String())
+	var dataEndpoint, err = url.Parse(htsutils.AddTrailingSlash(host) + htsconstants.VariantsDataURLPath)
 	if err != nil {
 		return nil, err
 	}
+	dataEndpoint.Path += htsgetReq.ID()
+	query := dataEndpoint.Query()
+	if htsgetReq.HeaderOnlyRequested() {
+		query.Set("class", htsgetReq.Class())
+	}
+	if htsgetReq.ReferenceNameRequested() {
+		query.Set("referenceName", htsgetReq.ReferenceName())
+	}
+	if htsgetReq.StartRequested() {
+		query.Set("start", htsgetReq.Start())
+	}
+	if htsgetReq.EndRequested() {
+		query.Set("end", htsgetReq.End())
+	}
+	if !htsgetReq.AllFieldsRequested() {
+		f := strings.Join(htsgetReq.Fields(), ",")
+		query.Set("fields", f)
+	}
+	if !htsgetReq.TagsNotSpecified() {
+		t := strings.Join(htsgetReq.Tags(), ",")
+		query.Set("tags", t)
+	}
+	if !htsgetReq.NoTagsNotSpecified() {
+		nt := strings.Join(htsgetReq.NoTags(), ",")
+		query.Set("notags", nt)
+	}
+	dataEndpoint.RawQuery = query.Encode()
 	return dataEndpoint, nil
 }

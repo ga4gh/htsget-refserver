@@ -54,6 +54,8 @@ var BamHeaderEOFLen = 12
 // ReadsDataURLPath (string): path to reads data endpoint
 var ReadsDataURLPath = "reads/data/"
 
+var VariantsDataURLPath = "variants/data/"
+
 // FileByteRangeURLPath (string): path to local file bytestream endpoint
 var FileByteRangeURLPath = "file-bytes"
 

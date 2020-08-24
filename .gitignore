@@ -8,6 +8,8 @@ htsget-refserver
 !data/**/*.bam
 *.bai
 !data/**/*.bai
+*.tbi
+!data/**/*.tbi
 temp/*
 !temp/.temp
 

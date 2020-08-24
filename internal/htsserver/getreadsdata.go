@@ -11,7 +11,6 @@ import (
 	"strconv"
 
 	"github.com/biogo/hts/bam"
-	"github.com/ga4gh/htsget-refserver/internal/genomics"
 	"github.com/ga4gh/htsget-refserver/internal/htsconfig"
 	"github.com/ga4gh/htsget-refserver/internal/htsconstants"
 	"github.com/ga4gh/htsget-refserver/internal/htserror"
@@ -35,7 +34,7 @@ func getReadsDataHandler(handler *requestHandler) {
 		return
 	}
 
-	region := &genomics.Region{
+	region := &htsformats.Region{
 		Name:  handler.HtsReq.ReferenceName(),
 		Start: handler.HtsReq.Start(),
 		End:   handler.HtsReq.End(),
@@ -44,6 +43,8 @@ func getReadsDataHandler(handler *requestHandler) {
 	args := getSamtoolsCmdArgs(region, handler.HtsReq, fileURL)
 	cmd := exec.Command("samtools", args...)
 	pipe, err := cmd.StdoutPipe()
+
+	fmt.Println(cmd)
 
 	if err != nil {
 		msg := err.Error()
@@ -238,7 +239,7 @@ func getTempPath(id string, blockID int) (string, error) {
 	return tempPath, nil
 }
 
-func getSamtoolsCmdArgs(region *genomics.Region, htsgetReq *htsrequest.HtsgetRequest, fileURL string) []string {
+func getSamtoolsCmdArgs(region *htsformats.Region, htsgetReq *htsrequest.HtsgetRequest, fileURL string) []string {
 	args := []string{"view", fileURL}
 	if htsgetReq.HtsgetBlockClass() == "header" {
 		args = append(args, "-H")
@@ -247,8 +248,8 @@ func getSamtoolsCmdArgs(region *genomics.Region, htsgetReq *htsrequest.HtsgetReq
 		if htsgetReq.AllFieldsRequested() && htsgetReq.AllTagsRequested() {
 			args = append(args, "-b")
 		}
-		if region.String() != "" {
-			args = append(args, region.String())
+		if region.ExportSamtools() != "" {
+			args = append(args, region.ExportSamtools())
 		}
 	}
 	return args

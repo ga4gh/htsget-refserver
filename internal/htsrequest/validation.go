@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -180,6 +181,74 @@ func validateClass(class string, htsgetReq *HtsgetRequest) (bool, string) {
 	}
 }
 
+func getReferenceNamesInReadsObject(htsgetReq *HtsgetRequest) ([]string, error) {
+
+	var referenceNames []string
+	fileURL, err := htsconfig.GetPathForID(htsgetReq.GetEndpoint(), htsgetReq.ID())
+	if err != nil {
+		return nil, err
+	}
+	cmd := exec.Command("samtools", "view", "-H", fileURL)
+	pipe, err := cmd.StdoutPipe()
+	if err != nil {
+		return nil, err
+	}
+
+	cmd.Start()
+	reader := bufio.NewReader(pipe)
+	l, _, err := reader.ReadLine()
+
+	for ; err == nil; l, _, err = reader.ReadLine() {
+		pattern := regexp.MustCompile("^@SQ\tSN:(.+?)\t.+?$")
+		submatches := pattern.FindStringSubmatch(string(l))
+		if len(submatches) > 1 {
+			referenceNames = append(referenceNames, submatches[1])
+		}
+	}
+	cmd.Wait()
+	return referenceNames, nil
+}
+
+func getReferenceNamesInVariantsObject(htsgetReq *HtsgetRequest) ([]string, error) {
+	var referenceNames []string
+	fileURL, err := htsconfig.GetPathForID(htsgetReq.GetEndpoint(), htsgetReq.ID())
+	if err != nil {
+		return nil, err
+	}
+	cmd := exec.Command("bcftools", "view", "-h", fileURL)
+	pipe, err := cmd.StdoutPipe()
+	if err != nil {
+		return nil, err
+	}
+
+	cmd.Start()
+	reader := bufio.NewReader(pipe)
+	l, _, err := reader.ReadLine()
+
+	for ; err == nil; l, _, err = reader.ReadLine() {
+		pattern := regexp.MustCompile("^##contig=<.*?ID=(.+?)[,>]")
+		submatches := pattern.FindStringSubmatch(string(l))
+		if len(submatches) > 1 {
+			referenceNames = append(referenceNames, submatches[1])
+		}
+	}
+	cmd.Wait()
+	return referenceNames, nil
+}
+
+// getAllowedReferenceNames
+// for a given endpoint (BAM request / VCF request), return the allowable values
+// for the 'referenceName' parameter for the requested object
+func getReferenceNames(htsgetReq *HtsgetRequest) ([]string, error) {
+	functions := map[htsconstants.ServerEndpoint]func(htsgetReq *HtsgetRequest) ([]string, error){
+		htsconstants.ReadsTicket:    getReferenceNamesInReadsObject,
+		htsconstants.ReadsData:      getReferenceNamesInReadsObject,
+		htsconstants.VariantsTicket: getReferenceNamesInVariantsObject,
+		htsconstants.VariantsData:   getReferenceNamesInVariantsObject,
+	}
+	return functions[htsgetReq.endpoint](htsgetReq)
+}
+
 // validateReferenceName validates the 'referenceName' query string
 // parameter. checks if the requested reference contig/chromosome is in the
 // BAM/CRAM header sequence dictionary. if unplaced unmapped reads are requested
@@ -193,10 +262,6 @@ func validateClass(class string, htsgetReq *HtsgetRequest) (bool, string) {
 //	(string): diagnostic message if error encountered
 func validateReferenceName(referenceName string, htsgetReq *HtsgetRequest) (bool, string) {
 
-	fileURL, err := htsconfig.GetPathForID(htsgetReq.GetEndpoint(), htsgetReq.ID())
-	if err != nil {
-		return false, err.Error()
-	}
 	// incompatible with header only request
 	if htsgetReq.HeaderOnlyRequested() {
 		return false, "'referenceName' incompatible with header-only request"
@@ -206,21 +271,15 @@ func validateReferenceName(referenceName string, htsgetReq *HtsgetRequest) (bool
 		return true, ""
 	}
 	// otherwise, check that referenceName is in the header
-	cmd := exec.Command("samtools", "view", "-H", fileURL)
-	pipe, err := cmd.StdoutPipe()
+	referenceNames, err := getReferenceNames(htsgetReq)
 	if err != nil {
-		return false, "Could not access requested file"
+		return false, err.Error()
 	}
-	cmd.Start()
-	reader := bufio.NewReader(pipe)
-	l, _, err := reader.ReadLine()
 
-	for ; err == nil; l, _, err = reader.ReadLine() {
-		if strings.Contains(string(l), "SN:"+referenceName) {
-			return true, ""
-		}
+	if htsutils.IsItemInArray(referenceName, referenceNames) {
+		return true, ""
 	}
-	cmd.Wait()
+
 	return false, "invalid 'referenceName': " + referenceName
 }
 

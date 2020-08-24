@@ -1,5 +1,4 @@
-// Package htsformats contains operations for reading and manipulating data
-// in bioinformatics file formats encountered by htsget
+// Package htsformats manipulates bioinformatic data encountered by htsget
 //
 // Module samrecord.go contains operations for working with individual records
 // (data lines) within a SAM/BAM/CRAM file. Each record represents a single
