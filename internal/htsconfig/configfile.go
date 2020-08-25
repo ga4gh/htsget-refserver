@@ -1,7 +1,7 @@
 // Package htsconfig allows the program to be configured with modifiable
 // properties, affecting runtime properties. also contains program constants
 //
-// Module configfile.go contains operations for setting properties from the
+// Module configfile contains operations for setting properties from the
 // JSON config file
 package htsconfig
 

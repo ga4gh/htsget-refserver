@@ -21,7 +21,7 @@ import (
 func getReadsData(writer http.ResponseWriter, request *http.Request) {
 	newRequestHandler(
 		htsconstants.GetMethod,
-		htsconstants.ReadsData,
+		htsconstants.APIEndpointReadsData,
 		getReadsDataHandler,
 	).handleRequest(writer, request)
 }

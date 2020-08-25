@@ -8,6 +8,13 @@
 package htsrequest
 
 import (
+	"net/url"
+	"strings"
+
+	"github.com/ga4gh/htsget-refserver/internal/htsutils"
+
+	"github.com/ga4gh/htsget-refserver/internal/htsconfig"
+
 	"github.com/ga4gh/htsget-refserver/internal/htsconstants"
 )
 
@@ -17,7 +24,7 @@ import (
 //	ScalarParams (map[string]string): map holding scalar parameter values
 //	ListParams (map[string][]string): map holding list parameter values
 type HtsgetRequest struct {
-	endpoint     htsconstants.ServerEndpoint
+	endpoint     htsconstants.APIEndpoint
 	ScalarParams map[string]string
 	ListParams   map[string][]string
 }
@@ -33,11 +40,11 @@ func NewHtsgetRequest() *HtsgetRequest {
 	return htsgetReq
 }
 
-func (htsgetReq *HtsgetRequest) SetEndpoint(endpoint htsconstants.ServerEndpoint) {
+func (htsgetReq *HtsgetRequest) SetEndpoint(endpoint htsconstants.APIEndpoint) {
 	htsgetReq.endpoint = endpoint
 }
 
-func (htsgetReq *HtsgetRequest) GetEndpoint() htsconstants.ServerEndpoint {
+func (htsgetReq *HtsgetRequest) GetEndpoint() htsconstants.APIEndpoint {
 	return htsgetReq.endpoint
 }
 
@@ -314,4 +321,60 @@ func (htsgetReq *HtsgetRequest) NoTagsNotSpecified() bool {
 //	(bool): true if neither tags nor notags was specified, thereby requesting all tags
 func (htsgetReq *HtsgetRequest) AllTagsRequested() bool {
 	return htsgetReq.TagsNotSpecified() && htsgetReq.NoTagsNotSpecified()
+}
+
+// ConstructDataEndpointURL for a given htsget request object, return the url
+// that will redirect the client to the correct data download endpoint with
+// all necessary parameters and headers provided
+func (htsgetReq *HtsgetRequest) ConstructDataEndpointURL() (*url.URL, error) {
+	host := htsconfig.GetHost()
+	dataEndpointPath := htsgetReq.GetEndpoint().DataEndpointPath()
+	dataEndpoint, err := url.Parse(htsutils.RemoveTrailingSlash(host) + dataEndpointPath + htsgetReq.ID())
+	if err != nil {
+		return nil, err
+	}
+
+	// add query params
+	query := dataEndpoint.Query()
+	if htsgetReq.HeaderOnlyRequested() {
+		query.Set("class", htsgetReq.Class())
+	}
+	if htsgetReq.ReferenceNameRequested() {
+		query.Set("referenceName", htsgetReq.ReferenceName())
+	}
+	if htsgetReq.StartRequested() {
+		query.Set("start", htsgetReq.Start())
+	}
+	if htsgetReq.EndRequested() {
+		query.Set("end", htsgetReq.End())
+	}
+	if !htsgetReq.AllFieldsRequested() {
+		f := strings.Join(htsgetReq.Fields(), ",")
+		query.Set("fields", f)
+	}
+	if !htsgetReq.TagsNotSpecified() {
+		t := strings.Join(htsgetReq.Tags(), ",")
+		query.Set("tags", t)
+	}
+	if !htsgetReq.NoTagsNotSpecified() {
+		nt := strings.Join(htsgetReq.NoTags(), ",")
+		query.Set("notags", nt)
+	}
+	dataEndpoint.RawQuery = query.Encode()
+	return dataEndpoint, nil
+}
+
+func (htsgetReq *HtsgetRequest) GetCorrespondingDataSourceRegistry() *htsconfig.DataSourceRegistry {
+	reads := htsconfig.GetReadsDataSourceRegistry()
+	variants := htsconfig.GetVariantsDataSourceRegistry()
+	registries := map[htsconstants.APIEndpoint]*htsconfig.DataSourceRegistry{
+		htsconstants.APIEndpointReadsTicket:         reads,
+		htsconstants.APIEndpointReadsData:           reads,
+		htsconstants.APIEndpointReadsServiceInfo:    nil,
+		htsconstants.APIEndpointVariantsTicket:      variants,
+		htsconstants.APIEndpointVariantsData:        variants,
+		htsconstants.APIEndpointVariantsServiceInfo: nil,
+		htsconstants.APIEndpointFileBytes:           nil,
+	}
+	return registries[htsgetReq.GetEndpoint()]
 }

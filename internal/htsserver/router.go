@@ -23,11 +23,11 @@ func SetRouter() (*chi.Mux, error) {
 
 	// Add API Routes
 
-	router.Get(htsconstants.ReadsTicket.String(), getReadsTicket)
-	router.Get(htsconstants.ReadsData.String(), getReadsData)
-	router.Get(htsconstants.VariantsTicket.String(), getVariantsTicket)
-	router.Get(htsconstants.VariantsData.String(), getVariantsData)
-	router.Get(htsconstants.FileBytes.String(), getFileBytes)
+	router.Get(htsconstants.APIEndpointReadsTicket.String(), getReadsTicket)
+	router.Get(htsconstants.APIEndpointReadsData.String(), getReadsData)
+	router.Get(htsconstants.APIEndpointVariantsTicket.String(), getVariantsTicket)
+	router.Get(htsconstants.APIEndpointVariantsData.String(), getVariantsData)
+	router.Get(htsconstants.APIEndpointFileBytes.String(), getFileBytes)
 
 	return router, err
 }

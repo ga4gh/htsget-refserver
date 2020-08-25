@@ -9,14 +9,14 @@ import (
 
 type requestHandler struct {
 	method          htsconstants.HTTPMethod
-	endpoint        htsconstants.ServerEndpoint
+	endpoint        htsconstants.APIEndpoint
 	handlerFunction func(handler *requestHandler)
 	Writer          http.ResponseWriter
 	Request         *http.Request
 	HtsReq          *htsrequest.HtsgetRequest
 }
 
-func newRequestHandler(method htsconstants.HTTPMethod, endpoint htsconstants.ServerEndpoint, handlerFunction func(handler *requestHandler)) *requestHandler {
+func newRequestHandler(method htsconstants.HTTPMethod, endpoint htsconstants.APIEndpoint, handlerFunction func(handler *requestHandler)) *requestHandler {
 	reqHandler := new(requestHandler)
 	reqHandler.method = method
 	reqHandler.endpoint = endpoint

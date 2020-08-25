@@ -10,13 +10,13 @@ import (
 )
 
 var endpointsTC = []struct {
-	e   ServerEndpoint
+	e   APIEndpoint
 	exp string
 }{
-	{ReadsTicket, "/reads/{id}"},
-	{ReadsData, "/reads/data/{id}"},
-	{VariantsServiceInfo, "/variants/service-info"},
-	{FileBytes, "/file-bytes"},
+	{APIEndpointReadsTicket, "/reads/{id}"},
+	{APIEndpointReadsData, "/reads/data/{id}"},
+	{APIEndpointVariantsServiceInfo, "/variants/service-info"},
+	{APIEndpointFileBytes, "/file-bytes"},
 }
 
 func TestEndpoints(t *testing.T) {

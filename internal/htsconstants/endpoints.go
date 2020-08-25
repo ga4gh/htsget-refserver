@@ -3,43 +3,57 @@
 // Module endpoints contains constants relating to htsget-specific endpoints
 package htsconstants
 
-// ServerEndpoint enum for different htsget-specific API routes
-type ServerEndpoint int
+// APIEndpoint enum for different htsget-specific API routes
+type APIEndpoint int
 
 // enum values for ServerEndpoint
 const (
-	ReadsTicket         ServerEndpoint = 0
-	ReadsData           ServerEndpoint = 1
-	ReadsServiceInfo    ServerEndpoint = 2
-	VariantsTicket      ServerEndpoint = 3
-	VariantsData        ServerEndpoint = 4
-	VariantsServiceInfo ServerEndpoint = 5
-	FileBytes           ServerEndpoint = 6
+	APIEndpointReadsTicket         APIEndpoint = 0
+	APIEndpointReadsData           APIEndpoint = 1
+	APIEndpointReadsServiceInfo    APIEndpoint = 2
+	APIEndpointVariantsTicket      APIEndpoint = 3
+	APIEndpointVariantsData        APIEndpoint = 4
+	APIEndpointVariantsServiceInfo APIEndpoint = 5
+	APIEndpointFileBytes           APIEndpoint = 6
 )
 
-// string representations of ServerEndpoint enum
-const (
-	ReadsTicketS         string = "/reads/{id}"
-	ReadsDataS           string = "/reads/data/{id}"
-	ReadsServiceInfoS    string = "/reads/service-info"
-	VariantsTicketS      string = "/variants/{id}"
-	VariantsDataS        string = "/variants/data/{id}"
-	VariantsServiceInfoS string = "/variants/service-info"
-	FileBytesS           string = "/file-bytes"
-)
+// maps enum int values to string representation
+var htsEndpointStringMap = map[APIEndpoint]string{
+	APIEndpointReadsTicket:         "/reads/{id}",
+	APIEndpointReadsData:           "/reads/data/{id}",
+	APIEndpointReadsServiceInfo:    "/reads/service-info",
+	APIEndpointVariantsTicket:      "/variants/{id}",
+	APIEndpointVariantsData:        "/variants/data/{id}",
+	APIEndpointVariantsServiceInfo: "/variants/service-info",
+	APIEndpointFileBytes:           "/file-bytes",
+}
 
-// htsEndpointStringMap maps enum int values to string representation
-var htsEndpointStringMap = map[ServerEndpoint]string{
-	ReadsTicket:         ReadsTicketS,
-	ReadsData:           ReadsDataS,
-	ReadsServiceInfo:    ReadsServiceInfoS,
-	VariantsTicket:      VariantsTicketS,
-	VariantsData:        VariantsDataS,
-	VariantsServiceInfo: VariantsServiceInfoS,
-	FileBytes:           FileBytesS,
+// maps ticket endpoints to their corresponding data endpoint prefixes
+var ticketEndpointToDataEndpointPathMap = map[APIEndpoint]string{
+	APIEndpointReadsTicket:    "/reads/data/",
+	APIEndpointVariantsTicket: "/variants/data/",
+}
+
+// maps endpoints to allowed format values
+var endpointToEnabledFormatsMap = map[APIEndpoint][]string{
+	APIEndpointReadsTicket:    []string{FormatBam /*, FormatCram */},
+	APIEndpointReadsData:      []string{FormatBam /*, FormatCram */},
+	APIEndpointVariantsTicket: []string{FormatVcf /*, FormatBcf */},
+	APIEndpointVariantsData:   []string{FormatVcf /*, FormatBcf */},
 }
 
 // String gets the string representation of a ServerEndpoint enum value
-func (e ServerEndpoint) String() string {
+func (e APIEndpoint) String() string {
 	return htsEndpointStringMap[e]
+}
+
+// DataEndpointPath gets the corresponding data endpoint prefix for a given
+// ticket APIEndpoint
+func (e APIEndpoint) DataEndpointPath() string {
+	return ticketEndpointToDataEndpointPathMap[e]
+}
+
+// AllowedFormats gets the acceptable requested formats based on the API Endpoint
+func (e APIEndpoint) AllowedFormats() []string {
+	return endpointToEnabledFormatsMap[e]
 }

@@ -151,14 +151,12 @@ func validateID(id string, htsgetReq *HtsgetRequest) (bool, string) {
 //	(bool): true if an allowed format was requested
 //	(string): diagnostic message if error encountered
 func validateFormat(format string, htsgetReq *HtsgetRequest) (bool, string) {
-	switch strings.ToUpper(format) {
-	case htsconstants.FormatBam:
-		return true, ""
-	case htsconstants.FormatCram:
-		return false, "CRAM not supported" // currently not supported
-	default:
-		return false, "file format: '" + format + "' not supported"
+	formatUpper := strings.ToUpper(format)
+	allowedFormats := htsgetReq.GetEndpoint().AllowedFormats()
+	if !htsutils.IsItemInArray(formatUpper, allowedFormats) {
+		return false, "file format: '" + formatUpper + "' not supported"
 	}
+	return true, ""
 }
 
 // validateClass validates the 'class' query string parameter. checks if the
@@ -240,11 +238,11 @@ func getReferenceNamesInVariantsObject(htsgetReq *HtsgetRequest) ([]string, erro
 // for a given endpoint (BAM request / VCF request), return the allowable values
 // for the 'referenceName' parameter for the requested object
 func getReferenceNames(htsgetReq *HtsgetRequest) ([]string, error) {
-	functions := map[htsconstants.ServerEndpoint]func(htsgetReq *HtsgetRequest) ([]string, error){
-		htsconstants.ReadsTicket:    getReferenceNamesInReadsObject,
-		htsconstants.ReadsData:      getReferenceNamesInReadsObject,
-		htsconstants.VariantsTicket: getReferenceNamesInVariantsObject,
-		htsconstants.VariantsData:   getReferenceNamesInVariantsObject,
+	functions := map[htsconstants.APIEndpoint]func(htsgetReq *HtsgetRequest) ([]string, error){
+		htsconstants.APIEndpointReadsTicket:    getReferenceNamesInReadsObject,
+		htsconstants.APIEndpointReadsData:      getReferenceNamesInReadsObject,
+		htsconstants.APIEndpointVariantsTicket: getReferenceNamesInVariantsObject,
+		htsconstants.APIEndpointVariantsData:   getReferenceNamesInVariantsObject,
 	}
 	return functions[htsgetReq.endpoint](htsgetReq)
 }

@@ -15,9 +15,9 @@ import (
 	"github.com/ga4gh/htsget-refserver/internal/htsconstants"
 )
 
-var orderedParametersByMethodAndEndpoint = map[htsconstants.HTTPMethod]map[htsconstants.ServerEndpoint][]string{
-	htsconstants.GetMethod: map[htsconstants.ServerEndpoint][]string{
-		htsconstants.ReadsTicket: []string{
+var orderedParametersByMethodAndEndpoint = map[htsconstants.HTTPMethod]map[htsconstants.APIEndpoint][]string{
+	htsconstants.GetMethod: map[htsconstants.APIEndpoint][]string{
+		htsconstants.APIEndpointReadsTicket: []string{
 			"id",
 			"format",
 			"class",
@@ -28,7 +28,7 @@ var orderedParametersByMethodAndEndpoint = map[htsconstants.HTTPMethod]map[htsco
 			"tags",
 			"notags",
 		},
-		htsconstants.ReadsData: []string{
+		htsconstants.APIEndpointReadsData: []string{
 			"id",
 			"format",
 			"referenceName",
@@ -41,7 +41,7 @@ var orderedParametersByMethodAndEndpoint = map[htsconstants.HTTPMethod]map[htsco
 			"HtsgetBlockId",
 			"HtsgetNumBlocks",
 		},
-		htsconstants.VariantsTicket: []string{
+		htsconstants.APIEndpointVariantsTicket: []string{
 			"id",
 			"format",
 			"class",
@@ -52,7 +52,7 @@ var orderedParametersByMethodAndEndpoint = map[htsconstants.HTTPMethod]map[htsco
 			"tags",
 			"notags",
 		},
-		htsconstants.VariantsData: []string{
+		htsconstants.APIEndpointVariantsData: []string{
 			"id",
 			"format",
 			"class",
@@ -66,7 +66,7 @@ var orderedParametersByMethodAndEndpoint = map[htsconstants.HTTPMethod]map[htsco
 			"HtsgetBlockId",
 			"HtsgetNumBlocks",
 		},
-		htsconstants.FileBytes: []string{
+		htsconstants.APIEndpointFileBytes: []string{
 			"HtsgetFilePath",
 			"Range",
 		},
@@ -152,7 +152,7 @@ func setSingleParameter(request *http.Request, paramKey string,
 // Returns
 //	(*HtsgetRequest): object with mature parameters set to it
 //	(error): client-side error if any parameters fail validation
-func SetAllParameters(method htsconstants.HTTPMethod, endpoint htsconstants.ServerEndpoint, writer http.ResponseWriter, request *http.Request) (*HtsgetRequest, error) {
+func SetAllParameters(method htsconstants.HTTPMethod, endpoint htsconstants.APIEndpoint, writer http.ResponseWriter, request *http.Request) (*HtsgetRequest, error) {
 
 	orderedParams := orderedParametersByMethodAndEndpoint[method][endpoint]
 	htsgetReq := NewHtsgetRequest()

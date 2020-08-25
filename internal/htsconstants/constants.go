@@ -65,6 +65,12 @@ var FormatBam = "BAM"
 // FormatCram canonical htsget format string for .cram files
 var FormatCram = "CRAM"
 
+// FormatVcf canonical htsget format string for .vcf(.gz) files
+var FormatVcf = "VCF"
+
+// FormatBcf canonical htsget format string for .bcf files
+var FormatBcf = "BCF"
+
 // ClassHeader canonical htsget class string for header segment
 var ClassHeader = "header"
 

@@ -1,7 +1,7 @@
 // Package htsconfig allows the program to be configured with modifiable
 // properties, affecting runtime properties. also contains program constants
 //
-// Module environment.go contains operations for parsing runtime properties
+// Module environment contains operations for parsing runtime properties
 // from various environment variables
 package htsconfig
 
@@ -10,9 +10,6 @@ import (
 )
 
 // getEnvironment retrieves valid properties set by environment variables
-//
-// Returns
-//	(map[string]string): key-value map of properties set on environment
 func getEnvironment() map[string]string {
 	// environment variables the program scans for, and the configuration
 	// property name they map to

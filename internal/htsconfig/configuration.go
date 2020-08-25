@@ -143,7 +143,7 @@ func getVariantsPathForID(id string) (string, error) {
 	return GetVariantsDataSourceRegistry().GetMatchingPath(id)
 }
 
-func GetPathForID(endpoint htsconstants.ServerEndpoint, id string) (string, error) {
+func GetPathForID(endpoint htsconstants.APIEndpoint, id string) (string, error) {
 	functionsByEndpoint := [6]func(string) (string, error){
 		getReadsPathForID,
 		getReadsPathForID,

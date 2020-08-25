@@ -1,14 +1,11 @@
 // Package htsconfig allows the program to be configured with modifiable
 // properties, affecting runtime properties. also contains program constants
 //
-// Module defaults.go contains default runtime properties when not overriden
+// Module defaults contains default runtime properties when not overriden
 // by environment properties
 package htsconfig
 
-// getDefaults gets all default properties
-//
-// Returns
-//	(map[string]string): map of default properties
+// getDefaults gets default properties as a map of strings
 func getDefaults() map[string]string {
 	defaults := map[string]string{
 		"port": "3000",
@@ -18,9 +15,6 @@ func getDefaults() map[string]string {
 }
 
 // getDefaultReadsSourcesRegistry gets the default source registry for 'reads' endpoint
-//
-// Returns
-//	(*DataSourceRegistry): default reads source registry. points to tabula muris and local test files
 func getDefaultReadsSourcesRegistry() *DataSourceRegistry {
 	sources := []map[string]string{
 		{
@@ -40,6 +34,7 @@ func getDefaultReadsSourcesRegistry() *DataSourceRegistry {
 	return registry
 }
 
+// getDefaultVariantsSourcesRegistry gets the default source registry for 'variants' endpoint
 func getDefaultVariantsSourcesRegistry() *DataSourceRegistry {
 	sources := []map[string]string{
 		{
