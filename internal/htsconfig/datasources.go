@@ -67,8 +67,14 @@ func (dataSource *DataSource) evaluatePath(id string) (string, error) {
 
 	// create match map, map of named control groups parsed from the regex
 	// evaluation of pattern on id
-	idParameterMap := htsutils.CreateRegexNamedParameterMap(dataSource.Pattern, id)
-	parameterNamesMap := htsutils.CreateRegexNamedParameterMap("\\{(?P<paramName>.+?)\\}", dataSource.Path)
+	idParameterMap, err := htsutils.CreateRegexNamedParameterMap(dataSource.Pattern, id)
+	if err != nil {
+		return "", err
+	}
+	parameterNamesMap, err := htsutils.CreateRegexNamedParameterMap("\\{(?P<paramName>.+?)\\}", dataSource.Path)
+	if err != nil {
+		return "", err
+	}
 
 	finalPath := dataSource.Path
 	for i := 0; i < len(parameterNamesMap["paramName"]); i++ {

@@ -1,9 +1,10 @@
 // Package htsutils provides general, high-level, reusable functions
 //
-// Module utils.go defines general, high-level, reusable functions
+// Module utils defines general, high-level, reusable functions
 package htsutils
 
 import (
+	"errors"
 	"net/url"
 	"regexp"
 	"strconv"
@@ -11,11 +12,6 @@ import (
 )
 
 // AddTrailingSlash adds a trailing slash to a url if there isn't one already
-//
-// Arguments
-//	url (string): url to add slash to
-// Returns
-//	(string): url with trailing slash (unmodified if url had a slash already)
 func AddTrailingSlash(url string) string {
 	if !strings.HasSuffix(url, "/") {
 		url += "/"
@@ -23,6 +19,7 @@ func AddTrailingSlash(url string) string {
 	return url
 }
 
+// RemoveTrailingSlash removes a trailing slash from a url path if one is there
 func RemoveTrailingSlash(url string) string {
 	if strings.HasSuffix(url, "/") {
 		url = url[:len(url)-1]
@@ -30,40 +27,13 @@ func RemoveTrailingSlash(url string) string {
 	return url
 }
 
-// FilePath gets the correct S3 directory path based on the id of the requested
-// file
-//
-// Arguments
-//	id (string): requested object id
-// Returns
-//	(string): S3 directory containing the object by the given id
-func FilePath(id string) string {
-	var path string
-	if strings.HasPrefix(id, "10X") {
-		path = "10x_bam_files/" + id
-	} else {
-		path = "facs_bam_files/" + id
-	}
-	return path
-}
-
-// GetTagName deconstructs a SAM tag to give only its two-letter name/identifier
-//
-// Arguments
-//	tag (string): a single tag, including name, data type, and value
-// Returns
-//	(string): the tag name
+// GetTagName accepts and parses a SAM tag to give only its two-letter identifier
 func GetTagName(tag string) string {
 	return strings.Split(tag, ":")[0]
 }
 
-// IsItemInArray checks if a string is present in an array
-//
-// Arguments
-//	item (string): the string to check for presence in the array
-//	array ([]string): the array to check against
-// Returns
-//	(bool): true if item was found in array, false if not
+// IsItemInArray checks if a string is present in an array. Returns true if the
+// item is in the array, false if not
 func IsItemInArray(item string, array []string) bool {
 
 	for i := 0; i < len(array); i++ {
@@ -74,12 +44,8 @@ func IsItemInArray(item string, array []string) bool {
 	return false
 }
 
-// StringIsEmpty checks if a string is empty
-//
-// Arguments
-//	item (string): the string to check
-// Returns
-//	(bool): true if string is empty, false if not
+// StringIsEmpty checks if a string is empty. Returns true if string is empty,
+// false if not
 func StringIsEmpty(item string) bool {
 
 	if item == "" {
@@ -88,34 +54,46 @@ func StringIsEmpty(item string) bool {
 	return false
 }
 
-func CreateRegexNamedParameterMap(pattern string, s string) map[string][]string {
+// CreateRegexNamedParameterMap creates a map of captured elements from the
+// evaluation of a regex pattern (with named capture groups) against a string.
+// the map keys will be named according to the capture group names, and
+// associated values will be capture group values
+func CreateRegexNamedParameterMap(pattern string, s string) (map[string][]string, error) {
 	var regex = regexp.MustCompile(pattern)
+	matchBool := regex.MatchString(s)
+	if !matchBool {
+		return nil, errors.New("the supplied string did not match the pattern")
+	}
+
 	match := regex.FindStringSubmatch(s)
 	matchMap := make(map[string][]string)
 	for i, name := range regex.SubexpNames() {
 		matchMap[name] = make([]string, 0)
 		matchMap[name] = append(matchMap[name], match[i])
 	}
-	return matchMap
+	return matchMap, nil
 }
 
-func IsValidUrl(toTest string) bool {
-	_, err := url.ParseRequestURI(toTest)
-	if err != nil {
+// IsValidURL checks if a passed string is a valid url
+func IsValidURL(toTest string) bool {
+	_, err1 := url.ParseRequestURI(toTest)
+	u, err2 := url.Parse(toTest)
+	if err1 != nil || err2 != nil || u.Scheme == "" || u.Host == "" {
 		return false
 	}
-
-	u, err := url.Parse(toTest)
-	if err != nil || u.Scheme == "" || u.Host == "" {
-		return false
-	}
-
 	return true
 }
 
+// ParseRangeHeader attempts to parse the canonical range header, converting
+// start and end to integers if possible. an error is returned if the range
+// header could not be successfully parsed
 func ParseRangeHeader(rangeHeader string) (int64, int64, error) {
 	pattern := "bytes=(?P<start>\\d+)-(?P<end>\\d+)"
-	matchMap := CreateRegexNamedParameterMap(pattern, rangeHeader)
+	matchMap, err := CreateRegexNamedParameterMap(pattern, rangeHeader)
+	if err != nil {
+		return 0, 0, err
+	}
+
 	start, err := strconv.Atoi(matchMap["start"][0])
 	if err != nil {
 		return 0, 0, err

@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/ga4gh/htsget-refserver/internal/htsconstants"
+	"github.com/stretchr/testify/assert"
 )
 
 var urlSetURLTC = []struct {
@@ -27,9 +28,7 @@ func TestUrlSetURL(t *testing.T) {
 	for _, tc := range urlSetURLTC {
 		url := NewURL()
 		url.SetURL(tc.url)
-		if url.URL != tc.url {
-			t.Errorf("Expected: %s, Actual: %s", tc.url, url.URL)
-		}
+		assert.Equal(t, tc.url, url.URL)
 	}
 }
 
@@ -41,15 +40,9 @@ func TestUrlSetHeaders(t *testing.T) {
 		h.SetFilePathHeader(tc.filepath)
 		url := NewURL()
 		url.SetHeaders(h)
-		if url.Headers.BlockID != tc.blockid {
-			t.Errorf("Expected: %s, Actual: %s", tc.blockid, url.Headers.BlockID)
-		}
-		if url.Headers.NumBlocks != tc.numblocks {
-			t.Errorf("Expected: %s, Actual: %s", tc.numblocks, url.Headers.NumBlocks)
-		}
-		if url.Headers.FilePath != tc.filepath {
-			t.Errorf("Expected: %s, Actual: %s", tc.filepath, url.Headers.FilePath)
-		}
+		assert.Equal(t, tc.blockid, url.Headers.BlockID)
+		assert.Equal(t, tc.numblocks, url.Headers.NumBlocks)
+		assert.Equal(t, tc.filepath, url.Headers.FilePath)
 	}
 }
 
@@ -65,8 +58,6 @@ func TestUrlSetClass(t *testing.T) {
 	}
 	for i := 0; i < len(functions); i++ {
 		functions[i]()
-		if url.Class != exp[i] {
-			t.Errorf("Expected: %s, Actual: %s", exp[i], url.Class)
-		}
+		assert.Equal(t, exp[i], url.Class)
 	}
 }

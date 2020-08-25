@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/ga4gh/htsget-refserver/internal/htsconstants"
+	"github.com/stretchr/testify/assert"
 )
 
 var headersSetBlockIDTC = []struct {
@@ -41,9 +42,7 @@ func TestHeadersSetBlockID(t *testing.T) {
 	for _, tc := range headersSetBlockIDTC {
 		h := NewHeaders()
 		h.SetBlockID(tc.blockID)
-		if h.BlockID != tc.blockID {
-			t.Errorf("Expected: %s, Actual: %s", tc.blockID, h.BlockID)
-		}
+		assert.Equal(t, tc.blockID, h.BlockID)
 	}
 }
 
@@ -51,9 +50,7 @@ func TestHeadersSetNumBlocks(t *testing.T) {
 	for _, tc := range headersSetNumBlocksTC {
 		h := NewHeaders()
 		h.SetNumBlocks(tc.numblocks)
-		if h.NumBlocks != tc.numblocks {
-			t.Errorf("Expected: %s, Actual: %s", tc.numblocks, h.NumBlocks)
-		}
+		assert.Equal(t, tc.numblocks, h.NumBlocks)
 	}
 }
 
@@ -61,9 +58,7 @@ func TestHeadersSetRangeHeader(t *testing.T) {
 	for _, tc := range headersSetRangeHeaderTC {
 		h := NewHeaders()
 		h.SetRangeHeader(tc.start, tc.end)
-		if h.Range != tc.exp {
-			t.Errorf("Expected: %s, Actual: %s", tc.exp, h.Range)
-		}
+		assert.Equal(t, tc.exp, h.Range)
 	}
 }
 
@@ -80,19 +75,14 @@ func TestHeadersSetClass(t *testing.T) {
 
 	for i := 0; i < len(functions); i++ {
 		functions[i]()
-		if h.Class != exp[i] {
-			t.Errorf("Expected: %s, Actual: %s", exp[i], h.Class)
-		}
+		assert.Equal(t, exp[i], h.Class)
 	}
-
 }
 
 func TestHeadersSetFilePath(t *testing.T) {
 	for _, tc := range headersSetFilePathHeaderTC {
 		h := NewHeaders()
 		h.SetFilePathHeader(tc.filepath)
-		if h.FilePath != tc.filepath {
-			t.Errorf("Expected: %s, Actual: %s", tc.filepath, h.FilePath)
-		}
+		assert.Equal(t, tc.filepath, h.FilePath)
 	}
 }

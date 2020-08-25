@@ -3,7 +3,11 @@
 // Module ticket_test tests ticket
 package htsticket
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
 
 var ticketSetContainerTC = []struct {
 	format string
@@ -39,14 +43,10 @@ func TestTicketSetContainer(t *testing.T) {
 		container.SetURLS(urls)
 		ticket.SetContainer(container)
 
-		if ticket.HTSget.Format != tc.format {
-			t.Errorf("Expected: %s, Actual: %s", tc.format, ticket.HTSget.Format)
-		}
+		assert.Equal(t, tc.format, ticket.HTSget.Format)
 
 		for i := 0; i < len(tc.urls); i++ {
-			if ticket.HTSget.URLS[i].URL != tc.urls[i] {
-				t.Errorf("Expected: %s, Actual: %s", tc.urls[i], ticket.HTSget.URLS[i].URL)
-			}
+			assert.Equal(t, tc.urls[i], ticket.HTSget.URLS[i].URL)
 		}
 	}
 }

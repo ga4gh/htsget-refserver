@@ -3,7 +3,11 @@
 // Module container_test tests container
 package htsticket
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
 
 var containerSetUrlsTC = []struct {
 	urls []string
@@ -34,9 +38,7 @@ func TestContainerSetFormat(t *testing.T) {
 
 	for i := 0; i < len(functions); i++ {
 		functions[i]()
-		if container.Format != expFormat[i] {
-			t.Errorf("Expected: %s, Actual: %s", expFormat[i], container.Format)
-		}
+		assert.Equal(t, expFormat[i], container.Format)
 	}
 }
 
@@ -54,9 +56,7 @@ func TestContainerSetUrls(t *testing.T) {
 		container.SetURLS(urls)
 
 		for i := 0; i < len(tc.urls); i++ {
-			if container.URLS[i].URL != tc.urls[i] {
-				t.Errorf("Expected: %s, Actual: %s", tc.urls[i], container.URLS[i].URL)
-			}
+			assert.Equal(t, tc.urls[i], container.URLS[i].URL)
 		}
 	}
 }

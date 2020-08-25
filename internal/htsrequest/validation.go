@@ -123,7 +123,7 @@ func validateID(id string, htsgetReq *HtsgetRequest) (bool, string) {
 
 	// attempt to locate the object by http request (if url) or on local file
 	// path
-	if htsutils.IsValidUrl(objPath) {
+	if htsutils.IsValidURL(objPath) {
 		res, err := http.Head(objPath)
 		if err != nil {
 			return false, "The requested resource was not found"

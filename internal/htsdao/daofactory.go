@@ -10,7 +10,7 @@ func GetMatchingDao(id string, registry *htsconfig.DataSourceRegistry) (DataAcce
 	if err != nil {
 		return nil, err
 	}
-	if htsutils.IsValidUrl(path) {
+	if htsutils.IsValidURL(path) {
 		return NewURLDao(id, path), nil
 	} else {
 		return NewFilePathDao(id, path), nil

@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/ga4gh/htsget-refserver/internal/htsrequest"
+	"github.com/stretchr/testify/assert"
 )
 
 var samrecordEmitCustomFieldsTC = []struct {
@@ -79,9 +80,7 @@ func TestSamRecordEmitCustomFields(t *testing.T) {
 		samrecord := NewSAMRecord(tc.line)
 		emittedFieldsArray := samrecord.emitCustomFields(tc.emittedFields)
 		emittedFieldsString := strings.Join(emittedFieldsArray, "\t")
-		if emittedFieldsString != tc.exp {
-			t.Errorf("Expected: %s, Actual: %s", tc.exp, emittedFieldsString)
-		}
+		assert.Equal(t, tc.exp, emittedFieldsString)
 	}
 }
 
@@ -90,13 +89,10 @@ func TestSamRecordEmitCustomTags(t *testing.T) {
 		htsreq := htsrequest.NewHtsgetRequest()
 		htsreq.AddListParam("tags", strings.Split(tc.tags, ","))
 		htsreq.AddListParam("notags", strings.Split(tc.notags, ","))
-
 		samrecord := NewSAMRecord(tc.line)
 		emittedTagsArray := samrecord.emitCustomTags(htsreq)
 		emittedTagsString := strings.Join(emittedTagsArray, "\t")
-		if emittedTagsString != tc.exp {
-			t.Errorf("Expected: %s, Actual: %s", tc.exp, emittedTagsString)
-		}
+		assert.Equal(t, tc.exp, emittedTagsString)
 	}
 }
 
@@ -106,11 +102,8 @@ func TestSamRecordCustomEmit(t *testing.T) {
 		htsreq.AddListParam("fields", strings.Split(tc.fields, ","))
 		htsreq.AddListParam("tags", strings.Split(tc.tags, ","))
 		htsreq.AddListParam("notags", strings.Split(tc.notags, ","))
-
 		samrecord := NewSAMRecord(tc.line)
 		emittedRecord := samrecord.CustomEmit(htsreq)
-		if emittedRecord != tc.exp {
-			t.Errorf("Expected: %s, Actual: %s", tc.exp, emittedRecord)
-		}
+		assert.Equal(t, tc.exp, emittedRecord)
 	}
 }

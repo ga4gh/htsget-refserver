@@ -5,6 +5,8 @@ package htsformats
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 var regionStringTC = []struct {
@@ -28,29 +30,20 @@ var regionExportBcftoolsTC = []struct {
 func TestString(t *testing.T) {
 	for _, tc := range regionStringTC {
 		r := &Region{Name: tc.name, Start: tc.start, End: tc.end}
-		s := r.String()
-		if s != tc.exp {
-			t.Errorf("Expected: %s, Actual: %s", tc.exp, s)
-		}
+		assert.Equal(t, tc.exp, r.String())
 	}
 }
 
 func TestExportSamtools(t *testing.T) {
 	for _, tc := range regionStringTC {
 		r := &Region{Name: tc.name, Start: tc.start, End: tc.end}
-		s := r.ExportSamtools()
-		if s != tc.exp {
-			t.Errorf("Expected: %s, Actual: %s", tc.exp, s)
-		}
+		assert.Equal(t, tc.exp, r.ExportSamtools())
 	}
 }
 
 func TestExportBcftools(t *testing.T) {
 	for _, tc := range regionExportBcftoolsTC {
 		r := &Region{Name: tc.name, Start: tc.start, End: tc.end}
-		s := r.ExportBcftools()
-		if s != tc.exp {
-			t.Errorf("Expected: %s, Actual: %s", tc.exp, s)
-		}
+		assert.Equal(t, tc.exp, r.ExportBcftools())
 	}
 }
