@@ -1,8 +1,7 @@
-// Package htserror provides operations for writing various HTTP errors,
-// including different status codes and error response bodies
+// Package htserror write HTTP errors with various codes, response bodies
 //
-// Module constants.go contains HTTP Error constants, including status codes,
-// error names, and default messages
+// Module constants contains HTTP Error constants (status codes, error names,
+// default messages)
 package htserror
 
 import (
