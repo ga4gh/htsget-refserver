@@ -8,7 +8,7 @@ import (
 )
 
 type requestHandler struct {
-	method          htsconstants.HttpMethod
+	method          htsconstants.HTTPMethod
 	endpoint        htsconstants.ServerEndpoint
 	handlerFunction func(handler *requestHandler)
 	Writer          http.ResponseWriter
@@ -16,7 +16,7 @@ type requestHandler struct {
 	HtsReq          *htsrequest.HtsgetRequest
 }
 
-func newRequestHandler(method htsconstants.HttpMethod, endpoint htsconstants.ServerEndpoint, handlerFunction func(handler *requestHandler)) *requestHandler {
+func newRequestHandler(method htsconstants.HTTPMethod, endpoint htsconstants.ServerEndpoint, handlerFunction func(handler *requestHandler)) *requestHandler {
 	reqHandler := new(requestHandler)
 	reqHandler.method = method
 	reqHandler.endpoint = endpoint

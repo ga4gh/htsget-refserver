@@ -15,7 +15,7 @@ import (
 	"github.com/ga4gh/htsget-refserver/internal/htsconstants"
 )
 
-var orderedParametersByMethodAndEndpoint = map[htsconstants.HttpMethod]map[htsconstants.ServerEndpoint][]string{
+var orderedParametersByMethodAndEndpoint = map[htsconstants.HTTPMethod]map[htsconstants.ServerEndpoint][]string{
 	htsconstants.GetMethod: map[htsconstants.ServerEndpoint][]string{
 		htsconstants.ReadsTicket: []string{
 			"id",
@@ -152,7 +152,7 @@ func setSingleParameter(request *http.Request, paramKey string,
 // Returns
 //	(*HtsgetRequest): object with mature parameters set to it
 //	(error): client-side error if any parameters fail validation
-func SetAllParameters(method htsconstants.HttpMethod, endpoint htsconstants.ServerEndpoint, writer http.ResponseWriter, request *http.Request) (*HtsgetRequest, error) {
+func SetAllParameters(method htsconstants.HTTPMethod, endpoint htsconstants.ServerEndpoint, writer http.ResponseWriter, request *http.Request) (*HtsgetRequest, error) {
 
 	orderedParams := orderedParametersByMethodAndEndpoint[method][endpoint]
 	htsgetReq := NewHtsgetRequest()

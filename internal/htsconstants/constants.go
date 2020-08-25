@@ -1,15 +1,14 @@
-// Package htsconstants allows the program to be configured with modifiable
-// properties, affecting runtime properties. also contains program constants
+// Package htsconstants contains program constants
 //
-// Module constants.go contains program constants
+// Module constants contains general program constants
 package htsconstants
 
 import "encoding/hex"
 
-// SingleBlockByteSize (int64) suggested byte size of response from a single ticket url
+// SingleBlockByteSize suggested byte size of response from a single ticket url
 var SingleBlockByteSize = int64(5e8)
 
-// BamFieldsN (int): canonical number of fields in SAM/BAM (excluding tags)
+// BamFieldsN canonical number of fields in SAM/BAM (excluding tags)
 var BamFieldsN = 11
 
 // BamFields (map[string]int): ordered map of canonical column name to position
@@ -27,7 +26,7 @@ var BamFields map[string]int = map[string]int{
 	"QUAL":  10, // base quality scores
 }
 
-// BamExcludedValues ([]string): correct values when column is removed by column
+// BamExcludedValues correct values when column is removed by column
 var BamExcludedValues []string = []string{
 	"*",   // QNAME
 	"0",   // FLAG
@@ -42,31 +41,32 @@ var BamExcludedValues []string = []string{
 	"*",   // QUAL
 }
 
-// BamEOF ([]byte): BAM end of file byte sequence
+// BamEOF BAM end of file byte sequence
 var BamEOF, _ = hex.DecodeString("1f8b08040000000000ff0600424302001b0003000000000000000000")
 
-// BamEOFLen (int): length (number of bytes) of BAM end of file byte sequence
+// BamEOFLen length (number of bytes) of BAM end of file byte sequence
 var BamEOFLen = len(BamEOF)
 
-// BamHeaderEOFLen (int): length (number of bytes) of BAM header end marker
+// BamHeaderEOFLen length (number of bytes) of BAM header end marker
 var BamHeaderEOFLen = 12
 
-// ReadsDataURLPath (string): path to reads data endpoint
+// ReadsDataURLPath path to reads data endpoint
 var ReadsDataURLPath = "reads/data/"
 
+// VariantsDataURLPath path to variants data endpoint
 var VariantsDataURLPath = "variants/data/"
 
-// FileByteRangeURLPath (string): path to local file bytestream endpoint
+// FileByteRangeURLPath path to local file bytestream endpoint
 var FileByteRangeURLPath = "file-bytes"
 
-// FormatBam (string): canonical htsget format string for .bam files
+// FormatBam canonical htsget format string for .bam files
 var FormatBam = "BAM"
 
-// FormatCram (string): canonical htsget format string for .cram files
+// FormatCram canonical htsget format string for .cram files
 var FormatCram = "CRAM"
 
-// ClassHeader (string): canonical htsget class string for header segment
+// ClassHeader canonical htsget class string for header segment
 var ClassHeader = "header"
 
-// ClassBody (string): canonical htsget class string for body segment
+// ClassBody canonical htsget class string for body segment
 var ClassBody = "body"

@@ -1,7 +1,12 @@
+// Package htsconstants contains program constants
+//
+// Module endpoints contains constants relating to htsget-specific endpoints
 package htsconstants
 
+// ServerEndpoint enum for different htsget-specific API routes
 type ServerEndpoint int
 
+// enum values for ServerEndpoint
 const (
 	ReadsTicket         ServerEndpoint = 0
 	ReadsData           ServerEndpoint = 1
@@ -12,6 +17,7 @@ const (
 	FileBytes           ServerEndpoint = 6
 )
 
+// string representations of ServerEndpoint enum
 const (
 	ReadsTicketS         string = "/reads/{id}"
 	ReadsDataS           string = "/reads/data/{id}"
@@ -22,6 +28,7 @@ const (
 	FileBytesS           string = "/file-bytes"
 )
 
+// htsEndpointStringMap maps enum int values to string representation
 var htsEndpointStringMap = map[ServerEndpoint]string{
 	ReadsTicket:         ReadsTicketS,
 	ReadsData:           ReadsDataS,
@@ -32,6 +39,7 @@ var htsEndpointStringMap = map[ServerEndpoint]string{
 	FileBytes:           FileBytesS,
 }
 
+// String gets the string representation of a ServerEndpoint enum value
 func (e ServerEndpoint) String() string {
 	return htsEndpointStringMap[e]
 }

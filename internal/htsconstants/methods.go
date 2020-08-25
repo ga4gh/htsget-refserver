@@ -1,22 +1,30 @@
+// Package htsconstants contains program constants
+//
+// Module methods contains constants relating to HTTP/REST methods
 package htsconstants
 
-type HttpMethod int
+// HTTPMethod enum for http methods
+type HTTPMethod int
 
+// enum values for HTTPMethod
 const (
-	GetMethod  HttpMethod = 0
-	PostMethod HttpMethod = 1
+	GetMethod  HTTPMethod = 0
+	PostMethod HTTPMethod = 1
 )
 
+// string representations of HTTPMethod enum
 const (
 	GetMethodS  string = "GET"
 	PostMethodS string = "POST"
 )
 
-var httpMethodStringMap = map[HttpMethod]string{
+// httpMethodStringMap maps HTTPMethod
+var httpMethodStringMap = map[HTTPMethod]string{
 	GetMethod:  GetMethodS,
 	PostMethod: PostMethodS,
 }
 
-func (e HttpMethod) String() string {
+// String gets the string representation of an HTTPMethod enum instance
+func (e HTTPMethod) String() string {
 	return httpMethodStringMap[e]
 }
