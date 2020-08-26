@@ -11,7 +11,7 @@ This is a reference implementation of the version 1.2.0 htsget API protocol for 
 ### Dependencies
 
 * samtools (tested on version 1.9)
-* bcftools (tested on version 1.10)
+* bcftools (tested on version 1.10.2)
 
 - Install [Golang(v1.13) and language tools](https://golang.org/dl/). With Homebrew, `$ brew install go`
 
@@ -37,13 +37,27 @@ The web service can be configured with modifiable runtime parameters via environ
 
 `go test ./... -coverprofile=cp.out`
 
+# Changelog
+
+**v1.2.0**
+
+* Server supports htsget `/variants/{id}` endpoint, streams VCFs via htsget protocol
+using bcftools dependency
+
+**v1.1.0**
+
+* Added support for configurable data sources via a data source registry specified
+in config file
+* server can stream reads data via htsget protocol from any **url** or **local file** specified via config 
+
+**v1.0.0**
+
+* Initial release
+
 ## Todo
 
-* Configurable data sources (local files and urls) instead of hardcoding tabula muris dataset
-* Correct handling of `referenceName=*` requests (unmapped, unplaced reads)
-* Remove `samtools` dependency, as `samtools view` sometimes automatically fills placeholder values
-* Implement `/variants/{id}` endpoint
 * Implement `POST` request functionality 
+* Implement `/service-info` request functionality
 
 ## Issues
 

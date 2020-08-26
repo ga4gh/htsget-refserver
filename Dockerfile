@@ -3,6 +3,7 @@ FROM golang:latest
 WORKDIR /usr/src/app
 
 ENV SAMTOOLS_VERSION 1.9
+ENV BCFTOOLS_VERSION 1.10.2
 
 RUN apt-get update \
     && apt-get install --yes build-essential
@@ -23,6 +24,15 @@ RUN cd /tmp \
     && make \
     && make install \
     && cd / && rm -rf /tmp/samtools-${SAMTOOLS_VERSION}
+
+RUN cd /tmp \
+    && wget https://github.com/samtools/bcftools/releases/download/${BCFTOOLS_VERSION}/bcftools-${BCFTOOLS_VERSION}.tar.bz2 \
+    && tar xvjf bcftools-${BCFTOOLS_VERSION}.tar.bz2 \
+    && cd bcftools-${BCFTOOLS_VERSION} \
+    && ./configure --prefix=/usr/local \
+    && make \
+    && make install \
+    && cd / && rm -rf /tmp/bcftools-${BCFTOOLS_VERSION}
 
 ENV PATH="/usr/local:${PATH}"
 
