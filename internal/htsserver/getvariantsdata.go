@@ -25,7 +25,7 @@ func getVariantsData(writer http.ResponseWriter, request *http.Request) {
 // getVariantsData serves the actual data from AWS back to client
 func getVariantsDataHandler(handler *requestHandler) {
 
-	fileURL, err := htsconfig.GetPathForID(handler.HtsReq.GetEndpoint(), handler.HtsReq.ID())
+	fileURL, err := htsconfig.GetObjectPath(handler.HtsReq.GetEndpoint(), handler.HtsReq.ID())
 	if err != nil {
 		return
 	}

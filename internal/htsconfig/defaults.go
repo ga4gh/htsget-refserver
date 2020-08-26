@@ -5,14 +5,26 @@
 // by environment properties
 package htsconfig
 
-var defaultConfiguration = &configuration{
+import (
+	"github.com/ga4gh/htsget-refserver/internal/htsconstants"
+)
+
+var defaultEnabledReads = true
+var defaultEnabledVariants = true
+var defaultServiceType = &ServiceType{
+	Group:    htsconstants.ServiceInfoTypeGroup,
+	Artifact: htsconstants.ServiceInfoTypeArtifact,
+	Version:  htsconstants.ServiceInfoTypeVersion,
+}
+
+var defaultConfiguration = &Configuration{
 	Container: &configurationContainer{
 		ServerProps: &configurationServerProps{
-			Port: "3000",
-			Host: "http://localhost:3000/",
+			Port: htsconstants.DfltServerPropsPort,
+			Host: htsconstants.DfltServerPropsHost,
 		},
 		ReadsConfig: &configurationEndpoint{
-			Enabled: true,
+			Enabled: &defaultEnabledReads,
 			DataSourceRegistry: &DataSourceRegistry{
 				Sources: []*DataSource{
 					&DataSource{
@@ -25,13 +37,25 @@ var defaultConfiguration = &configuration{
 					},
 				},
 			},
-			ServiceInfo: &configurationServiceInfo{
-				ID:   "htsgetref.reads",
-				Name: "htsget reference server reads",
+			ServiceInfo: &ServiceInfo{
+				ID:          htsconstants.DfltServiceInfoReadsID,
+				Name:        htsconstants.DfltServiceInfoReadsName,
+				Type:        defaultServiceType,
+				Description: htsconstants.DfltServiceInfoReadsDescription,
+				Organization: &Organization{
+					Name: htsconstants.DfltServiceInfoOrganizationName,
+					URL:  htsconstants.DfltServiceInfoOrganizationURL,
+				},
+				ContactURL:       htsconstants.DfltServiceInfoContactURL,
+				DocumentationURL: htsconstants.DfltServiceInfoDocumentationURL,
+				CreatedAt:        htsconstants.DfltServiceInfoCreatedAt,
+				UpdatedAt:        htsconstants.DfltServiceInfoUpdatedAt,
+				Environment:      htsconstants.DfltServiceInfoEnvironment,
+				Version:          htsconstants.DfltServiceInfoVersion,
 			},
 		},
 		VariantsConfig: &configurationEndpoint{
-			Enabled: true,
+			Enabled: &defaultEnabledVariants,
 			DataSourceRegistry: &DataSourceRegistry{
 				Sources: []*DataSource{
 					&DataSource{
@@ -40,9 +64,21 @@ var defaultConfiguration = &configuration{
 					},
 				},
 			},
-			ServiceInfo: &configurationServiceInfo{
-				ID:   "htsgetref.variants",
-				Name: "htsget reference server variants",
+			ServiceInfo: &ServiceInfo{
+				ID:          htsconstants.DfltServiceInfoVariantsID,
+				Name:        htsconstants.DfltServiceInfoVariantsName,
+				Type:        defaultServiceType,
+				Description: htsconstants.DfltServiceInfoVariantsDescription,
+				Organization: &Organization{
+					Name: htsconstants.DfltServiceInfoOrganizationName,
+					URL:  htsconstants.DfltServiceInfoOrganizationURL,
+				},
+				ContactURL:       htsconstants.DfltServiceInfoContactURL,
+				DocumentationURL: htsconstants.DfltServiceInfoDocumentationURL,
+				CreatedAt:        htsconstants.DfltServiceInfoCreatedAt,
+				UpdatedAt:        htsconstants.DfltServiceInfoUpdatedAt,
+				Environment:      htsconstants.DfltServiceInfoEnvironment,
+				Version:          htsconstants.DfltServiceInfoVersion,
 			},
 		},
 	},

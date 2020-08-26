@@ -8,13 +8,12 @@ package htsconfig
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"sync"
 )
 
-var configFileSingleton *configuration
+var configFileSingleton *Configuration
 
 var configFileSingletonLoaded sync.Once
 
@@ -45,33 +44,14 @@ func loadConfigFile() {
 		return
 	}
 
-	//TEMP DELETE THIS
-	jsonContent = []byte(`{}`)
-
 	err = json.Unmarshal(jsonContent, &configFileSingleton)
 	if err != nil {
 		configFileSingletonLoadedError = errors.New(err.Error())
 	}
-
-	// TODO remove this in favor of more generalizable code
-	// this block directly goes to endpoint configuration, and sets them to
-	// "true" if not specified, as the reflection library isn't currently handling
-	// boolean values correctly
-	fmt.Println("config file stuff")
-	if configFileSingleton.Container != nil {
-		if configFileSingleton.Container.ReadsConfig != nil {
-			fmt.Println("printing pointer")
-			fmt.Println(&configFileSingleton.Container.ReadsConfig.Enabled)
-		}
-	}
-
-	// fmt.Println(configFileSingleton.Container.ReadsConfig.Enabled)
-	fmt.Println("---")
-
 }
 
 // getConfigFile get the the loaded configFile settings singleton
-func getConfigFile() *configuration {
+func getConfigFile() *Configuration {
 	configFileSingletonLoaded.Do(func() {
 		loadConfigFile()
 	})

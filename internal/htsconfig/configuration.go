@@ -7,7 +7,6 @@ package htsconfig
 
 import (
 	"errors"
-	"fmt"
 	"reflect"
 	"sync"
 
@@ -22,7 +21,7 @@ import (
 //
 // Attributes
 //	ReadsDataSourceRegistry (*DataSourceRegistry): data sources for reads endpoint
-type configuration struct {
+type Configuration struct {
 	Container *configurationContainer `json:"htsgetconfig"`
 }
 
@@ -38,17 +37,12 @@ type configurationServerProps struct {
 }
 
 type configurationEndpoint struct {
-	Enabled            bool                      `json:"enabled,true" default:"true"`
-	DataSourceRegistry *DataSourceRegistry       `json:"dataSourceRegistry"`
-	ServiceInfo        *configurationServiceInfo `json:"serviceInfo"`
+	Enabled            *bool               `json:"enabled,true" default:"true"`
+	DataSourceRegistry *DataSourceRegistry `json:"dataSourceRegistry"`
+	ServiceInfo        *ServiceInfo        `json:"serviceInfo"`
 }
 
-type configurationServiceInfo struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-}
-
-var configurationSingleton *configuration
+var configurationSingleton *Configuration
 
 var configurationSingletonLoaded sync.Once
 
@@ -62,7 +56,7 @@ func patchConfiguration(defR reflect.Value, patchR reflect.Value) {
 		var defRVal reflect.Value
 		var patchRVal reflect.Value
 
-		basicTypes := []string{"string", "bool"}
+		basicTypes := []string{"string", "*bool"}
 
 		if !htsutils.IsItemInArray(defRType, basicTypes) && !htsutils.IsItemInArray(patchRType, basicTypes) {
 			defRVal = defR.Field(i).Elem()
@@ -79,21 +73,17 @@ func patchConfiguration(defR reflect.Value, patchR reflect.Value) {
 				if patchString != "" {
 					defR.Field(i).Set(patchR.Field(i))
 				}
-			} else if defRType == "bool" {
-				test := patchR.Field(i).Bool()
-				fmt.Println("test!")
-				fmt.Println(test)
-				fmt.Println("***")
-				// patchBool := patchR.Field(i).Bool()
-				// fmt.Println("patch bool")
-				// fmt.Println(patchBool)
+			} else if defRType == "*bool" {
+				if !patchR.Field(i).IsNil() {
+					defR.Field(i).Set(patchR.Field(i))
+				}
 			}
 		}
 	}
 }
 
 func loadConfig() {
-	newConfiguration := new(configuration)
+	newConfiguration := new(Configuration)
 	deepcopy.Copy(newConfiguration, defaultConfiguration)
 
 	configFileLoadError := getConfigFileLoadError()
@@ -109,7 +99,7 @@ func loadConfig() {
 	configurationSingleton = newConfiguration
 }
 
-func getConfig() *configuration {
+func GetConfig() *Configuration {
 	configurationSingletonLoaded.Do(func() {
 		loadConfig()
 	})
@@ -117,21 +107,21 @@ func getConfig() *configuration {
 }
 
 func getContainer() *configurationContainer {
-	return getConfig().Container
+	return GetConfig().Container
 }
 
 func getServerProps() *configurationServerProps {
 	return getContainer().ServerProps
 }
 
-// Port gets the current configuration 'port' setting, the port the server will run on
-func Port() string {
+// GetPort gets the current configuration 'port' setting, the port the server will run on
+func GetPort() string {
 	return getServerProps().Port
 }
 
-// Host gets the current configuration 'host' setting, the host base url the
+// GetHost gets the current configuration 'host' setting, the host base url the
 // service is running at
-func Host() string {
+func GetHost() string {
 	return htsutils.AddTrailingSlash(getServerProps().Host)
 }
 
@@ -150,68 +140,22 @@ func getEndpointConfig(ep htsconstants.APIEndpoint) *configurationEndpoint {
 }
 
 func IsEndpointEnabled(ep htsconstants.APIEndpoint) bool {
-	return getEndpointConfig(ep).Enabled
+	return *getEndpointConfig(ep).Enabled
 }
 
-func getDataSourceRegistry(ep htsconstants.APIEndpoint) *DataSourceRegistry {
+func GetDataSourceRegistry(ep htsconstants.APIEndpoint) *DataSourceRegistry {
 	return getEndpointConfig(ep).DataSourceRegistry
 }
 
 func GetObjectPath(ep htsconstants.APIEndpoint, id string) (string, error) {
-	return getDataSourceRegistry(ep).GetMatchingPath(id)
+	return GetDataSourceRegistry(ep).GetMatchingPath(id)
 }
 
-/*
+func GetServiceInfo(ep htsconstants.APIEndpoint) *ServiceInfo {
+	return getEndpointConfig(ep).ServiceInfo
+}
+
 // GetConfigLoadError gets the error associated with loading the configuration
-//
-// Returns
-//	(error): if not nil, an error was encountered during configuration loading
 func GetConfigLoadError() error {
-	return configLoadError
+	return configurationSingletonLoadedError
 }
-
-// LoadAndValidateConfig performs custom validation on the configuration,
-// ensuring properties are set correctly. sets the configuration error if
-// any errors encountered
-func LoadAndValidateConfig() {
-
-	keys := [2]string{"readsDataSourceRegistry", "variantsDataSourceRegistry"}
-	getters := [2]func() *DataSourceRegistry{GetReadsDataSourceRegistry, GetVariantsDataSourceRegistry}
-
-	// validate 1. Reads, and 2. Variants data source registries coming from
-	// config file if either is not set, use the default
-	// if either is malformed, raise an error
-	for i := 0; i < 2; i++ {
-		registryFromConfig := getters[i]()
-
-		configFileLoadError := getConfigFileLoadError()
-		if configFileLoadError != nil {
-			configFileLoadError = errors.New(configFileLoadError.Error())
-			return
-		}
-
-		if registryFromConfig == nil {
-			configLoadError = errors.New(keys[i] + " not configured, check json config file")
-		}
-
-		if registryFromConfig.Sources == nil {
-			configLoadError = errors.New(keys[i] + " not configured, check json config file")
-		}
-
-		for j := 0; j < len(registryFromConfig.Sources); j++ {
-			source := registryFromConfig.Sources[j]
-			if source.Path == "" {
-				msg := keys[i] + " incorrectly configured, missing \"path\" on source #" + strconv.Itoa(j)
-				configLoadError = errors.New(msg)
-				return
-
-			}
-			if source.Pattern == "" {
-				msg := keys[i] + " incorrectly configured, missing \"pattern\" on source #" + strconv.Itoa(j)
-				configLoadError = errors.New(msg)
-				return
-			}
-		}
-	}
-}
-*/

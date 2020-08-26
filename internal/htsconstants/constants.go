@@ -3,7 +3,16 @@
 // Module constants contains general program constants
 package htsconstants
 
-import "encoding/hex"
+import (
+	"encoding/hex"
+	"time"
+)
+
+/* **************************************************
+ * TIME RELATED CONSTANTS
+ * ************************************************** */
+
+var StartupTime = time.Now().UTC().Format(time.RFC3339)
 
 // SingleBlockByteSize suggested byte size of response from a single ticket url
 var SingleBlockByteSize = int64(5e8)

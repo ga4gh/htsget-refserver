@@ -11,8 +11,6 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/ga4gh/htsget-refserver/internal/htsserviceinfo"
-
 	"github.com/ga4gh/htsget-refserver/internal/htsutils"
 
 	"github.com/ga4gh/htsget-refserver/internal/htsconfig"
@@ -366,21 +364,10 @@ func (htsgetReq *HtsgetRequest) ConstructDataEndpointURL() (*url.URL, error) {
 	return dataEndpoint, nil
 }
 
-func (htsgetReq *HtsgetRequest) GetCorrespondingDataSourceRegistry() *htsconfig.DataSourceRegistry {
-	reads := htsconfig.GetReadsDataSourceRegistry()
-	variants := htsconfig.GetVariantsDataSourceRegistry()
-	registries := map[htsconstants.APIEndpoint]*htsconfig.DataSourceRegistry{
-		htsconstants.APIEndpointReadsTicket:         reads,
-		htsconstants.APIEndpointReadsData:           reads,
-		htsconstants.APIEndpointReadsServiceInfo:    nil,
-		htsconstants.APIEndpointVariantsTicket:      variants,
-		htsconstants.APIEndpointVariantsData:        variants,
-		htsconstants.APIEndpointVariantsServiceInfo: nil,
-		htsconstants.APIEndpointFileBytes:           nil,
-	}
-	return registries[htsgetReq.GetEndpoint()]
+func (htsgetReq *HtsgetRequest) GetDataSourceRegistry() *htsconfig.DataSourceRegistry {
+	return htsconfig.GetDataSourceRegistry(htsgetReq.GetEndpoint())
 }
 
-func (htsgetReq *HtsgetRequest) GetServiceInfo() *htsserviceinfo.ServiceInfo {
-	return htsserviceinfo.GetServiceInfo(htsgetReq.GetEndpoint())
+func (htsgetReq *HtsgetRequest) GetServiceInfo() *htsconfig.ServiceInfo {
+	return htsconfig.GetServiceInfo(htsgetReq.GetEndpoint())
 }
