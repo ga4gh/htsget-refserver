@@ -26,7 +26,6 @@ func newRequestHandler(method htsconstants.HTTPMethod, endpoint htsconstants.API
 
 func (reqHandler *requestHandler) stage(writer http.ResponseWriter, request *http.Request) error {
 	htsgetReq, err := htsrequest.SetAllParameters(reqHandler.method, reqHandler.endpoint, writer, request)
-
 	if err != nil {
 		return err
 	}

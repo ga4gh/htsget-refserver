@@ -41,6 +41,7 @@ var orderedParametersByMethodAndEndpoint = map[htsconstants.HTTPMethod]map[htsco
 			"HtsgetBlockId",
 			"HtsgetNumBlocks",
 		},
+		htsconstants.APIEndpointReadsServiceInfo: []string{},
 		htsconstants.APIEndpointVariantsTicket: []string{
 			"id",
 			"format",

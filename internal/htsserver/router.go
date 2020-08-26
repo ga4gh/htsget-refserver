@@ -25,8 +25,10 @@ func SetRouter() (*chi.Mux, error) {
 
 	router.Get(htsconstants.APIEndpointReadsTicket.String(), getReadsTicket)
 	router.Get(htsconstants.APIEndpointReadsData.String(), getReadsData)
+	router.Get(htsconstants.APIEndpointReadsServiceInfo.String(), getReadsServiceInfo)
 	router.Get(htsconstants.APIEndpointVariantsTicket.String(), getVariantsTicket)
 	router.Get(htsconstants.APIEndpointVariantsData.String(), getVariantsData)
+	router.Get(htsconstants.APIEndpointVariantsServiceInfo.String(), getVariantsServiceInfo)
 	router.Get(htsconstants.APIEndpointFileBytes.String(), getFileBytes)
 
 	return router, err

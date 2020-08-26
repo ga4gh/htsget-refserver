@@ -5,27 +5,35 @@ package main
 
 import (
 	"fmt"
-	"net/http"
+
+	"github.com/ga4gh/htsget-refserver/internal/htsconstants"
 
 	"github.com/ga4gh/htsget-refserver/internal/htsconfig"
-	"github.com/ga4gh/htsget-refserver/internal/htsserver"
 )
 
 // main program entrypoint
 func main() {
 	// load configuration object
-	htsconfig.LoadAndValidateConfig()
-	configLoadError := htsconfig.GetConfigLoadError()
-	if configLoadError != nil {
-		panic(configLoadError.Error())
-	}
-	// load server routes
-	router, err := htsserver.SetRouter()
-	if err != nil {
-		panic("Problem setting up server.")
-	}
-	// start server
-	port := htsconfig.GetPort()
-	fmt.Printf("Server started on port %s!\n", port)
-	http.ListenAndServe(":"+port, router)
+	fmt.Println("START")
+	fmt.Println(htsconfig.Port())
+	fmt.Println(htsconfig.Host())
+	fmt.Println("Is my reads endpoint loaded?")
+	fmt.Println(htsconfig.IsEndpointEnabled(htsconstants.APIEndpointReadsTicket))
+
+	/*
+		htsconfig.LoadAndValidateConfig()
+		configLoadError := htsconfig.GetConfigLoadError()
+		if configLoadError != nil {
+			panic(configLoadError.Error())
+		}
+			// load server routes
+			router, err := htsserver.SetRouter()
+			if err != nil {
+				panic("Problem setting up server.")
+			}
+			// start server
+			port := htsconfig.GetPort()
+			fmt.Printf("Server started on port %s!\n", port)
+			http.ListenAndServe(":"+port, router)
+	*/
 }

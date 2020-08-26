@@ -7,154 +7,161 @@ package htsconfig
 
 import (
 	"errors"
-	"strconv"
+	"fmt"
+	"reflect"
 	"sync"
 
 	"github.com/ga4gh/htsget-refserver/internal/htsconstants"
+
 	"github.com/ga4gh/htsget-refserver/internal/htsutils"
+
+	"github.com/getlantern/deepcopy"
 )
 
-// Configuration contains runtime properties loaded from env, config file, or default
+// configFile contains properties loaded from the JSON config file
 //
 // Attributes
-// 	props (map[string]string): runtime properties dictionary
-//	readsDataSourceRegistry (*DataSourceRegistry): data sources for /reads endpoint
-type Configuration struct {
-	props                      map[string]string
-	readsDataSourceRegistry    *DataSourceRegistry
-	variantsDataSourceRegistry *DataSourceRegistry
+//	ReadsDataSourceRegistry (*DataSourceRegistry): data sources for reads endpoint
+type configuration struct {
+	Container *configurationContainer `json:"htsgetconfig"`
 }
 
-// config (*Configuration): singleton of config to be used throughout the program
-var config *Configuration
+type configurationContainer struct {
+	ServerProps    *configurationServerProps `json:"props"`
+	ReadsConfig    *configurationEndpoint    `json:"reads"`
+	VariantsConfig *configurationEndpoint    `json:"variants"`
+}
 
-// configLoad (sync.Once): indicates whether the singleton config has been loaded or not
-var configLoad sync.Once
+type configurationServerProps struct {
+	Port string `json:"port"`
+	Host string `json:"host"`
+}
 
-// configLoadError (error): holds any error encountered during setting of overall config
-var configLoadError error
+type configurationEndpoint struct {
+	Enabled            bool                      `json:"enabled,true" default:"true"`
+	DataSourceRegistry *DataSourceRegistry       `json:"dataSourceRegistry"`
+	ServiceInfo        *configurationServiceInfo `json:"serviceInfo"`
+}
 
-// loadConfig instantiates config singleton with correct runtime properties
-// loads properties into the map from defaults then environment (environment
-// overrides defaults)
+type configurationServiceInfo struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+var configurationSingleton *configuration
+
+var configurationSingletonLoaded sync.Once
+
+var configurationSingletonLoadedError error
+
+func patchConfiguration(defR reflect.Value, patchR reflect.Value) {
+
+	for i := 0; i < patchR.NumField(); i++ {
+		defRType := defR.Field(i).Type().String()
+		patchRType := patchR.Field(i).Type().String()
+		var defRVal reflect.Value
+		var patchRVal reflect.Value
+
+		basicTypes := []string{"string", "bool"}
+
+		if !htsutils.IsItemInArray(defRType, basicTypes) && !htsutils.IsItemInArray(patchRType, basicTypes) {
+			defRVal = defR.Field(i).Elem()
+			patchRVal = patchR.Field(i).Elem()
+
+			defRValid := defRVal.IsValid()
+			patchRValid := patchRVal.IsValid()
+			if defRValid && patchRValid {
+				patchConfiguration(defRVal, patchRVal)
+			}
+		} else {
+			if defRType == "string" {
+				patchString := patchR.Field(i).String()
+				if patchString != "" {
+					defR.Field(i).Set(patchR.Field(i))
+				}
+			} else if defRType == "bool" {
+				test := patchR.Field(i).Bool()
+				fmt.Println("test!")
+				fmt.Println(test)
+				fmt.Println("***")
+				// patchBool := patchR.Field(i).Bool()
+				// fmt.Println("patch bool")
+				// fmt.Println(patchBool)
+			}
+		}
+	}
+}
+
 func loadConfig() {
+	newConfiguration := new(configuration)
+	deepcopy.Copy(newConfiguration, defaultConfiguration)
 
-	config = new(Configuration)
-	config.props = make(map[string]string)
-	defaults := getDefaults()
-	environment := getEnvironment()
-	// load properties dictionary
-	// set default properties
-	for k, v := range defaults {
-		config.props[k] = v
-	}
-	// environment properties override defaults
-	for k, v := range environment {
-		config.props[k] = v
+	configFileLoadError := getConfigFileLoadError()
+	if configFileLoadError != nil {
+		configurationSingletonLoadedError = errors.New(configFileLoadError.Error())
 	}
 
-	// load properties from cli args, then load reads data source registry
-	cliargs := getCliArgs()
-	config.readsDataSourceRegistry = getDefaultReadsSourcesRegistry()
-	config.variantsDataSourceRegistry = getDefaultVariantsSourcesRegistry()
-	if cliargs.configFile != "" {
-		configFile := getConfigFile()
-		configFileLoadError := getConfigFileLoadError()
-		if configFileLoadError != nil {
-			configLoadError = errors.New(configFileLoadError.Error())
-			return
-		}
-
-		if configFile.ReadsDataSourceRegistry != nil {
-			config.readsDataSourceRegistry = configFile.ReadsDataSourceRegistry
-		}
-
-		if configFile.VariantsDataSourceRegistry != nil {
-			config.variantsDataSourceRegistry = configFile.VariantsDataSourceRegistry
-		}
-	}
+	configFileConfiguration := getConfigFile()
+	patchConfiguration(
+		reflect.ValueOf(newConfiguration).Elem(),
+		reflect.ValueOf(configFileConfiguration).Elem(),
+	)
+	configurationSingleton = newConfiguration
 }
 
-// getConfig get the loaded config singleton
-//
-// Returns
-// (*Configuration): loaded config singleton
-func getConfig() *Configuration {
-	configLoad.Do(func() {
+func getConfig() *configuration {
+	configurationSingletonLoaded.Do(func() {
 		loadConfig()
 	})
-	return config
+	return configurationSingleton
 }
 
-// getConfigProp get a single runtime property by its key
-//
-// Arguments
-// 	key (string): property key
-// Returns
-//	(string): value for the specified property
-func getConfigProp(key string) string {
-	c := getConfig()
-	return c.props[key]
+func getContainer() *configurationContainer {
+	return getConfig().Container
 }
 
-// GetPort gets the current configuration 'port' setting
-//
-// Returns
-//	(string): current port setting - the port the server will run on
-func GetPort() string {
-	return getConfigProp("port")
+func getServerProps() *configurationServerProps {
+	return getContainer().ServerProps
 }
 
-// GetHost gets the current configuration 'host' setting
-//
-// Returns
-//	(string): host setting - the host base url the service is running at
-func GetHost() string {
-	return htsutils.AddTrailingSlash(getConfigProp("host"))
+// Port gets the current configuration 'port' setting, the port the server will run on
+func Port() string {
+	return getServerProps().Port
 }
 
-// GetReadsDataSourceRegistry gets the registered data sources for the 'reads' endpoint
-//
-// Returns
-//	(*DataSourceRegistry): all 'reads' endpoint data sources
-func GetReadsDataSourceRegistry() *DataSourceRegistry {
-	return getConfig().readsDataSourceRegistry
+// Host gets the current configuration 'host' setting, the host base url the
+// service is running at
+func Host() string {
+	return htsutils.AddTrailingSlash(getServerProps().Host)
 }
 
-func GetVariantsDataSourceRegistry() *DataSourceRegistry {
-	return getConfig().variantsDataSourceRegistry
-}
-
-// getReadsPathForID gets a complete url or file path for a given ID
-// given the request ID, this function looks up the 'reads' data source registry
-// and finds the first data source matching the pattern. The id is then used to
-// populate the path to the resource based on the data source's 'path' attribute
-//
-// Arguments
-//	id (string): request ID
-// Returns
-//	(string): path to the object for the given id
-//	(error): no match was found, or another error was encountered
-func getReadsPathForID(id string) (string, error) {
-	return GetReadsDataSourceRegistry().GetMatchingPath(id)
-}
-
-func getVariantsPathForID(id string) (string, error) {
-	return GetVariantsDataSourceRegistry().GetMatchingPath(id)
-}
-
-func GetPathForID(endpoint htsconstants.APIEndpoint, id string) (string, error) {
-	functionsByEndpoint := [6]func(string) (string, error){
-		getReadsPathForID,
-		getReadsPathForID,
-		nil,
-		getVariantsPathForID,
-		getVariantsPathForID,
-		nil,
+func getEndpointConfig(ep htsconstants.APIEndpoint) *configurationEndpoint {
+	reads := getContainer().ReadsConfig
+	variants := getContainer().VariantsConfig
+	configs := map[htsconstants.APIEndpoint]*configurationEndpoint{
+		htsconstants.APIEndpointReadsTicket:         reads,
+		htsconstants.APIEndpointReadsData:           reads,
+		htsconstants.APIEndpointReadsServiceInfo:    reads,
+		htsconstants.APIEndpointVariantsTicket:      variants,
+		htsconstants.APIEndpointVariantsData:        variants,
+		htsconstants.APIEndpointVariantsServiceInfo: variants,
 	}
-	return functionsByEndpoint[endpoint](id)
+	return configs[ep]
 }
 
+func IsEndpointEnabled(ep htsconstants.APIEndpoint) bool {
+	return getEndpointConfig(ep).Enabled
+}
+
+func getDataSourceRegistry(ep htsconstants.APIEndpoint) *DataSourceRegistry {
+	return getEndpointConfig(ep).DataSourceRegistry
+}
+
+func GetObjectPath(ep htsconstants.APIEndpoint, id string) (string, error) {
+	return getDataSourceRegistry(ep).GetMatchingPath(id)
+}
+
+/*
 // GetConfigLoadError gets the error associated with loading the configuration
 //
 // Returns
@@ -207,3 +214,4 @@ func LoadAndValidateConfig() {
 		}
 	}
 }
+*/

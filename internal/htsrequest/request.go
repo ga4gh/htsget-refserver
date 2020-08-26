@@ -11,6 +11,8 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/ga4gh/htsget-refserver/internal/htsserviceinfo"
+
 	"github.com/ga4gh/htsget-refserver/internal/htsutils"
 
 	"github.com/ga4gh/htsget-refserver/internal/htsconfig"
@@ -377,4 +379,8 @@ func (htsgetReq *HtsgetRequest) GetCorrespondingDataSourceRegistry() *htsconfig.
 		htsconstants.APIEndpointFileBytes:           nil,
 	}
 	return registries[htsgetReq.GetEndpoint()]
+}
+
+func (htsgetReq *HtsgetRequest) GetServiceInfo() *htsserviceinfo.ServiceInfo {
+	return htsserviceinfo.GetServiceInfo(htsgetReq.GetEndpoint())
 }
