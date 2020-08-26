@@ -14,5 +14,13 @@
         "path":    "./data/gcp/gatk-test-data/wgs_bam/{accession}.bam"
       }
     ]
+  },
+  "variantsDataSourceRegistry": {
+    "sources": [
+      {
+        "pattern": "^1000genomes\\.(?P<accession>.*)$",
+  			"path":    "https://ftp-trace.ncbi.nih.gov/1000genomes/ftp/phase1/analysis_results/integrated_call_sets/{accession}.vcf.gz"
+      }
+    ]
   }
 }
