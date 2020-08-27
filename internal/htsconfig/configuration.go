@@ -92,10 +92,12 @@ func loadConfig() {
 	}
 
 	configFileConfiguration := getConfigFile()
-	patchConfiguration(
-		reflect.ValueOf(newConfiguration).Elem(),
-		reflect.ValueOf(configFileConfiguration).Elem(),
-	)
+	if configFileConfiguration != nil {
+		patchConfiguration(
+			reflect.ValueOf(newConfiguration).Elem(),
+			reflect.ValueOf(configFileConfiguration).Elem(),
+		)
+	}
 	configurationSingleton = newConfiguration
 }
 
