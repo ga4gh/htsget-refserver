@@ -28,12 +28,12 @@ var defaultConfiguration = &Configuration{
 			DataSourceRegistry: &DataSourceRegistry{
 				Sources: []*DataSource{
 					&DataSource{
-						Pattern: "^tabulamuris\\.(?P<accession>10X.*)$",
-						Path:    "https://s3.amazonaws.com/czbiohub-tabula-muris/10x_bam_files/{accession}_possorted_genome.bam",
+						Pattern: htsconstants.DfltReadsDataSourceTabulaMuris10XPattern,
+						Path:    htsconstants.DfltReadsDataSourceTabulaMuris10XPath,
 					},
 					&DataSource{
-						Pattern: "^tabulamuris\\.(?P<accession>.*)$",
-						Path:    "https://s3.amazonaws.com/czbiohub-tabula-muris/facs_bam_files/{accession}.mus.Aligned.out.sorted.bam",
+						Pattern: htsconstants.DfltReadsDataSourceTabulaMurisFACSPattern,
+						Path:    htsconstants.DfltReadsDataSourceTabulaMurisFACSPath,
 					},
 				},
 			},
@@ -59,8 +59,8 @@ var defaultConfiguration = &Configuration{
 			DataSourceRegistry: &DataSourceRegistry{
 				Sources: []*DataSource{
 					&DataSource{
-						Pattern: "^1000genomes\\.(?P<accession>.*)$",
-						Path:    "https://ftp-trace.ncbi.nih.gov/1000genomes/ftp/phase1/analysis_results/integrated_call_sets/{accession}.vcf.gz",
+						Pattern: htsconstants.DfltVariantsDataSource1000GPattern,
+						Path:    htsconstants.DfltVariantsDataSource1000GPath,
 					},
 				},
 			},
