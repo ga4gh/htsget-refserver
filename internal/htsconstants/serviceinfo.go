@@ -49,3 +49,11 @@ var DfltServiceInfoVariantsID = "htsgetref.variants"
 var DfltServiceInfoVariantsName = "GA4GH htsget reference server variants endpoint"
 
 var DfltServiceInfoVariantsDescription = "Stream variant files (VCF/BCF) according to GA4GH htsget protocol"
+
+/* **************************************************
+ * HTSGET EXTENSION CONSTANTS
+ * ************************************************** */
+
+var HtsgetExtensionDatatypeReads = "reads"
+
+var HtsgetExtensionDatatypeVariants = "variants"

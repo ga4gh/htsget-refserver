@@ -9,13 +9,19 @@ import (
 	"github.com/ga4gh/htsget-refserver/internal/htsconstants"
 )
 
-var defaultEnabledReads = true
-var defaultEnabledVariants = true
 var defaultServiceType = &ServiceType{
 	Group:    htsconstants.ServiceInfoTypeGroup,
 	Artifact: htsconstants.ServiceInfoTypeArtifact,
 	Version:  htsconstants.ServiceInfoTypeVersion,
 }
+
+var defaultEnabledReads = true
+var defaultFieldsParameterEffectiveReads = true
+var defaultTagsParametersEffectiveReads = true
+
+var defaultEnabledVariants = true
+var defaultFieldsParameterEffectiveVariants = true
+var defaultTagsParametersEffectiveVariants = true
 
 var defaultConfiguration = &Configuration{
 	Container: &configurationContainer{
@@ -52,6 +58,12 @@ var defaultConfiguration = &Configuration{
 				UpdatedAt:        htsconstants.DfltServiceInfoUpdatedAt,
 				Environment:      htsconstants.DfltServiceInfoEnvironment,
 				Version:          htsconstants.DfltServiceInfoVersion,
+				HtsgetExtension: &HtsgetExtension{
+					Datatype:                 htsconstants.HtsgetExtensionDatatypeReads,
+					Formats:                  htsconstants.APIEndpointReadsTicket.AllowedFormats(),
+					FieldsParameterEffective: &defaultFieldsParameterEffectiveReads,
+					TagsParametersEffective:  &defaultTagsParametersEffectiveReads,
+				},
 			},
 		},
 		VariantsConfig: &configurationEndpoint{
@@ -79,6 +91,12 @@ var defaultConfiguration = &Configuration{
 				UpdatedAt:        htsconstants.DfltServiceInfoUpdatedAt,
 				Environment:      htsconstants.DfltServiceInfoEnvironment,
 				Version:          htsconstants.DfltServiceInfoVersion,
+				HtsgetExtension: &HtsgetExtension{
+					Datatype:                 htsconstants.HtsgetExtensionDatatypeVariants,
+					Formats:                  htsconstants.APIEndpointVariantsTicket.AllowedFormats(),
+					FieldsParameterEffective: &defaultFieldsParameterEffectiveVariants,
+					TagsParametersEffective:  &defaultTagsParametersEffectiveVariants,
+				},
 			},
 		},
 	},
