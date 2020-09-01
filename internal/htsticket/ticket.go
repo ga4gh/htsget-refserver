@@ -16,12 +16,12 @@ type Ticket struct {
 }
 
 // NewTicket instantiates an empty ticket object
-func NewTicket() *Ticket {
+func newTicket() *Ticket {
 	return new(Ticket)
 }
 
 // SetContainer sets the high-level JSON container
-func (ticket *Ticket) SetContainer(container *Container) *Ticket {
+func (ticket *Ticket) setContainer(container *Container) *Ticket {
 	ticket.HTSget = container
 	return ticket
 }
@@ -30,7 +30,7 @@ func (ticket *Ticket) SetContainer(container *Container) *Ticket {
 // writer
 func FinalizeTicket(format string, urls []*URL, writer http.ResponseWriter) {
 	container := NewContainer().setFormat(format).SetURLS(urls)
-	ticket := NewTicket().SetContainer(container)
+	ticket := newTicket().setContainer(container)
 	writer.Header().Set(htsconstants.ContentTypeHeader.String(), htsconstants.ContentTypeHeaderHtsgetJSON.String())
 	json.NewEncoder(writer).Encode(ticket)
 }

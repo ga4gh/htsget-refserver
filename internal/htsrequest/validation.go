@@ -372,7 +372,6 @@ func validateEnd(end string, htsgetReq *HtsgetRequest) (bool, string) {
 			return false, "'end' MUST be higher than 'start'"
 		}
 	}
-
 	return true, ""
 }
 
