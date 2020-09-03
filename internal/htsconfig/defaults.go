@@ -20,8 +20,8 @@ var defaultFieldsParameterEffectiveReads = true
 var defaultTagsParametersEffectiveReads = true
 
 var defaultEnabledVariants = true
-var defaultFieldsParameterEffectiveVariants = true
-var defaultTagsParametersEffectiveVariants = true
+var defaultFieldsParameterEffectiveVariants = false
+var defaultTagsParametersEffectiveVariants = false
 
 var defaultConfiguration = &Configuration{
 	Container: &configurationContainer{
