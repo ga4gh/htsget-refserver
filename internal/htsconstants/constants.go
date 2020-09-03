@@ -12,7 +12,7 @@ import (
  * TIME RELATED CONSTANTS
  * ************************************************** */
 
-var StartupTime = time.Now().UTC().Format(time.RFC3339)
+var StartupTime = time.Date(2020, 9, 1, 12, 0, 0, 0, time.UTC).UTC().Format(time.RFC3339)
 
 // SingleBlockByteSize suggested byte size of response from a single ticket url
 var SingleBlockByteSize = int64(5e8)

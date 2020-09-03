@@ -2,7 +2,6 @@ package htsserver
 
 import (
 	"bufio"
-	"fmt"
 	"io"
 	"net/http"
 	"os/exec"
@@ -33,8 +32,6 @@ func getVariantsDataHandler(handler *requestHandler) {
 	command, args := constructBcftoolsCommand(handler.HtsReq, fileURL)
 	cmd := exec.Command(command, args...)
 	pipe, err := cmd.StdoutPipe()
-
-	fmt.Println(cmd)
 
 	if err != nil {
 		msg := err.Error()

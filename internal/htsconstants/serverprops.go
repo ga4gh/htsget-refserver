@@ -8,6 +8,10 @@ var DfltServerPropsPort = "3000"
 
 var DfltServerPropsHost = "http://localhost:3000/"
 
+var DfltServerPropsTempdir = "."
+
+var DfltServerPropsLogfile = "htsget-refserver.log"
+
 /* **************************************************
  * READS DATA SOURCE REGISTRY
  * ************************************************** */

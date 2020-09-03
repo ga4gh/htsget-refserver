@@ -7,6 +7,8 @@ package htsconfig
 
 import (
 	"errors"
+	"os"
+	"path/filepath"
 	"reflect"
 	"sync"
 
@@ -32,8 +34,10 @@ type configurationContainer struct {
 }
 
 type configurationServerProps struct {
-	Port string `json:"port"`
-	Host string `json:"host"`
+	Port    string `json:"port"`
+	Host    string `json:"host"`
+	Tempdir string `json:"tempdir"`
+	Logfile string `json:"logfile"`
 }
 
 type configurationEndpoint struct {
@@ -125,6 +129,26 @@ func GetPort() string {
 // service is running at
 func GetHost() string {
 	return htsutils.AddTrailingSlash(getServerProps().Host)
+}
+
+func GetTempdir() string {
+	return htsutils.AddTrailingSlash(getServerProps().Tempdir)
+}
+
+func GetTempfilePath(filename string) string {
+	return filepath.Join(GetTempdir(), filename)
+}
+
+func CreateTempfile(filename string) (*os.File, error) {
+	return os.Create(GetTempfilePath(filename))
+}
+
+func RemoveTempfile(file *os.File) error {
+	return os.Remove(file.Name())
+}
+
+func GetLogfile() string {
+	return getServerProps().Logfile
 }
 
 func getEndpointConfig(ep htsconstants.APIEndpoint) *configurationEndpoint {

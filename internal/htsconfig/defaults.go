@@ -26,8 +26,10 @@ var defaultTagsParametersEffectiveVariants = true
 var defaultConfiguration = &Configuration{
 	Container: &configurationContainer{
 		ServerProps: &configurationServerProps{
-			Port: htsconstants.DfltServerPropsPort,
-			Host: htsconstants.DfltServerPropsHost,
+			Port:    htsconstants.DfltServerPropsPort,
+			Host:    htsconstants.DfltServerPropsHost,
+			Tempdir: htsconstants.DfltServerPropsTempdir,
+			Logfile: htsconstants.DfltServerPropsLogfile,
 		},
 		ReadsConfig: &configurationEndpoint{
 			Enabled: &defaultEnabledReads,
