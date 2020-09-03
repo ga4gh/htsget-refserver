@@ -3,6 +3,9 @@ go:
     - 1.13
 before_install:
     - go get github.com/mattn/goveralls
+before_script:
+    - chmod 744 ./scripts/install-samtools.sh
+    - ./scripts/install-samtools.sh
 script:
     - go test ./...
 after_success:
