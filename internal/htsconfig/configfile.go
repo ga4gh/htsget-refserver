@@ -10,17 +10,16 @@ import (
 	"errors"
 	"io/ioutil"
 	"os"
-	"sync"
 )
 
 var configFileSingleton *Configuration
 
-var configFileSingletonLoaded sync.Once
+var configFileSingletonLoaded = false
 
 var configFileSingletonLoadedError error
 
-// loadConfigFile instanties config file singleton with correct runtime properties
-func loadConfigFile() {
+// LoadConfigFile instanties config file singleton with correct runtime properties
+func LoadConfigFile() {
 	// get config file path from cli
 	filePath := getCliArgs().configFile
 	_, err := os.Stat(filePath)
@@ -48,13 +47,18 @@ func loadConfigFile() {
 	if err != nil {
 		configFileSingletonLoadedError = errors.New(err.Error())
 	}
+	configFileSingletonLoaded = true
+}
+
+func SetConfigFile(configFile *Configuration) {
+	configFileSingleton = configFile
 }
 
 // getConfigFile get the the loaded configFile settings singleton
 func getConfigFile() *Configuration {
-	configFileSingletonLoaded.Do(func() {
-		loadConfigFile()
-	})
+	if !configFileSingletonLoaded {
+		LoadConfigFile()
+	}
 	return configFileSingleton
 }
 

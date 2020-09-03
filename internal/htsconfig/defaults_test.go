@@ -13,7 +13,7 @@ import (
 )
 
 func TestDefaults(t *testing.T) {
-	d := defaultConfiguration
+	d := DefaultConfiguration
 	props := d.Container.ServerProps
 	reads := d.Container.ReadsConfig
 	variants := d.Container.VariantsConfig

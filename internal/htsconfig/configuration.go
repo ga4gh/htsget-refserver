@@ -10,7 +10,6 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
-	"sync"
 
 	"github.com/ga4gh/htsget-refserver/internal/htsconstants"
 
@@ -19,7 +18,7 @@ import (
 	"github.com/getlantern/deepcopy"
 )
 
-// configFile contains properties loaded from the JSON config file
+// Configuration contains properties loaded from the JSON config file
 //
 // Attributes
 //	ReadsDataSourceRegistry (*DataSourceRegistry): data sources for reads endpoint
@@ -48,7 +47,7 @@ type configurationEndpoint struct {
 
 var configurationSingleton *Configuration
 
-var configurationSingletonLoaded sync.Once
+var configurationSingletonLoaded = false
 
 var configurationSingletonLoadedError error
 
@@ -60,9 +59,13 @@ func patchConfiguration(defR reflect.Value, patchR reflect.Value) {
 		var defRVal reflect.Value
 		var patchRVal reflect.Value
 
-		basicTypes := []string{"string", "*bool"}
+		typesToPatch := []string{
+			"string",
+			"*bool",
+			"*htsconfig.DataSourceRegistry",
+		}
 
-		if !htsutils.IsItemInArray(defRType, basicTypes) && !htsutils.IsItemInArray(patchRType, basicTypes) {
+		if !htsutils.IsItemInArray(defRType, typesToPatch) && !htsutils.IsItemInArray(patchRType, typesToPatch) {
 			defRVal = defR.Field(i).Elem()
 			patchRVal = patchR.Field(i).Elem()
 
@@ -81,14 +84,18 @@ func patchConfiguration(defR reflect.Value, patchR reflect.Value) {
 				if !patchR.Field(i).IsNil() {
 					defR.Field(i).Set(patchR.Field(i))
 				}
+			} else if defRType == "*htsconfig.DataSourceRegistry" {
+				if !patchR.Field(i).IsNil() {
+					defR.Field(i).Set(patchR.Field(i))
+				}
 			}
 		}
 	}
 }
 
-func loadConfig() {
+func LoadConfig() {
 	newConfiguration := new(Configuration)
-	deepcopy.Copy(newConfiguration, defaultConfiguration)
+	deepcopy.Copy(newConfiguration, DefaultConfiguration)
 
 	configFileLoadError := getConfigFileLoadError()
 	if configFileLoadError != nil {
@@ -102,13 +109,18 @@ func loadConfig() {
 			reflect.ValueOf(configFileConfiguration).Elem(),
 		)
 	}
-	configurationSingleton = newConfiguration
+	SetConfig(newConfiguration)
+	configurationSingletonLoaded = true
+}
+
+func SetConfig(config *Configuration) {
+	configurationSingleton = config
 }
 
 func GetConfig() *Configuration {
-	configurationSingletonLoaded.Do(func() {
-		loadConfig()
-	})
+	if !configurationSingletonLoaded {
+		LoadConfig()
+	}
 	return configurationSingleton
 }
 

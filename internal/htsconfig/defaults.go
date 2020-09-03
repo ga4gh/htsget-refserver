@@ -23,7 +23,7 @@ var defaultEnabledVariants = true
 var defaultFieldsParameterEffectiveVariants = false
 var defaultTagsParametersEffectiveVariants = false
 
-var defaultConfiguration = &Configuration{
+var DefaultConfiguration = &Configuration{
 	Container: &configurationContainer{
 		ServerProps: &configurationServerProps{
 			Port:    htsconstants.DfltServerPropsPort,

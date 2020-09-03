@@ -34,12 +34,14 @@ var httpRequestMultiTC = []struct {
 	 * ************************************************** */
 
 	// READS, NOTHING SPECIFIED
+
 	{
 		"/reads/tabulamuris.A1-B000168-3_57_F-1-1_R2",
 		nil,
 		"reads-tc-00.bam",
 	},
 	// READS, SPECIFY REFERENCE NAME, START, END, FIELDS
+
 	{
 		"/reads/tabulamuris.A1-B000168-3_57_F-1-1_R2",
 		[][]string{
@@ -85,8 +87,6 @@ func assignQueryParams(url string, queryParams [][]string) string {
 func downloadFilepart(server *httptest.Server, i int, ticketURL *htsticket.URL, writer *bufio.Writer) error {
 	request, _ := http.NewRequest("GET", ticketURL.URL, nil)
 
-	fmt.Println(ticketURL.URL)
-
 	h := ticketURL.Headers
 	headerKeys := []string{"HtsgetBlockId", "HtsgetNumBlocks", "Range", "HtsgetBlockClass", "HtsgetFilePath"}
 	headerVals := []string{h.BlockID, h.NumBlocks, h.Range, h.Class, h.FilePath}
@@ -123,6 +123,19 @@ func calculateMD5(fp string) string {
 
 func TestHTTPRequestMulti(t *testing.T) {
 
+	// configure dir in which temp and test comparator files are relative to
+	wd, _ := os.Getwd()
+	parentDir := filepath.Dir(filepath.Dir(wd))
+
+	// set the configuration for E2E tests
+	configFilePath := filepath.Join(parentDir, "data", "config", "integration-tests.config.json")
+	configFile, _ := os.Open(configFilePath)
+	configJSONBytes, _ := ioutil.ReadAll(configFile)
+	newConfig := new(htsconfig.Configuration)
+	json.Unmarshal(configJSONBytes, newConfig)
+	htsconfig.SetConfigFile(newConfig)
+	htsconfig.LoadConfig()
+
 	// setup test server on port 3000
 	router, _ := SetRouter()
 	listener, err := net.Listen("tcp", "localhost:3000")
@@ -135,13 +148,8 @@ func TestHTTPRequestMulti(t *testing.T) {
 	server.Start()
 	defer server.Close()
 
-	// configure dir in which temp and test comparator files are relative to
-	wd, _ := os.Getwd()
-	parentDir := filepath.Dir(filepath.Dir(wd))
-
 	// run the htsget request loop for each test case
 	for _, tc := range httpRequestMultiTC {
-
 		// create the temp outputfile that htsget data response blocks will be
 		// written to
 		outputFilepath := htsconfig.GetTempfilePath("testoutput")
@@ -165,10 +173,14 @@ func TestHTTPRequestMulti(t *testing.T) {
 
 		// compare md5sum of the fileparts concatenated together against the
 		// expected file in the test data directory
-		expectedFilePath := filepath.Join(parentDir, "data", "test", tc.expFilename)
+		expectedFilePath := filepath.Join(parentDir, "data", "test", "expected", tc.expFilename)
 		expectedMD5 := calculateMD5(expectedFilePath)
 		actualMD5 := calculateMD5(outputFilepath)
 		htsconfig.RemoveTempfile(outputFile)
 		assert.Equal(t, expectedMD5, actualMD5)
 	}
+
+	// set the configuration back to default
+	htsconfig.SetConfigFile(htsconfig.DefaultConfiguration)
+	htsconfig.SetConfig(htsconfig.DefaultConfiguration)
 }
