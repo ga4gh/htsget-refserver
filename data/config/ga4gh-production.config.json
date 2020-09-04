@@ -1,0 +1,25 @@
+{
+  "htsgetconfig": {
+    "props": {
+      "port": "80",
+      "host": "https://registry.ga4gh.org/"
+    },
+    "reads": {
+      "enabled": true,
+      "dataSourceRegistry": {
+        "sources": [
+          {
+
+          }
+        ]
+      },
+      "serviceInfo": {
+        "id": "",
+        "description": ""
+      }
+    },
+    "variants": {
+
+    }
+  }
+}
