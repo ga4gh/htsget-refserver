@@ -56,7 +56,7 @@
         },
         "contactUrl": "mailto:jeremy.adams@ga4gh.org",
         "documentationUrl": "https://ga4gh.github.io/htsget-refserver/docs/index.html",
-        "createdAt": "2019-08-31T08:00:00Z",
+        "createdAt": "2020-08-31T08:00:00Z",
         "updatedAt": "2020-09-04T14:40:00Z",
         "environment": "production",
         "version": "1.3.0"

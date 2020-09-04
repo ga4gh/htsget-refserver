@@ -6,9 +6,9 @@
 [![Travis (.org) branch](https://img.shields.io/travis/ga4gh/htsget-refserver/master.svg?style=flat-square)](https://travis-ci.org/ga4gh/htsget-refserver)
 [![Coveralls github](https://img.shields.io/coveralls/github/ga4gh/htsget-refserver?style=flat-square)](https://coveralls.io/github/ga4gh/htsget-refserver?branch=master)
 
-This is a reference implementation of the htsget API protocol for securely streaming genomic data. For more information about htsget, see the [paper](https://academic.oup.com/bioinformatics/article/35/1/119/5040320) or [specification](http://samtools.github.io/hts-specs/htsget.html).
+Reference server implementation of the htsget API protocol for securely streaming genomic data. For more information about htsget, see the [paper](https://academic.oup.com/bioinformatics/article/35/1/119/5040320) or [specification](http://samtools.github.io/hts-specs/htsget.html).
 
-A GA4GH-hosted instance of this server is running at `https://htsget.ga4gh.org/`. See the [OpenAPI documentation](https://ga4gh.github.io/htsget-refserver/docs/index.html).
+A GA4GH-hosted instance of this server is running at `https://htsget.ga4gh.org/`. To use, see the [OpenAPI documentation](https://ga4gh.github.io/htsget-refserver/docs/index.html).
 
 ## Quickstart - Docker
 
