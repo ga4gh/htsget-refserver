@@ -28,8 +28,7 @@ func getReadsData(writer http.ResponseWriter, request *http.Request) {
 
 // getReadsData serves the actual data from AWS back to client
 func getReadsDataHandler(handler *requestHandler) {
-
-	fileURL, err := htsconfig.GetPathForID(handler.HtsReq.GetEndpoint(), handler.HtsReq.ID())
+	fileURL, err := htsconfig.GetObjectPath(handler.HtsReq.GetEndpoint(), handler.HtsReq.ID())
 	if err != nil {
 		return
 	}
@@ -43,8 +42,6 @@ func getReadsDataHandler(handler *requestHandler) {
 	args := getSamtoolsCmdArgs(region, handler.HtsReq, fileURL)
 	cmd := exec.Command("samtools", args...)
 	pipe, err := cmd.StdoutPipe()
-
-	fmt.Println(cmd)
 
 	if err != nil {
 		msg := err.Error()
@@ -119,15 +116,8 @@ func getReadsDataHandler(handler *requestHandler) {
 			columns[htsconstants.BamFields[field]] = true
 		}
 
-		tmpDirPath, err := tmpDirPath()
-		if err != nil {
-			msg := err.Error()
-			htserror.InternalServerError(handler.Writer, &msg)
-			return
-		}
-
-		tmpPath := tmpDirPath + handler.HtsReq.ID()
-		tmp, err := os.Create(tmpPath)
+		tmpPath := htsconfig.GetTempfilePath(handler.HtsReq.ID())
+		tmp, err := htsconfig.CreateTempfile(handler.HtsReq.ID())
 		if err != nil {
 			msg := err.Error()
 			htserror.InternalServerError(handler.Writer, &msg)
@@ -135,7 +125,7 @@ func getReadsDataHandler(handler *requestHandler) {
 		}
 
 		/* Write the BAM Header to the temporary SAM file */
-		tmpHeaderPath := tmpDirPath + handler.HtsReq.ID() + ".header.bam"
+		tmpHeaderPath := htsconfig.GetTempfilePath(handler.HtsReq.ID() + ".header.bam")
 		headerCmd := exec.Command("samtools", "view", "-H", "-O", "SAM", "-o", tmpHeaderPath, fileURL)
 		if err != nil {
 			msg := err.Error()
@@ -203,7 +193,7 @@ func getReadsDataHandler(handler *requestHandler) {
 			return
 		}
 
-		err = os.Remove(tmpPath)
+		err = htsconfig.RemoveTempfile(tmp)
 		if err != nil {
 			msg := err.Error()
 			htserror.InternalServerError(handler.Writer, &msg)
@@ -264,12 +254,7 @@ func samToBam(tempPath string) string {
 
 func headerLen(id string, fileURL string) (int64, error) {
 	cmd := exec.Command("samtools", "view", "-H", "-b", fileURL)
-	tmpDirPath, err := tmpDirPath()
-	if err != nil {
-		return 0, err
-	}
-	path := tmpDirPath + id + "_header"
-	tmpHeader, err := os.Create(path)
+	tmpHeader, err := htsconfig.CreateTempfile(id + "_header")
 	if err != nil {
 		return 0, err
 	}
@@ -284,7 +269,7 @@ func headerLen(id string, fileURL string) (int64, error) {
 
 	size := fi.Size() - 12
 	tmpHeader.Close()
-	os.Remove(path)
+	htsconfig.RemoveTempfile(tmpHeader)
 	return size, nil
 }
 
@@ -347,12 +332,4 @@ func isDir(path string) (bool, error) {
 		return false, nil
 	}
 	return true, nil
-}
-
-func tmpDirPath() (string, error) {
-	wd, err := os.Getwd()
-	if err != nil {
-		return "", err
-	}
-	return wd + "/temp/", nil
 }

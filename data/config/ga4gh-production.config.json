@@ -1,0 +1,66 @@
+{
+  "htsgetconfig": {
+    "props": {
+      "port": "3000",
+      "host": "https://htsget.ga4gh.org/",
+      "tempdir": "/tmp/",
+      "logfile": "/usr/src/app/htsget-refserver.log"
+    },
+    "reads": {
+      "enabled": true,
+      "dataSourceRegistry": {
+        "sources": [
+          {
+            "pattern": "^tabulamuris\\.(?P<accession>10X.*)$",
+            "path": "https://s3.amazonaws.com/czbiohub-tabula-muris/10x_bam_files/{accession}_possorted_genome.bam"
+          },
+          {
+            "pattern": "^tabulamuris\\.(?P<accession>.*)$",
+            "path": "https://s3.amazonaws.com/czbiohub-tabula-muris/facs_bam_files/{accession}.mus.Aligned.out.sorted.bam"
+          }
+        ]
+      },
+      "serviceInfo": {
+        "id": "org.ga4gh.htsgetreference.reads",
+        "name": "GA4GH htsget reference server reads API",
+        "description": "Reference web service of the GA4GH htsget protocol. Streams alignment data from public datasets, such as Tabula Muris and 1000 Genomes.",
+        "organization": {
+          "name": "Global Alliance for Genomics and Health",
+          "url": "https://ga4gh.org"
+        },
+        "contactUrl": "mailto:jeremy.adams@ga4gh.org",
+        "documentationUrl": "https://ga4gh.github.io/htsget-refserver/docs/index.html",
+        "createdAt": "2019-09-15T12:00:00Z",
+        "updatedAt": "2020-09-04T14:40:00Z",
+        "environment": "production",
+        "version": "1.3.0"
+      }
+    },
+    "variants": {
+      "enabled": true,
+      "dataSourceRegistry": {
+        "sources": [
+          {
+            "pattern": "^1000genomes\\.(?P<accession>.*)$",
+            "path": "https://ftp-trace.ncbi.nih.gov/1000genomes/ftp/phase1/analysis_results/integrated_call_sets/{accession}.vcf.gz"
+          }
+        ]
+      },
+      "serviceInfo": {
+        "id": "org.ga4gh.htsgetreference.variants",
+        "name": "GA4GH htsget reference server variants API",
+        "description": "Reference web service of the GA4GH htsget protocol. Streams variant data from public datasets, such as Tabula Muris and 1000 Genomes.",
+        "organization": {
+          "name": "Global Alliance for Genomics and Health",
+          "url": "https://ga4gh.org"
+        },
+        "contactUrl": "mailto:jeremy.adams@ga4gh.org",
+        "documentationUrl": "https://ga4gh.github.io/htsget-refserver/docs/index.html",
+        "createdAt": "2020-08-31T08:00:00Z",
+        "updatedAt": "2020-09-04T14:40:00Z",
+        "environment": "production",
+        "version": "1.3.0"
+      }
+    }
+  }
+}

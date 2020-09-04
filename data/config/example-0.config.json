@@ -1,0 +1,20 @@
+{
+  "htsgetconfig": {
+    "props": {
+      "port": "80",
+      "host": "http://localhost/"
+    },
+    "reads": {
+      "enabled": true,
+      "serviceInfo": {
+        "id": "org.ga4gh.htsget-reference.reads"
+      }
+    },
+    "variants": {
+      "enabled": true,
+      "serviceInfo": {
+        "id": "org.ga4gh.htsget-reference.variants"
+      }
+    }
+  }
+}

@@ -7,59 +7,24 @@ package htsconfig
 import (
 	"testing"
 
+	"github.com/ga4gh/htsget-refserver/internal/htsconstants"
+
 	"github.com/stretchr/testify/assert"
 )
 
-var defaultsTC = []struct {
-	key, exp string
-}{
-	{"port", "3000"},
-	{"host", "http://localhost:3000"},
-}
-
-var defaultsReadsSourcesRegistryTC = []struct {
-	expPattern, expPath string
-}{
-	{
-		"^tabulamuris\\.(?P<accession>10X.*)$",
-		"https://s3.amazonaws.com/czbiohub-tabula-muris/10x_bam_files/{accession}_possorted_genome.bam",
-	},
-	{
-		"^tabulamuris\\.(?P<accession>.*)$",
-		"https://s3.amazonaws.com/czbiohub-tabula-muris/facs_bam_files/{accession}.mus.Aligned.out.sorted.bam",
-	},
-}
-
-var defaultsVariantsSourcesRegistryTC = []struct {
-	expPattern, expPath string
-}{
-	{
-		"^1000genomes\\.(?P<accession>.*)$",
-		"https://ftp-trace.ncbi.nih.gov/1000genomes/ftp/phase1/analysis_results/integrated_call_sets/{accession}.vcf.gz",
-	},
-}
-
 func TestDefaults(t *testing.T) {
-	d := getDefaults()
-	for _, tc := range defaultsTC {
-		assert.Equal(t, tc.exp, d[tc.key])
-	}
-}
+	d := DefaultConfiguration
+	props := d.Container.ServerProps
+	reads := d.Container.ReadsConfig
+	variants := d.Container.VariantsConfig
 
-func TestDefaultReadsSourcesRegistry(t *testing.T) {
-	d := getDefaultReadsSourcesRegistry()
-	for i := 0; i < len(d.Sources); i++ {
-		tc := defaultsReadsSourcesRegistryTC[i]
-		assert.Equal(t, tc.expPattern, d.Sources[i].Pattern)
-		assert.Equal(t, tc.expPath, d.Sources[i].Path)
-	}
-}
+	// SERVER PROPS
+	assert.Equal(t, props.Host, htsconstants.DfltServerPropsHost)
+	assert.Equal(t, props.Port, htsconstants.DfltServerPropsPort)
 
-func TestDefaultVariantsSourcesRegistry(t *testing.T) {
-	d := getDefaultVariantsSourcesRegistry()
-	for i := 0; i < len(d.Sources); i++ {
-		tc := defaultsVariantsSourcesRegistryTC[i]
-		assert.Equal(t, tc.expPattern, d.Sources[i].Pattern)
-		assert.Equal(t, tc.expPath, d.Sources[i].Path)
-	}
+	// READS DATA SOURCE REGISTRY
+	assert.Equal(t, *reads.Enabled, true)
+
+	// VARIANTS DATA SOURCE REGISTRY
+	assert.Equal(t, *variants.Enabled, true)
 }
