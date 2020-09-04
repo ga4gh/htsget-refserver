@@ -13,17 +13,20 @@ import (
 
 // main program entrypoint
 func main() {
+
 	// load configuration object
-	htsconfig.LoadAndValidateConfig()
+	htsconfig.GetConfig()
 	configLoadError := htsconfig.GetConfigLoadError()
 	if configLoadError != nil {
 		panic(configLoadError.Error())
 	}
+
 	// load server routes
 	router, err := htsserver.SetRouter()
 	if err != nil {
 		panic("Problem setting up server.")
 	}
+
 	// start server
 	port := htsconfig.GetPort()
 	fmt.Printf("Server started on port %s!\n", port)

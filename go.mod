@@ -5,6 +5,7 @@ go 1.13
 require (
 	github.com/biogo/boom v0.0.0-20150317015657-28119bc1ffc1 // indirect
 	github.com/biogo/hts v1.0.1
+	github.com/getlantern/deepcopy v0.0.0-20160317154340-7f45deb8130a
 	github.com/go-chi/chi v4.0.2+incompatible
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/mattn/goveralls v0.0.6 // indirect

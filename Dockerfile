@@ -13,6 +13,7 @@ RUN apt-get --yes install autoconf automake make gcc perl zlib1g-dev libbz2-dev 
 COPY go.mod go.sum index.html ./
 COPY cmd cmd
 COPY internal internal
+COPY data/config data/config
 RUN mkdir temp
 RUN go mod download
 
@@ -36,7 +37,7 @@ RUN cd /tmp \
 
 ENV PATH="/usr/local:${PATH}"
 
-RUN go build -o ./htsref ./cmd
+RUN go build -o ./htsget-refserver ./cmd
 EXPOSE 3000
 
-CMD ["./htsref"]
+CMD ["./htsget-refserver"]

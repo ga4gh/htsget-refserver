@@ -116,7 +116,7 @@ func noValidation(value string, htsgetReq *HtsgetRequest) (bool, string) {
 //	(bool): true if a resource matching id could be found from the data source
 //	(string): diagnostic message if error encountered
 func validateID(id string, htsgetReq *HtsgetRequest) (bool, string) {
-	objPath, err := htsconfig.GetPathForID(htsgetReq.GetEndpoint(), id)
+	objPath, err := htsconfig.GetObjectPath(htsgetReq.GetEndpoint(), id)
 	if err != nil {
 		return false, "The requested resource could not be associated with a registered data source"
 	}
@@ -182,7 +182,7 @@ func validateClass(class string, htsgetReq *HtsgetRequest) (bool, string) {
 func getReferenceNamesInReadsObject(htsgetReq *HtsgetRequest) ([]string, error) {
 
 	var referenceNames []string
-	fileURL, err := htsconfig.GetPathForID(htsgetReq.GetEndpoint(), htsgetReq.ID())
+	fileURL, err := htsconfig.GetObjectPath(htsgetReq.GetEndpoint(), htsgetReq.ID())
 	if err != nil {
 		return nil, err
 	}
@@ -209,7 +209,7 @@ func getReferenceNamesInReadsObject(htsgetReq *HtsgetRequest) ([]string, error) 
 
 func getReferenceNamesInVariantsObject(htsgetReq *HtsgetRequest) ([]string, error) {
 	var referenceNames []string
-	fileURL, err := htsconfig.GetPathForID(htsgetReq.GetEndpoint(), htsgetReq.ID())
+	fileURL, err := htsconfig.GetObjectPath(htsgetReq.GetEndpoint(), htsgetReq.ID())
 	if err != nil {
 		return nil, err
 	}
@@ -372,7 +372,6 @@ func validateEnd(end string, htsgetReq *HtsgetRequest) (bool, string) {
 			return false, "'end' MUST be higher than 'start'"
 		}
 	}
-
 	return true, ""
 }
 

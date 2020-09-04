@@ -5,46 +5,101 @@
 // by environment properties
 package htsconfig
 
-// getDefaults gets default properties as a map of strings
-func getDefaults() map[string]string {
-	defaults := map[string]string{
-		"port": "3000",
-		"host": "http://localhost:3000",
-	}
-	return defaults
+import (
+	"github.com/ga4gh/htsget-refserver/internal/htsconstants"
+)
+
+var defaultServiceType = &ServiceType{
+	Group:    htsconstants.ServiceInfoTypeGroup,
+	Artifact: htsconstants.ServiceInfoTypeArtifact,
+	Version:  htsconstants.ServiceInfoTypeVersion,
 }
 
-// getDefaultReadsSourcesRegistry gets the default source registry for 'reads' endpoint
-func getDefaultReadsSourcesRegistry() *DataSourceRegistry {
-	sources := []map[string]string{
-		{
-			"pattern": "^tabulamuris\\.(?P<accession>10X.*)$",
-			"path":    "https://s3.amazonaws.com/czbiohub-tabula-muris/10x_bam_files/{accession}_possorted_genome.bam",
-		},
-		{
-			"pattern": "^tabulamuris\\.(?P<accession>.*)$",
-			"path":    "https://s3.amazonaws.com/czbiohub-tabula-muris/facs_bam_files/{accession}.mus.Aligned.out.sorted.bam",
-		},
-	}
+var defaultEnabledReads = true
+var defaultFieldsParameterEffectiveReads = true
+var defaultTagsParametersEffectiveReads = true
 
-	registry := newDataSourceRegistry()
-	for i := 0; i < len(sources); i++ {
-		registry.addDataSource(newDataSource(sources[i]["pattern"], sources[i]["path"]))
-	}
-	return registry
-}
+var defaultEnabledVariants = true
+var defaultFieldsParameterEffectiveVariants = false
+var defaultTagsParametersEffectiveVariants = false
 
-// getDefaultVariantsSourcesRegistry gets the default source registry for 'variants' endpoint
-func getDefaultVariantsSourcesRegistry() *DataSourceRegistry {
-	sources := []map[string]string{
-		{
-			"pattern": "^1000genomes\\.(?P<accession>.*)$",
-			"path":    "https://ftp-trace.ncbi.nih.gov/1000genomes/ftp/phase1/analysis_results/integrated_call_sets/{accession}.vcf.gz",
+var DefaultConfiguration = &Configuration{
+	Container: &configurationContainer{
+		ServerProps: &configurationServerProps{
+			Port:    htsconstants.DfltServerPropsPort,
+			Host:    htsconstants.DfltServerPropsHost,
+			Tempdir: htsconstants.DfltServerPropsTempdir,
+			Logfile: htsconstants.DfltServerPropsLogfile,
 		},
-	}
-	registry := newDataSourceRegistry()
-	for i := 0; i < len(sources); i++ {
-		registry.addDataSource(newDataSource(sources[i]["pattern"], sources[i]["path"]))
-	}
-	return registry
+		ReadsConfig: &configurationEndpoint{
+			Enabled: &defaultEnabledReads,
+			DataSourceRegistry: &DataSourceRegistry{
+				Sources: []*DataSource{
+					&DataSource{
+						Pattern: htsconstants.DfltReadsDataSourceTabulaMuris10XPattern,
+						Path:    htsconstants.DfltReadsDataSourceTabulaMuris10XPath,
+					},
+					&DataSource{
+						Pattern: htsconstants.DfltReadsDataSourceTabulaMurisFACSPattern,
+						Path:    htsconstants.DfltReadsDataSourceTabulaMurisFACSPath,
+					},
+				},
+			},
+			ServiceInfo: &ServiceInfo{
+				ID:          htsconstants.DfltServiceInfoReadsID,
+				Name:        htsconstants.DfltServiceInfoReadsName,
+				Type:        defaultServiceType,
+				Description: htsconstants.DfltServiceInfoReadsDescription,
+				Organization: &Organization{
+					Name: htsconstants.DfltServiceInfoOrganizationName,
+					URL:  htsconstants.DfltServiceInfoOrganizationURL,
+				},
+				ContactURL:       htsconstants.DfltServiceInfoContactURL,
+				DocumentationURL: htsconstants.DfltServiceInfoDocumentationURL,
+				CreatedAt:        htsconstants.DfltServiceInfoCreatedAt,
+				UpdatedAt:        htsconstants.DfltServiceInfoUpdatedAt,
+				Environment:      htsconstants.DfltServiceInfoEnvironment,
+				Version:          htsconstants.DfltServiceInfoVersion,
+				HtsgetExtension: &HtsgetExtension{
+					Datatype:                 htsconstants.HtsgetExtensionDatatypeReads,
+					Formats:                  htsconstants.APIEndpointReadsTicket.AllowedFormats(),
+					FieldsParameterEffective: &defaultFieldsParameterEffectiveReads,
+					TagsParametersEffective:  &defaultTagsParametersEffectiveReads,
+				},
+			},
+		},
+		VariantsConfig: &configurationEndpoint{
+			Enabled: &defaultEnabledVariants,
+			DataSourceRegistry: &DataSourceRegistry{
+				Sources: []*DataSource{
+					&DataSource{
+						Pattern: htsconstants.DfltVariantsDataSource1000GPattern,
+						Path:    htsconstants.DfltVariantsDataSource1000GPath,
+					},
+				},
+			},
+			ServiceInfo: &ServiceInfo{
+				ID:          htsconstants.DfltServiceInfoVariantsID,
+				Name:        htsconstants.DfltServiceInfoVariantsName,
+				Type:        defaultServiceType,
+				Description: htsconstants.DfltServiceInfoVariantsDescription,
+				Organization: &Organization{
+					Name: htsconstants.DfltServiceInfoOrganizationName,
+					URL:  htsconstants.DfltServiceInfoOrganizationURL,
+				},
+				ContactURL:       htsconstants.DfltServiceInfoContactURL,
+				DocumentationURL: htsconstants.DfltServiceInfoDocumentationURL,
+				CreatedAt:        htsconstants.DfltServiceInfoCreatedAt,
+				UpdatedAt:        htsconstants.DfltServiceInfoUpdatedAt,
+				Environment:      htsconstants.DfltServiceInfoEnvironment,
+				Version:          htsconstants.DfltServiceInfoVersion,
+				HtsgetExtension: &HtsgetExtension{
+					Datatype:                 htsconstants.HtsgetExtensionDatatypeVariants,
+					Formats:                  htsconstants.APIEndpointVariantsTicket.AllowedFormats(),
+					FieldsParameterEffective: &defaultFieldsParameterEffectiveVariants,
+					TagsParametersEffective:  &defaultTagsParametersEffectiveVariants,
+				},
+			},
+		},
+	},
 }

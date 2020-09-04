@@ -1,0 +1,22 @@
+{
+  "htsgetconfig": {
+    "props": {
+      "port": "3000",
+      "host": "http://localhost:3000/"
+    },
+    "reads": {
+      "enabled": true,
+      "dataSourceRegistry": {
+        "sources": [
+          {
+            "pattern": "^tabulamuris\\.(?P<accession>.*)$",
+            "path": "../../data/test/sources/tabulamuris/{accession}.mus.Aligned.out.sorted.bam"
+          }
+        ]
+      }
+    },
+    "variants": {
+      "enabled": true
+    }
+  }
+}
