@@ -6,40 +6,236 @@
 [![Travis (.org) branch](https://img.shields.io/travis/ga4gh/htsget-refserver/master.svg?style=flat-square)](https://travis-ci.org/ga4gh/htsget-refserver)
 [![Coveralls github](https://img.shields.io/coveralls/github/ga4gh/htsget-refserver?style=flat-square)](https://coveralls.io/github/ga4gh/htsget-refserver?branch=master)
 
-This is a reference implementation of the version 1.2.0 htsget API protocol for securely streaming genomic data. Click [here](https://academic.oup.com/bioinformatics/article/35/1/119/5040320) for a high level overview of the standard, and [here](https://github.com/samtools/hts-specs/blob/master/htsget.md) to view the specification itself. 
+This is a reference implementation of the htsget API protocol for securely streaming genomic data. For more information about htsget, see the [paper](https://academic.oup.com/bioinformatics/article/35/1/119/5040320) or [specification](http://samtools.github.io/hts-specs/htsget.html).
 
-## Setup
+A GA4GH-hosted instance of this server is running at `https://htsget.ga4gh.org/`. See the [OpenAPI documentation](https://ga4gh.github.io/htsget-refserver/docs/index.html).
 
-### Dependencies
+## Quickstart - Docker
 
-* samtools (tested on version 1.9)
-* bcftools (tested on version 1.10.2)
+We suggest running the reference server as a docker container, as the image comes
+pre-installed with all dependencies.
 
-- Install [Golang(v1.13) and language tools](https://golang.org/dl/). With Homebrew, `$ brew install go`
+With docker installed, run:
+```
+docker image pull ga4gh/htsget-refserver:${TAG}
+```
+to pull the image, and:
+```
+docker container run -d -p 3000:3000 ga4gh/htsget-refserver:${TAG}
+```
+to spin up a containerized server. Custom config files can also be passed to the application by first mounting the directory containing the config, and specifying the path to config in the run command:
+```
+docker container run -d -p ${PORT}:${PORT} -v /directory/to/config:/usr/src/app/config ga4gh/htsget-refserver:${TAG} ./htsget-refserver -config /usr/src/app/config/config.json
+```
+Additional BAM/CRAM/VCF/BCF directories you wish to serve via htsget can also be mounted into the container. See the **Configuration** section below for instructions on how to serve custom datasets.
+
+The full list of tags/versions is available on the [dockerhub repository page](https://hub.docker.com/repository/docker/ga4gh/htsget-refserver).
+
+## Setup - Native
+
+To run and/or develop the server natively on your OS, the following **dependencies** are required: 
+
+* [Golang and language tools](https://golang.org/dl/) (tested on version 1.13) 
+* [samtools](http://www.htslib.org/download/) (tested on version 1.9)
+* [bcftools](http://www.htslib.org/download/) (tested on version 1.10.2)
 
 This project uses [Go modules](https://blog.golang.org/using-go-modules) to manage packages and dependencies.
 
-`$ go build -o ./htsget-refserver ./cmd && ./htsget-refserver` from root directory to start the server on the specified port (`3000` by default, see Configuration section).
+With the above dependencies installed, run:
+```
+git clone https://github.com/ga4gh/htsget-refserver.git
+cd htsget-refserver
+```
+to clone and enter the repository, and:
+```
+go build -o ./htsget-refserver ./cmd
+```
+to build the application binary. To start, run:
+```
+./htsget-refserver
+```
+A custom config file can also be specified with `-config`:
+```
+./htsget-refserver -config /path/to/config.json
+```
 
-## Usage
-The API is defined at https://github.com/samtools/hts-specs/blob/master/htsget.md. 
+## Configuration
 
-This server is deployed at https://htsget.ga4gh.org/.
+The htsget web service can be configured with runtime parameters via a JSON config file, specified with `-config`. For example:
+```
+./htsget-refserver -config /path/to/config.json
+```
 
-### Configuration
+Examples of valid JSON config files are available in this repository:
 
-The web service can be configured with modifiable runtime parameters via environment variables. The table below indicates these modifiable parameters, their default values, and what environment variables need to be set to override defaults.
+* [example 0 config](./data/config/example-0.config.json)
+* [integration tests config](./data/config/integration-tests.config.json) - used for integration testing on Travis CI builds
+* [ga4gh instance config](./data/config/ga4gh-production.config.json) - used to run the GA4GH-hosted instance at https://htsget.ga4gh.org
+* [empty config](./data/config/example-empty.config.json)
 
-| Name | Description | Environment Variable | Default Value | 
-|------|-------------|----------------------|---------------|
-| port | the port on which the service will run | HTSGET_PORT | 3000 | 
-| host | web service hostname. The JSON ticket returned by the server will reference other endpoints, using this hostname/base url to provide a complete url. | HTSGET_HOST | http://localhost:3000 | 
+In the JSON file, the root object must have a single "htsget" property, containing all sub-properties. ie:
+
+```
+{
+    "htsget": {}
+}
+```
+
+### Configuration - "props" object
+
+Under the `htsget` property, the `props` object overrides application-wide settings. The following table indicates the attributes of `props` and what settings they affect.
+
+| Name | Description |  Default Value | 
+|------|-------------|----------------|
+| port | the port on which the service will run | 3000 | 
+| host | web service hostname. The JSON ticket returned by the server will reference other endpoints, using this hostname/base url to provide a complete url. | http://localhost:3000/ | 
+| tempdir | writes temporary files used in request processing to this directory | . |
+| logfile | writes application logs to this file | htsget-refserver.log |
+
+Example `props` object:
+
+```
+{
+    "htsget": {
+        "props": {
+            "port": "80",
+            "host": "https://htsget.ga4gh.org/",
+            "tempdir": "/tmp/",
+            "logfile": "/usr/src/app/htsget-refserver.log"
+        }
+    }
+}
+```
+
+### Configuration - "reads" object
+
+Under the `htsget` property, the `reads` object overrides settings for reads-related data and endpoints. The following properties can be set:
+
+* `enabled` (boolean): if true, the server will set up reads-related routes (ie. `/reads/{id}`, `/reads/service-info`). True by default.
+* `dataSourceRegistry` (object): allows the server to serve alignment data from multiple cloud or local storage sources by mapping request object id patterns to registered data sources. A single `sources` property contains an array of data sources. For each data source, the following properties are required:
+    * `pattern` - a regex pattern that the `id` in `/reads/{id}` is matched against. If an `id` matches the pattern, the server will attempt to load data from the specified source. The pattern should make use of named capture group(s) to populate the path to the file.
+    * `path` - the path template (either by url or local file path) to alignment files matching the pattern. The path must indicate how named capture groups in the pattern will populate the path to the file.
+* `serviceInfo` (object): specify the attribute values returned in the Service Info response from `/reads/service-info`. Default attributes are supplied if not provided by config. Allows modification of the following properties from the Service Info specification:
+    * `id`
+    * `name`
+    * `description`
+    * `organization`
+    * `contactUrl`
+    * `documentationUrl`
+    * `createdAt`
+    * `updatedAt`
+    * `environment`
+    * `version`)
+
+Example `reads` object:
+
+```
+{
+    "htsget": {
+        "reads": {
+            "enabled": true,
+            "dataSourceRegistry": {
+                "sources": [
+                    {
+                        "pattern": "^tabulamuris\\.(?P<accession>10X.*)$",
+                        "path": "https://s3.amazonaws.com/czbiohub-tabula-muris/10x_bam_files/{accession}_possorted_genome.bam"
+                    },
+                    {
+                        "pattern": "^tabulamuris\\.(?P<accession>.*)$",
+                        "path": "https://s3.amazonaws.com/czbiohub-tabula-muris/facs_bam_files/{accession}.mus.Aligned.out.sorted.bam"
+                    }
+                ]
+            }
+            "serviceInfo": {
+                "id": "demo.reads",
+                "name": "htsget demo reads",
+                "description": "serve alignment data via htsget",
+                "organization": {
+                    "name": "Example Org",
+                    "url": "https://exampleorg.com"
+                },
+                "contactUrl": "mailto:nobody@exampleorg.com",
+                "documentationUrl": "https://htsget.exampleorg.com/docs",
+                "createdAt": "2021-01-01T09:00:00Z",
+                "updatedAt": "2021-01-01T09:00:00Z",
+                "environment": "test",
+                "version": "1.0.0"
+            }
+        }
+    }
+}
+```
+
+### Configuration - "variants" object
+
+Under the `htsget` property, the `variants` object overrides settings for variants-related data and endpoints. The following properties can be set:
+
+* `enabled` (boolean): if true, the server will set up variants-related routes (ie. `/variants/{id}`, `/variants/service-info`). True by default.
+* `dataSourceRegistry` (object): allows the server to serve variant data from multiple cloud or local storage sources by mapping request object id patterns to registered data sources. A single `sources` property contains an array of data sources. For each data source, the following properties are required:
+    * `pattern` - a regex pattern that the `id` in `/variants/{id}` is matched against. If an `id` matches the pattern, the server will attempt to load data from the specified source. The pattern should make use of named capture group(s) to populate the path to the file.
+    * `path` - the path template (either by url or local file path) to variant files matching the pattern. The path must indicate how named capture groups in the pattern will populate the path to the file.
+* `serviceInfo` (object): specify the attribute values returned in the Service Info response from `/variants/service-info`. Default attributes are supplied if not provided by config. Allows modification of the following properties from the Service Info specification:
+    * `id`
+    * `name`
+    * `description`
+    * `organization`
+    * `contactUrl`
+    * `documentationUrl`
+    * `createdAt`
+    * `updatedAt`
+    * `environment`
+    * `version`)
+
+Example `variants` object:
+
+```
+{
+    "htsget": {
+        "variants": {
+            "enabled": true,
+            "dataSourceRegistry": {
+                "sources": [
+                    {
+                        "pattern": "^1000genomes\\.(?P<accession>.*)$",
+                        "path": "https://ftp-trace.ncbi.nih.gov/1000genomes/ftp/phase1/analysis_results/integrated_call_sets/{accession}.vcf.gz"
+                    }
+                ]
+            }
+            "serviceInfo": {
+                "id": "demo.variants",
+                "name": "htsget demo variants",
+                "description": "serve variant data via htsget",
+                "organization": {
+                    "name": "Example Org",
+                    "url": "https://exampleorg.com"
+                },
+                "contactUrl": "mailto:nobody@exampleorg.com",
+                "documentationUrl": "https://htsget.exampleorg.com/docs",
+                "createdAt": "2021-01-01T09:00:00Z",
+                "updatedAt": "2021-01-01T09:00:00Z",
+                "environment": "test",
+                "version": "1.0.0"
+            }
+        }
+    }
+}
+```
 
 ## Testing
 
-`go test ./... -coverprofile=cp.out`
+To execute unit and end-to-end tests on the entire package, run:
+```
+go test ./... -coverprofile=cp.out
+```
+The go coverage report will be available at `./cp.out`. To execute tests for a specific package (for example the `htsformats` package) run:
+```
+go test ./internal/htsformats -coverprofile=cp.out
+```
 
-# Changelog
+## Changelog
+
+**v1.3.0**
+* Server supports reads and/or variants `service-info` endpoints. The attributes of the `service-info` response can be specified via the config file independently for each datatype 
 
 **v1.2.0**
 
@@ -56,10 +252,14 @@ in config file
 
 * Initial release
 
-## Todo
+## Roadmap
 
 * Implement `POST` request functionality 
-* Implement `/service-info` request functionality
+
+## Maintainers
+
+* Jeremy Adams (jb-adams) [jeremy.adams@ga4gh.org](mailto:jeremy.adams@ga4gh.org)
+* David Liu (xngln)
 
 ## Issues
 
