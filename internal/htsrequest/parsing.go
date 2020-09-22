@@ -15,17 +15,6 @@ import (
 	"github.com/go-chi/chi"
 )
 
-// ParamLoc (ParameterLocation) enum of where an htsget parameter can be found
-// in an HTTP request
-type ParamLoc int
-
-// enum values of ParamLoc: Path, Query (string), Header
-const (
-	ParamLocPath ParamLoc = iota
-	ParamLocQuery
-	ParamLocHeader
-)
-
 // ParamType enum of the final data type of an htsget parameter
 type ParamType int
 
@@ -35,23 +24,12 @@ const (
 	ParamTypeList
 )
 
-// paramLocations (map[string]ParamLoc): indicates whether each htsget parameter
-// is found on the url path, query string, or header
-var paramLocations = map[string]ParamLoc{
-	"id":               ParamLocPath,
-	"format":           ParamLocQuery,
-	"class":            ParamLocQuery,
-	"referenceName":    ParamLocQuery,
-	"start":            ParamLocQuery,
-	"end":              ParamLocQuery,
-	"fields":           ParamLocQuery,
-	"tags":             ParamLocQuery,
-	"notags":           ParamLocQuery,
-	"HtsgetBlockClass": ParamLocHeader,
-	"HtsgetBlockId":    ParamLocHeader,
-	"HtsgetNumBlocks":  ParamLocHeader,
-	"HtsgetFilePath":   ParamLocHeader,
-	"Range":            ParamLocHeader,
+type PostRequestBody struct {
+	Format  string   `json:"format"`
+	Fields  []string `json:"fields"`
+	Tags    []string `json:tags`
+	NoTags  []string `json:notags`
+	Regions []Region `json:"regions"`
 }
 
 // paramTypes (map[string]ParamType): indicates whether each htsget parameter is
@@ -126,4 +104,8 @@ func parseHeaderParam(request *http.Request, key string) (string, bool) {
 		found = true
 	}
 	return value, found
+}
+
+func parseReqBodyParam(request *http.Request, key string) (string, bool) {
+	return "", false
 }

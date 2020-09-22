@@ -15,61 +15,72 @@ import (
 	"github.com/ga4gh/htsget-refserver/internal/htsconstants"
 )
 
-var orderedParametersByMethodAndEndpoint = map[htsconstants.HTTPMethod]map[htsconstants.APIEndpoint][]string{
-	htsconstants.GetMethod: map[htsconstants.APIEndpoint][]string{
-		htsconstants.APIEndpointReadsTicket: []string{
-			"id",
-			"format",
-			"class",
-			"referenceName",
-			"start",
-			"end",
-			"fields",
-			"tags",
-			"notags",
+type RequestParameter struct {
+	location htsconstants.ParamLoc
+	name     string
+}
+
+var paramsByMethodEndpointLocation = map[htsconstants.HTTPMethod]map[htsconstants.APIEndpoint][]RequestParameter{
+	htsconstants.GetMethod: map[htsconstants.APIEndpoint][]RequestParameter{
+		htsconstants.APIEndpointReadsTicket: []RequestParameter{
+			{htsconstants.ParamLocPath, "id"},
+			{htsconstants.ParamLocQuery, "format"},
+			{htsconstants.ParamLocQuery, "class"},
+			{htsconstants.ParamLocQuery, "referenceName"},
+			{htsconstants.ParamLocQuery, "start"},
+			{htsconstants.ParamLocQuery, "end"},
+			{htsconstants.ParamLocQuery, "fields"},
+			{htsconstants.ParamLocQuery, "tags"},
+			{htsconstants.ParamLocQuery, "notags"},
 		},
-		htsconstants.APIEndpointReadsData: []string{
-			"id",
-			"format",
-			"referenceName",
-			"start",
-			"end",
-			"fields",
-			"tags",
-			"notags",
-			"HtsgetBlockClass",
-			"HtsgetBlockId",
-			"HtsgetNumBlocks",
+		htsconstants.APIEndpointReadsData: []RequestParameter{
+			{htsconstants.ParamLocPath, "id"},
+			{htsconstants.ParamLocQuery, "format"},
+			{htsconstants.ParamLocQuery, "referenceName"},
+			{htsconstants.ParamLocQuery, "start"},
+			{htsconstants.ParamLocQuery, "end"},
+			{htsconstants.ParamLocQuery, "fields"},
+			{htsconstants.ParamLocQuery, "tags"},
+			{htsconstants.ParamLocQuery, "notags"},
+			{htsconstants.ParamLocHeader, "HtsgetBlockClass"},
+			{htsconstants.ParamLocHeader, "HtsgetBlockId"},
+			{htsconstants.ParamLocHeader, "HtsgetNumBlocks"},
 		},
-		htsconstants.APIEndpointReadsServiceInfo: []string{},
-		htsconstants.APIEndpointVariantsTicket: []string{
-			"id",
-			"format",
-			"class",
-			"referenceName",
-			"start",
-			"end",
-			"fields",
-			"tags",
-			"notags",
+		htsconstants.APIEndpointReadsServiceInfo: []RequestParameter{},
+		htsconstants.APIEndpointVariantsTicket: []RequestParameter{
+			{htsconstants.ParamLocPath, "id"},
+			{htsconstants.ParamLocQuery, "format"},
+			{htsconstants.ParamLocQuery, "class"},
+			{htsconstants.ParamLocQuery, "referenceName"},
+			{htsconstants.ParamLocQuery, "start"},
+			{htsconstants.ParamLocQuery, "end"},
+			{htsconstants.ParamLocQuery, "fields"},
+			{htsconstants.ParamLocQuery, "tags"},
+			{htsconstants.ParamLocQuery, "notags"},
 		},
-		htsconstants.APIEndpointVariantsData: []string{
-			"id",
-			"format",
-			"class",
-			"referenceName",
-			"start",
-			"end",
-			"fields",
-			"tags",
-			"notags",
-			"HtsgetBlockClass",
-			"HtsgetBlockId",
-			"HtsgetNumBlocks",
+		htsconstants.APIEndpointVariantsData: []RequestParameter{
+			{htsconstants.ParamLocPath, "id"},
+			{htsconstants.ParamLocQuery, "format"},
+			{htsconstants.ParamLocQuery, "class"},
+			{htsconstants.ParamLocQuery, "referenceName"},
+			{htsconstants.ParamLocQuery, "start"},
+			{htsconstants.ParamLocQuery, "end"},
+			{htsconstants.ParamLocQuery, "fields"},
+			{htsconstants.ParamLocQuery, "tags"},
+			{htsconstants.ParamLocQuery, "notags"},
+			{htsconstants.ParamLocHeader, "HtsgetBlockClass"},
+			{htsconstants.ParamLocHeader, "HtsgetBlockId"},
+			{htsconstants.ParamLocHeader, "HtsgetNumBlocks"},
 		},
-		htsconstants.APIEndpointFileBytes: []string{
-			"HtsgetFilePath",
-			"Range",
+		htsconstants.APIEndpointFileBytes: []RequestParameter{
+			{htsconstants.ParamLocHeader, "HtsgetFilePath"},
+			{htsconstants.ParamLocHeader, "Range"},
+		},
+	},
+	htsconstants.PostMethod: map[htsconstants.APIEndpoint][]RequestParameter{
+		htsconstants.APIEndpointReadsTicket: []RequestParameter{
+			{htsconstants.ParamLocPath, "id"},
+			{htsconstants.ParamLocReqBody, "referenceName"},
 		},
 	},
 }
@@ -84,35 +95,38 @@ var orderedParametersByMethodAndEndpoint = map[htsconstants.HTTPMethod]map[htsco
 // 	htsgetReq (*HtsgetRequest): object to set transformed parameter value to
 // Returns
 //	(error): client-side error if any parameters fail validation
-func setSingleParameter(request *http.Request, paramKey string,
+func setSingleParameter(request *http.Request, param RequestParameter,
 	params url.Values, htsgetReq *HtsgetRequest) error {
 
 	var value string
 	var found bool
 	// lookup if parameter is found on path/query/header,
 	// and if a scalar or list is expected
-	paramLocation := paramLocations[paramKey]
-	paramType := paramTypes[paramKey]
+	paramLocation := param.location
+	paramName := param.name
+	paramType := paramTypes[paramName]
 
 	// parse the request parameter by path, query string, or header
 	switch paramLocation {
-	case ParamLocPath:
-		value, found = parsePathParam(request, paramKey)
-	case ParamLocQuery:
-		v, f, err := parseQueryParam(params, paramKey)
+	case htsconstants.ParamLocPath:
+		value, found = parsePathParam(request, paramName)
+	case htsconstants.ParamLocQuery:
+		v, f, err := parseQueryParam(params, paramName)
 		value = v
 		found = f
 		if err != nil {
 			return err
 		}
-	case ParamLocHeader:
-		value, found = parseHeaderParam(request, paramKey)
+	case htsconstants.ParamLocHeader:
+		value, found = parseHeaderParam(request, paramName)
+	case htsconstants.ParamLocReqBody:
+		value, found = parseReqBodyParam(request, paramName)
 	}
 
 	// if a value is found, then
 	if found {
 		// run the validation function, return an error if invalid
-		validationFunc := validationByParam[paramKey]
+		validationFunc := validationByParam[paramName]
 		validationResult, validationMsg := validationFunc(value, htsgetReq)
 		if !validationResult {
 			return errors.New(validationMsg)
@@ -122,11 +136,11 @@ func setSingleParameter(request *http.Request, paramKey string,
 		// HtsgetRequest map
 		switch paramType {
 		case ParamTypeScalar:
-			transformFunc := transformationScalarByParam[paramKey]
-			htsgetReq.AddScalarParam(paramKey, transformFunc(value))
+			transformFunc := transformationScalarByParam[paramName]
+			htsgetReq.AddScalarParam(paramName, transformFunc(value))
 		case ParamTypeList:
-			transformFunc := transformationListByParam[paramKey]
-			htsgetReq.AddListParam(paramKey, transformFunc(value))
+			transformFunc := transformationListByParam[paramName]
+			htsgetReq.AddListParam(paramName, transformFunc(value))
 		}
 		return nil
 	}
@@ -135,9 +149,9 @@ func setSingleParameter(request *http.Request, paramKey string,
 	// map
 	switch paramType {
 	case ParamTypeScalar:
-		htsgetReq.AddScalarParam(paramKey, defaultScalarParameterValues[paramKey])
+		htsgetReq.AddScalarParam(paramName, defaultScalarParameterValues[paramName])
 	case ParamTypeList:
-		htsgetReq.AddListParam(paramKey, defaultListParameterValues[paramKey])
+		htsgetReq.AddListParam(paramName, defaultListParameterValues[paramName])
 	}
 	return nil
 }
@@ -155,15 +169,16 @@ func setSingleParameter(request *http.Request, paramKey string,
 //	(error): client-side error if any parameters fail validation
 func SetAllParameters(method htsconstants.HTTPMethod, endpoint htsconstants.APIEndpoint, writer http.ResponseWriter, request *http.Request) (*HtsgetRequest, error) {
 
-	orderedParams := orderedParametersByMethodAndEndpoint[method][endpoint]
+	orderedParams := paramsByMethodEndpointLocation[method][endpoint]
 	htsgetReq := NewHtsgetRequest()
 	htsgetReq.SetEndpoint(endpoint)
 	params := request.URL.Query()
 	for i := 0; i < len(orderedParams); i++ {
-		paramKey := orderedParams[i]
-		err := setSingleParameter(request, paramKey, params, htsgetReq)
+		param := orderedParams[i]
+		paramName := param.name
+		err := setSingleParameter(request, param, params, htsgetReq)
 		if err != nil {
-			htsgetErrorFunc := errorsByParam[paramKey]
+			htsgetErrorFunc := errorsByParam[paramName]
 			msg := err.Error()
 			htsgetErrorFunc(writer, &msg)
 			return htsgetReq, err

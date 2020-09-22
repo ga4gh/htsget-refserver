@@ -28,6 +28,7 @@ func SetRouter() (*chi.Mux, error) {
 	// if reads enabled, add reads routes
 	if htsconfig.IsEndpointEnabled(htsconstants.APIEndpointReadsTicket) {
 		router.Get(htsconstants.APIEndpointReadsTicket.String(), getReadsTicket)
+		router.Post(htsconstants.APIEndpointReadsTicket.String(), postReadsTicket)
 		router.Get(htsconstants.APIEndpointReadsData.String(), getReadsData)
 		router.Get(htsconstants.APIEndpointReadsServiceInfo.String(), getReadsServiceInfo)
 	}

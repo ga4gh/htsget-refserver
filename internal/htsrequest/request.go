@@ -25,6 +25,8 @@ import (
 //	ListParams (map[string][]string): map holding list parameter values
 type HtsgetRequest struct {
 	endpoint     htsconstants.APIEndpoint
+	ID           string
+	format       string
 	ScalarParams map[string]string
 	ListParams   map[string][]string
 }

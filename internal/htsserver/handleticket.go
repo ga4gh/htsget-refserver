@@ -1,12 +1,18 @@
 package htsserver
 
 import (
+	"fmt"
+
 	"github.com/ga4gh/htsget-refserver/internal/htsdao"
 	"github.com/ga4gh/htsget-refserver/internal/htserror"
 	"github.com/ga4gh/htsget-refserver/internal/htsticket"
 )
 
 func ticketRequestHandler(handler *requestHandler) {
+	fmt.Println(handler.HtsReq.ID())
+	fmt.Println(handler.HtsReq.ReferenceName())
+	fmt.Println("***")
+
 	dao, err := htsdao.GetDao(handler.HtsReq)
 	if err != nil {
 		msg := "Could not determine data source path/url from request id"
