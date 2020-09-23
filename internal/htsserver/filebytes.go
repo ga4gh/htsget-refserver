@@ -22,12 +22,12 @@ func getFileBytes(writer http.ResponseWriter, request *http.Request) {
 
 func getFileBytesHandler(handler *requestHandler) {
 
-	start, end, err := htsutils.ParseRangeHeader(handler.HtsReq.Range())
+	start, end, err := htsutils.ParseRangeHeader(handler.HtsReq.GetHtsgetRange())
 	if err != nil {
 		return
 	}
 
-	file, err := os.Open(handler.HtsReq.HtsgetFilePath())
+	file, err := os.Open(handler.HtsReq.GetHtsgetFilePath())
 	reader := bufio.NewReader(file)
 	reader.Discard(int(start))
 

@@ -28,15 +28,15 @@ func getReadsData(writer http.ResponseWriter, request *http.Request) {
 
 // getReadsData serves the actual data from AWS back to client
 func getReadsDataHandler(handler *requestHandler) {
-	fileURL, err := htsconfig.GetObjectPath(handler.HtsReq.GetEndpoint(), handler.HtsReq.ID())
+	fileURL, err := htsconfig.GetObjectPath(handler.HtsReq.GetEndpoint(), handler.HtsReq.GetID())
 	if err != nil {
 		return
 	}
 
-	region := &htsformats.Region{
-		Name:  handler.HtsReq.ReferenceName(),
-		Start: handler.HtsReq.Start(),
-		End:   handler.HtsReq.End(),
+	region := &htsrequest.Region{
+		ReferenceName: handler.HtsReq.GetReferenceName(),
+		Start:         handler.HtsReq.GetStart(),
+		End:           handler.HtsReq.GetEnd(),
 	}
 
 	args := getSamtoolsCmdArgs(region, handler.HtsReq, fileURL)
@@ -59,15 +59,15 @@ func getReadsDataHandler(handler *requestHandler) {
 	reader := bufio.NewReader(pipe)
 
 	var eofLen int
-	if handler.HtsReq.HtsgetBlockClass() == "header" {
+	if handler.HtsReq.GetHtsgetBlockClass() == "header" {
 		eofLen = htsconstants.BamHeaderEOFLen
 	} else {
 		eofLen = htsconstants.BamEOFLen
 	}
 
-	if (handler.HtsReq.AllFieldsRequested() && handler.HtsReq.AllTagsRequested()) || handler.HtsReq.HtsgetBlockClass() == "header" {
-		if handler.HtsReq.HtsgetBlockClass() != "header" { // remove header
-			headerLen, err := headerLen(handler.HtsReq.ID(), fileURL)
+	if (handler.HtsReq.AllFieldsRequested() && handler.HtsReq.AllTagsRequested()) || handler.HtsReq.GetHtsgetBlockClass() == "header" {
+		if handler.HtsReq.GetHtsgetBlockClass() != "header" { // remove header
+			headerLen, err := headerLen(handler.HtsReq.GetID(), fileURL)
 			handler.Writer.Header().Set("header-len", strconv.FormatInt(headerLen, 10))
 			if err != nil {
 				msg := err.Error()
@@ -77,7 +77,7 @@ func getReadsDataHandler(handler *requestHandler) {
 			headerBuf := make([]byte, headerLen)
 			io.ReadFull(reader, headerBuf)
 		}
-		if handler.HtsReq.HtsgetBlockID() != handler.HtsReq.HtsgetNumBlocks() { // remove EOF if current block is not the last block
+		if handler.HtsReq.GetHtsgetCurrentBlock() != handler.HtsReq.GetHtsgetTotalBlocks() { // remove EOF if current block is not the last block
 			bufSize := 65536
 			buf := make([]byte, bufSize)
 			n, err := io.ReadFull(reader, buf)
@@ -112,12 +112,12 @@ func getReadsDataHandler(handler *requestHandler) {
 		}
 	} else {
 		columns := make([]bool, 11)
-		for _, field := range handler.HtsReq.Fields() {
+		for _, field := range handler.HtsReq.GetFields() {
 			columns[htsconstants.BamFields[field]] = true
 		}
 
-		tmpPath := htsconfig.GetTempfilePath(handler.HtsReq.ID())
-		tmp, err := htsconfig.CreateTempfile(handler.HtsReq.ID())
+		tmpPath := htsconfig.GetTempfilePath(handler.HtsReq.GetID())
+		tmp, err := htsconfig.CreateTempfile(handler.HtsReq.GetID())
 		if err != nil {
 			msg := err.Error()
 			htserror.InternalServerError(handler.Writer, &msg)
@@ -125,7 +125,7 @@ func getReadsDataHandler(handler *requestHandler) {
 		}
 
 		/* Write the BAM Header to the temporary SAM file */
-		tmpHeaderPath := htsconfig.GetTempfilePath(handler.HtsReq.ID() + ".header.bam")
+		tmpHeaderPath := htsconfig.GetTempfilePath(handler.HtsReq.GetID() + ".header.bam")
 		headerCmd := exec.Command("samtools", "view", "-H", "-O", "SAM", "-o", tmpHeaderPath, fileURL)
 		if err != nil {
 			msg := err.Error()
@@ -180,7 +180,7 @@ func getReadsDataHandler(handler *requestHandler) {
 		}
 
 		// remove header bytes from 'body' class data streams
-		headerByteCount, _ := headerLen(handler.HtsReq.ID(), fileURL)
+		headerByteCount, _ := headerLen(handler.HtsReq.GetID(), fileURL)
 		bamReader := bufio.NewReader(bamPipe)
 		headerBuf := make([]byte, headerByteCount)
 		io.ReadFull(bamReader, headerBuf)
@@ -229,9 +229,9 @@ func getTempPath(id string, blockID int) (string, error) {
 	return tempPath, nil
 }
 
-func getSamtoolsCmdArgs(region *htsformats.Region, htsgetReq *htsrequest.HtsgetRequest, fileURL string) []string {
+func getSamtoolsCmdArgs(region *htsrequest.Region, htsgetReq *htsrequest.HtsgetRequest, fileURL string) []string {
 	args := []string{"view", fileURL}
-	if htsgetReq.HtsgetBlockClass() == "header" {
+	if htsgetReq.GetHtsgetBlockClass() == "header" {
 		args = append(args, "-H")
 		args = append(args, "-b")
 	} else {

@@ -7,65 +7,46 @@
 package htsrequest
 
 import (
+	"fmt"
+	"strconv"
 	"strings"
 )
 
-// transformationScalarByParam (map[string]func(string) string): map of
-// functions. the correct transformation function for each scalar parameter
-var transformationScalarByParam = map[string]func(string) string{
-	"id":               noTransform,
-	"format":           strings.ToUpper,
-	"class":            strings.ToLower,
-	"referenceName":    noTransform,
-	"start":            noTransform,
-	"end":              noTransform,
-	"HtsgetBlockClass": strings.ToLower,
-	"HtsgetBlockId":    noTransform,
-	"HtsgetNumBlocks":  noTransform,
-	"HtsgetFilePath":   noTransform,
-	"Range":            noTransform,
+type ParamTransformer struct{}
+
+func NewParamTransformer() *ParamTransformer {
+	return new(ParamTransformer)
 }
 
-// transformationScalarByParam (map[string]func(string) []string): map of
-// functions. the correct transformation function for each list parameter
-var transformationListByParam = map[string]func(string) []string{
-	"fields": splitAndUppercase,
-	"tags":   splitOnComma,
-	"notags": splitOnComma,
+func (t *ParamTransformer) NoTransform(s string) (string, string) {
+	return s, ""
 }
 
-// noTransform performs no transformation on a request parameter
-//
-// Arguments
-//	s (string): request parameter
-// Returns
-//	(string): unmodified request parameter
-func noTransform(s string) string {
-	return s
+func (t *ParamTransformer) TransformStringUppercase(s string) (string, string) {
+	return strings.ToUpper(s), ""
 }
 
-// splitOnComma splits a single string into a list of strings, using the comma
-// as delimiter
-//
-// Arguments
-//	s (string): request parameter string
-// Returns
-//	([]string): list representation of the passed string
-func splitOnComma(s string) []string {
-	return strings.Split(s, ",")
+func (t *ParamTransformer) TransformStringLowercase(s string) (string, string) {
+	return strings.ToLower(s), ""
 }
 
-// splitAndUppercase splits into a list of strings, and makes each string
-// uppercase
-//
-// Arguments
-//	s (string): request parameter string
-// Returns
-// ([]string): list of strings, with each string uppercased
-func splitAndUppercase(s string) []string {
-	sList := splitOnComma(s)
+func (t *ParamTransformer) TransformStringToInt(s string) (int, string) {
+	msg := ""
+	value, err := strconv.Atoi(s)
+	if err != nil {
+		msg = fmt.Sprintf("Could not parse value: '%s', integer expected", s)
+	}
+	return value, msg
+}
+
+func (t *ParamTransformer) TransformSplit(s string) ([]string, string) {
+	return strings.Split(s, ","), ""
+}
+
+func (t *ParamTransformer) TransformSplitAndUppercase(s string) ([]string, string) {
+	sList, _ := t.TransformSplit(s)
 	for i := 0; i < len(sList); i++ {
 		sList[i] = strings.ToUpper(sList[i])
 	}
-	return sList
+	return sList, ""
 }

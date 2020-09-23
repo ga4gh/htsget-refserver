@@ -8,6 +8,7 @@ package htsrequest
 
 import (
 	"errors"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 
@@ -27,8 +28,8 @@ const (
 type PostRequestBody struct {
 	Format  string   `json:"format"`
 	Fields  []string `json:"fields"`
-	Tags    []string `json:tags`
-	NoTags  []string `json:notags`
+	Tags    []string `json:"tags"`
+	NoTags  []string `json:"notags"`
 	Regions []Region `json:"regions"`
 }
 
@@ -107,5 +108,7 @@ func parseHeaderParam(request *http.Request, key string) (string, bool) {
 }
 
 func parseReqBodyParam(request *http.Request, key string) (string, bool) {
+	ioutil.ReadAll(request.Body)
+
 	return "", false
 }
