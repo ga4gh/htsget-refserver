@@ -8,58 +8,24 @@ package htsrequest
 
 import (
 	"errors"
-	"io/ioutil"
+	"fmt"
 	"net/http"
 	"net/url"
+	"reflect"
 
 	"github.com/ga4gh/htsget-refserver/internal/htsutils"
 	"github.com/go-chi/chi"
 )
 
-// ParamType enum of the final data type of an htsget parameter
-type ParamType int
-
-// enum values of ParamType: Scalar, List
-const (
-	ParamTypeScalar ParamType = iota
-	ParamTypeList
-)
-
 type PostRequestBody struct {
-	Format  string   `json:"format"`
-	Fields  []string `json:"fields"`
-	Tags    []string `json:"tags"`
-	NoTags  []string `json:"notags"`
-	Regions []Region `json:"regions"`
-}
-
-// paramTypes (map[string]ParamType): indicates whether each htsget parameter is
-// expected to contain a scalar or list value
-var paramTypes = map[string]ParamType{
-	"id":               ParamTypeScalar,
-	"format":           ParamTypeScalar,
-	"class":            ParamTypeScalar,
-	"referenceName":    ParamTypeScalar,
-	"start":            ParamTypeScalar,
-	"end":              ParamTypeScalar,
-	"fields":           ParamTypeList,
-	"tags":             ParamTypeList,
-	"notags":           ParamTypeList,
-	"HtsgetBlockClass": ParamTypeScalar,
-	"HtsgetBlockId":    ParamTypeScalar,
-	"HtsgetNumBlocks":  ParamTypeScalar,
-	"HtsgetFilePath":   ParamTypeScalar,
-	"Range":            ParamTypeScalar,
+	Format  *string    `json:"format"`
+	Fields  *[]string  `json:"fields"`
+	Tags    *[]string  `json:"tags"`
+	NoTags  *[]string  `json:"notags"`
+	Regions *[]*Region `json:"regions"`
 }
 
 // parsePathParam parses a single url path parameter as a string
-//
-// Arguments
-//	request (*http.Request): the HTTP request
-//	key (string): the parameter name/field
-// Returns
-//	(string): the value of the path parameter by specified name
-//	(bool): true if the parameter was specified by client
 func parsePathParam(request *http.Request, key string) (string, bool) {
 	value := chi.URLParam(request, key)
 	found := false
@@ -70,14 +36,6 @@ func parsePathParam(request *http.Request, key string) (string, bool) {
 }
 
 // parseQueryParam parses a single query string parameter as a string
-//
-// Arguments
-//	params (url.Values): query string parameters from HTTP request
-//	key (string): the parameter name/field
-// Returns
-//	(string): the value of the query parameter by specified name
-//	(bool): true if the parameter was specified by client
-//	(error): encountered if the parameter was specified by client incorrectly
 func parseQueryParam(params url.Values, key string) (string, bool, error) {
 
 	if len(params[key]) == 1 {
@@ -90,13 +48,6 @@ func parseQueryParam(params url.Values, key string) (string, bool, error) {
 }
 
 // parseHeaderParam parses a single header parameter as a string
-//
-// Arguments
-//	request (*http.Request): the HTTP request
-//	key (string): the parameter name/field
-// Returns
-//	(string): the value of the header parameter by specified name
-//	(bool): true if the parameter was specified by client
 func parseHeaderParam(request *http.Request, key string) (string, bool) {
 
 	value := request.Header.Get(key)
@@ -107,8 +58,20 @@ func parseHeaderParam(request *http.Request, key string) (string, bool) {
 	return value, found
 }
 
-func parseReqBodyParam(request *http.Request, key string) (string, bool) {
-	ioutil.ReadAll(request.Body)
+func parseReqBodyParam(requestBody *PostRequestBody, key string) (string, bool) {
+	fmt.Println("Your requst body")
+	fmt.Println(requestBody)
 
+	foo := reflect.TypeOf(requestBody)
+	fmt.Println(foo)
+
+	/*
+		requestBodyReflect := reflect.ValueOf(requestBody).Type()
+		requestFieldReflect := requestBodyReflect.FieldByName(key)
+		fmt.Println(requestFieldReflect)
+
+		fmt.Println("Your key")
+		fmt.Println(key)
+	*/
 	return "", false
 }

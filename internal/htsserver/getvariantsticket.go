@@ -10,6 +10,7 @@ func getVariantsTicket(writer http.ResponseWriter, request *http.Request) {
 	newRequestHandler(
 		htsconstants.GetMethod,
 		htsconstants.APIEndpointVariantsTicket,
+		addRegionFromQueryString,
 		ticketRequestHandler,
 	).handleRequest(writer, request)
 }

@@ -10,6 +10,7 @@ func getVariantsServiceInfo(writer http.ResponseWriter, request *http.Request) {
 	newRequestHandler(
 		htsconstants.GetMethod,
 		htsconstants.APIEndpointVariantsServiceInfo,
+		noAfterSetup,
 		serviceInfoRequestHandler,
 	).handleRequest(writer, request)
 }

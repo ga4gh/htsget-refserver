@@ -16,6 +16,7 @@ func getVariantsData(writer http.ResponseWriter, request *http.Request) {
 	newRequestHandler(
 		htsconstants.GetMethod,
 		htsconstants.APIEndpointVariantsData,
+		noAfterSetup,
 		getVariantsDataHandler,
 	).handleRequest(writer, request)
 }

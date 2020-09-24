@@ -14,17 +14,23 @@ var defaultEnd = -1
 var defaultFields = []string{"ALL"}
 var defaultTags = []string{"ALL"}
 var defaultNoTags = []string{"NONE"}
+var defaultRegions = []*Region{}
 var defaultHtsgetBlockClass = ""
 
 var defaultParameterValues = map[string]interface{}{
 	"id":               defaultId,
 	"format":           defaultFormat,
+	"Format":           defaultFormat,
 	"class":            defaultClass,
 	"referenceName":    defaultReferenceName,
 	"start":            defaultStart,
 	"end":              defaultEnd,
 	"fields":           defaultFields,
+	"Fields":           defaultFields,
 	"tags":             defaultTags,
+	"Tags":             defaultTags,
 	"notags":           defaultNoTags,
+	"NoTags":           defaultNoTags,
+	"Regions":          defaultRegions,
 	"HtsgetBlockClass": defaultHtsgetBlockClass,
 }

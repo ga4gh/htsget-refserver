@@ -43,7 +43,9 @@ type HtsgetRequest struct {
 
 // NewHtsgetRequest instantiates a new HtsgetRequest struct instance
 func NewHtsgetRequest() *HtsgetRequest {
-	return new(HtsgetRequest)
+	r := new(HtsgetRequest)
+	r.SetRegions([]*Region{})
+	return r
 }
 
 /* SETTERS AND GETTERS */
@@ -130,6 +132,10 @@ func (r *HtsgetRequest) GetNoTags() []string {
 
 func (r *HtsgetRequest) SetRegions(regions []*Region) {
 	r.regions = regions
+}
+
+func (r *HtsgetRequest) AddRegion(region *Region) {
+	r.regions = append(r.regions, region)
 }
 
 func (r *HtsgetRequest) GetRegions() []*Region {
@@ -224,10 +230,14 @@ func (r *HtsgetRequest) EndRequested() bool {
 	return !r.isDefaultInt(r.GetEnd(), defaultEnd)
 }
 
+func (r *HtsgetRequest) NRegions() int {
+	return len(r.GetRegions())
+}
+
 // AllRegionsRequested checks if the client request is for all chromosomal
 // regions in the file (ie. referenceName not specified)
 func (r *HtsgetRequest) AllRegionsRequested() bool {
-	return r.isDefaultString(r.GetReferenceName(), defaultReferenceName)
+	return r.NRegions() == 0
 }
 
 // AllFieldsRequested checks if all fields were requested by the client. all
@@ -254,15 +264,21 @@ func (r *HtsgetRequest) AllTagsRequested() bool {
 	return r.TagsNotSpecified() && r.NoTagsNotSpecified()
 }
 
+func (r *HtsgetRequest) IsFinalBlock() bool {
+	current, _ := strconv.Atoi(r.GetHtsgetCurrentBlock())
+	total, _ := strconv.Atoi(r.GetHtsgetTotalBlocks())
+	return current == total-1
+}
+
 // ConstructDataEndpointURL for a given htsget request object, return the url
 // that will redirect the client to the correct data download endpoint with
 // all necessary parameters and headers provided
-func (r *HtsgetRequest) ConstructDataEndpointURL() (*url.URL, error) {
+func (r *HtsgetRequest) ConstructDataEndpointURL(useRegion bool, regionI int) (string, error) {
 	host := htsconfig.GetHost()
 	dataEndpointPath := r.GetEndpoint().DataEndpointPath()
 	dataEndpoint, err := url.Parse(htsutils.RemoveTrailingSlash(host) + dataEndpointPath + r.GetID())
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	// add query params
@@ -270,17 +286,20 @@ func (r *HtsgetRequest) ConstructDataEndpointURL() (*url.URL, error) {
 	if r.HeaderOnlyRequested() {
 		query.Set("class", r.GetClass())
 	}
-	if r.ReferenceNameRequested() {
-		query.Set("referenceName", r.GetReferenceName())
+
+	if useRegion {
+		region := r.GetRegions()[regionI]
+		if region.ReferenceNameRequested() {
+			query.Set("referenceName", region.GetReferenceName())
+		}
+		if region.StartRequested() {
+			query.Set("start", region.StartString())
+		}
+		if region.EndRequested() {
+			query.Set("end", region.EndString())
+		}
 	}
-	if r.StartRequested() {
-		startString := strconv.Itoa(r.GetStart())
-		query.Set("start", startString)
-	}
-	if r.EndRequested() {
-		endString := strconv.Itoa(r.GetEnd())
-		query.Set("end", endString)
-	}
+
 	if !r.AllFieldsRequested() {
 		f := strings.Join(r.GetFields(), ",")
 		query.Set("fields", f)
@@ -294,7 +313,7 @@ func (r *HtsgetRequest) ConstructDataEndpointURL() (*url.URL, error) {
 		query.Set("notags", nt)
 	}
 	dataEndpoint.RawQuery = query.Encode()
-	return dataEndpoint, nil
+	return dataEndpoint.String(), nil
 }
 
 func (r *HtsgetRequest) GetDataSourceRegistry() *htsconfig.DataSourceRegistry {

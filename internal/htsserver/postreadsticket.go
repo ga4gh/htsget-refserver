@@ -10,6 +10,7 @@ func postReadsTicket(writer http.ResponseWriter, request *http.Request) {
 	newRequestHandler(
 		htsconstants.PostMethod,
 		htsconstants.APIEndpointReadsTicket,
+		noAfterSetup,
 		ticketRequestHandler,
 	).handleRequest(writer, request)
 }

@@ -22,6 +22,7 @@ func getReadsData(writer http.ResponseWriter, request *http.Request) {
 	newRequestHandler(
 		htsconstants.GetMethod,
 		htsconstants.APIEndpointReadsData,
+		noAfterSetup,
 		getReadsDataHandler,
 	).handleRequest(writer, request)
 }
@@ -77,7 +78,7 @@ func getReadsDataHandler(handler *requestHandler) {
 			headerBuf := make([]byte, headerLen)
 			io.ReadFull(reader, headerBuf)
 		}
-		if handler.HtsReq.GetHtsgetCurrentBlock() != handler.HtsReq.GetHtsgetTotalBlocks() { // remove EOF if current block is not the last block
+		if !handler.HtsReq.IsFinalBlock() { // remove EOF if current block is not the last block
 			bufSize := 65536
 			buf := make([]byte, bufSize)
 			n, err := io.ReadFull(reader, buf)

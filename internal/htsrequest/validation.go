@@ -8,6 +8,7 @@ package htsrequest
 
 import (
 	"bufio"
+	"fmt"
 	"net/http"
 	"os"
 	"os/exec"
@@ -222,7 +223,7 @@ func (v *ParamValidator) ValidateStart(htsgetReq *HtsgetRequest, start int) (boo
 	}
 
 	// start requires referenceName to be specified as well
-	if htsgetReq.AllRegionsRequested() {
+	if !htsgetReq.ReferenceNameRequested() {
 		return false, "'start' cannot be set without 'referenceName'"
 	}
 
@@ -253,7 +254,7 @@ func (v *ParamValidator) ValidateEnd(htsgetReq *HtsgetRequest, end int) (bool, s
 	}
 
 	// end requires referenceName to be specified as well
-	if htsgetReq.AllRegionsRequested() {
+	if !htsgetReq.ReferenceNameRequested() {
 		return false, "'end' cannot be set without 'referenceName'"
 	}
 
@@ -261,6 +262,9 @@ func (v *ParamValidator) ValidateEnd(htsgetReq *HtsgetRequest, end int) (bool, s
 	if !isGreaterThanEqualToZero(end) {
 		return false, "'end' must be greater than or equal to zero"
 	}
+
+	fmt.Println("checking end")
+	fmt.Println(end)
 
 	// if start is specified, end must be greater than start
 	if start != -1 {

@@ -8,10 +8,14 @@
 package htsrequest
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
+	"io/ioutil"
 	"net/http"
-	"net/url"
 	"reflect"
+
+	"github.com/ga4gh/htsget-refserver/internal/htserror"
 
 	"github.com/ga4gh/htsget-refserver/internal/htsconstants"
 )
@@ -394,6 +398,43 @@ var orderedParamsMap = map[htsconstants.HTTPMethod]map[htsconstants.APIEndpoint]
 				"ValidateID",
 				"SetID",
 			},
+			{
+				htsconstants.ParamLocReqBody,
+				"Format",
+				"NoTransform",
+				"ValidateFormat",
+				"SetFormat",
+			},
+			{
+				htsconstants.ParamLocReqBody,
+				"Fields",
+				"NoTransform",
+				"ValidateFields",
+				"SetFields",
+			},
+			{
+				htsconstants.ParamLocReqBody,
+				"Tags",
+				"NoTransform",
+				"ValidateTags",
+				"SetTags",
+			},
+			{
+				htsconstants.ParamLocReqBody,
+				"NoTags",
+				"NoTransform",
+				"ValidateNoTags",
+				"SetNoTags",
+			},
+			/*
+				{
+					htsconstants.ParamLocReqBody,
+					"Regions",
+					"NoTransform",
+					"ValidateRegions",
+					"SetRegions",
+				},
+			*/
 		},
 	},
 }
@@ -402,7 +443,10 @@ var orderedParamsMap = map[htsconstants.HTTPMethod]map[htsconstants.APIEndpoint]
 // to the HtsgetRequest object. if the parameter value is not valid,
 // returns an error
 func setSingleParameter(request *http.Request, setParamTuple SetParameterTuple,
-	params url.Values, htsgetReq *HtsgetRequest) error {
+	postRequestBody *PostRequestBody, htsgetReq *HtsgetRequest) error {
+
+	fmt.Println("-")
+	fmt.Println(setParamTuple.name)
 
 	var value string
 	var found bool
@@ -416,7 +460,7 @@ func setSingleParameter(request *http.Request, setParamTuple SetParameterTuple,
 	case htsconstants.ParamLocPath:
 		value, found = parsePathParam(request, paramName)
 	case htsconstants.ParamLocQuery:
-		v, f, err := parseQueryParam(params, paramName)
+		v, f, err := parseQueryParam(request.URL.Query(), paramName)
 		value = v
 		found = f
 		if err != nil {
@@ -425,12 +469,18 @@ func setSingleParameter(request *http.Request, setParamTuple SetParameterTuple,
 	case htsconstants.ParamLocHeader:
 		value, found = parseHeaderParam(request, paramName)
 	case htsconstants.ParamLocReqBody:
-		value, found = parseReqBodyParam(request, paramName)
+		value, found = parseReqBodyParam(postRequestBody, paramName)
 	}
 
+	fmt.Println("found?")
+	fmt.Println(found)
+
 	// use reflect to get the param setter method for the request
+	fmt.Println("A")
 	htsgetReqReflect := reflect.ValueOf(htsgetReq)
+	fmt.Println("B")
 	htsgetParamSetter := htsgetReqReflect.MethodByName(setParamTuple.setFunc)
+	fmt.Println("C")
 
 	// if a value is found, then transform, validate, and set
 	if found {
@@ -460,10 +510,16 @@ func setSingleParameter(request *http.Request, setParamTuple SetParameterTuple,
 		htsgetParamSetter.Call([]reflect.Value{transformed})
 		return nil
 	}
+	fmt.Println("D")
 
 	// if no param value is found, set the default value
 	defaultValueReflect := reflect.ValueOf(defaultParameterValues[paramName])
+	fmt.Println("E")
+	fmt.Println(paramName)
+	fmt.Println(defaultParameterValues[paramName])
+	fmt.Println(htsgetParamSetter)
 	htsgetParamSetter.Call([]reflect.Value{defaultValueReflect})
+	fmt.Println("F")
 	return nil
 }
 
@@ -474,11 +530,28 @@ func SetAllParameters(method htsconstants.HTTPMethod, endpoint htsconstants.APIE
 	orderedParams := orderedParamsMap[method][endpoint]
 	htsgetReq := NewHtsgetRequest()
 	htsgetReq.SetEndpoint(endpoint)
-	params := request.URL.Query()
+
+	// for POST requests, unmarshal the JSON body once and pass to individual
+	// setting methods
+	var postRequestBody *PostRequestBody
+	if method == htsconstants.PostMethod {
+		bytes, err := ioutil.ReadAll(request.Body)
+		msg := "Request body malformed"
+		if err != nil {
+			htserror.InvalidInput(writer, &msg)
+			return htsgetReq, err
+		}
+		err = json.Unmarshal(bytes, &postRequestBody)
+		if err != nil {
+			htserror.InvalidInput(writer, &msg)
+			return htsgetReq, err
+		}
+	}
+
 	for i := 0; i < len(orderedParams); i++ {
 		param := orderedParams[i]
 		paramName := param.name
-		err := setSingleParameter(request, param, params, htsgetReq)
+		err := setSingleParameter(request, param, postRequestBody, htsgetReq)
 		if err != nil {
 			htsgetErrorFunc := errorsByParam[paramName]
 			msg := err.Error()

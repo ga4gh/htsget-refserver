@@ -16,6 +16,7 @@ func getFileBytes(writer http.ResponseWriter, request *http.Request) {
 	newRequestHandler(
 		htsconstants.GetMethod,
 		htsconstants.APIEndpointFileBytes,
+		noAfterSetup,
 		getFileBytesHandler,
 	).handleRequest(writer, request)
 }

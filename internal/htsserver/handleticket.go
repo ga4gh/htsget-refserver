@@ -1,10 +1,43 @@
 package htsserver
 
 import (
+	"strconv"
+
+	"github.com/ga4gh/htsget-refserver/internal/htsrequest"
+
 	"github.com/ga4gh/htsget-refserver/internal/htsdao"
 	"github.com/ga4gh/htsget-refserver/internal/htserror"
 	"github.com/ga4gh/htsget-refserver/internal/htsticket"
 )
+
+func addBlockURL(blockURLs []*htsticket.URL, blockURL *htsticket.URL) []*htsticket.URL {
+	return append(blockURLs, blockURL)
+}
+
+func addHeaderBlockURL(blockURLs []*htsticket.URL, request *htsrequest.HtsgetRequest, totalBlocks int) []*htsticket.URL {
+	blockHeaders := htsticket.NewHeaders().
+		SetCurrentBlock("0").
+		SetTotalBlocks(strconv.Itoa(totalBlocks)).
+		SetClassHeader()
+	dataEndpoint, _ := request.ConstructDataEndpointURL(false, 0)
+	blockURL := htsticket.NewURL().
+		SetURL(dataEndpoint).
+		SetHeaders(blockHeaders).
+		SetClassHeader()
+	return addBlockURL(blockURLs, blockURL)
+}
+
+func addBodyBlockURL(blockURLs []*htsticket.URL, request *htsrequest.HtsgetRequest, currentBlock int, totalBlocks int, useRegion bool, regionI int) []*htsticket.URL {
+	blockHeaders := htsticket.NewHeaders().
+		SetCurrentBlock(strconv.Itoa(currentBlock)).
+		SetTotalBlocks(strconv.Itoa(totalBlocks))
+	dataEndpoint, _ := request.ConstructDataEndpointURL(useRegion, regionI)
+	blockURL := htsticket.NewURL().
+		SetURL(dataEndpoint).
+		SetHeaders(blockHeaders).
+		SetClassBody()
+	return addBlockURL(blockURLs, blockURL)
+}
 
 func ticketRequestHandler(handler *requestHandler) {
 
@@ -15,27 +48,29 @@ func ticketRequestHandler(handler *requestHandler) {
 		return
 	}
 
-	var urls []*htsticket.URL
-	dataEndpoint, err := handler.HtsReq.ConstructDataEndpointURL()
-	if err != nil {
-		msg := "Could not construct data url"
-		htserror.InternalServerError(handler.Writer, &msg)
-	}
+	var blockURLs []*htsticket.URL
 
+	// only header is requested, requires one URL block
 	if handler.HtsReq.HeaderOnlyRequested() {
-		headers := htsticket.NewHeaders().SetCurrentBlock("1").SetTotalBlocks("1").SetClassHeader()
-		url := htsticket.NewURL().SetURL(dataEndpoint.String()).SetHeaders(headers).SetClassHeader()
-		urls = append(urls, url)
+		blockURLs = addHeaderBlockURL(blockURLs, handler.HtsReq, 1)
+		// pure byte range URLs, requires one block per every x bytes
 	} else if handler.HtsReq.AllFieldsRequested() && handler.HtsReq.AllTagsRequested() && handler.HtsReq.AllRegionsRequested() {
-		urls = dao.GetByteRangeUrls()
+		blockURLs = dao.GetByteRangeUrls()
 	} else {
-		headersBlock1 := htsticket.NewHeaders().SetCurrentBlock("1").SetTotalBlocks("2").SetClassHeader()
-		urlBlock1 := htsticket.NewURL().SetURL(dataEndpoint.String()).SetHeaders(headersBlock1).SetClassHeader()
-		headersBlock2 := htsticket.NewHeaders().SetCurrentBlock("2").SetTotalBlocks("2")
-		urlBlock2 := htsticket.NewURL().SetURL(dataEndpoint.String()).SetHeaders(headersBlock2)
-		urls = append(urls, urlBlock1)
-		urls = append(urls, urlBlock2)
+		if handler.HtsReq.AllRegionsRequested() {
+			// the entire file was requested, requires 2 blocks: one for header
+			// and one for body
+			blockURLs = addHeaderBlockURL(blockURLs, handler.HtsReq, 2)
+			blockURLs = addBodyBlockURL(blockURLs, handler.HtsReq, 1, 2, false, 0)
+		} else {
+			// one or more regions requested, requires one header block, and one
+			// block for per region
+			nBlocks := handler.HtsReq.NRegions() + 1
+			blockURLs = addHeaderBlockURL(blockURLs, handler.HtsReq, nBlocks)
+			for i := range handler.HtsReq.GetRegions() {
+				blockURLs = addBodyBlockURL(blockURLs, handler.HtsReq, i+1, nBlocks, true, i)
+			}
+		}
 	}
-
-	htsticket.FinalizeTicket(handler.HtsReq.GetFormat(), urls, handler.Writer)
+	htsticket.FinalizeTicket(handler.HtsReq.GetFormat(), blockURLs, handler.Writer)
 }
