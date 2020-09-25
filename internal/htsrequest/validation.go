@@ -8,7 +8,6 @@ package htsrequest
 
 import (
 	"bufio"
-	"fmt"
 	"net/http"
 	"os"
 	"os/exec"
@@ -39,6 +38,7 @@ var errorsByParam = map[string]func(http.ResponseWriter, *string){
 	"fields":           htserror.InvalidInput,
 	"tags":             htserror.InvalidInput,
 	"notags":           htserror.InvalidInput,
+	"regions":          htserror.InvalidRange,
 	"HtsgetBlockClass": htserror.InvalidInput,
 	"HtsgetBlockId":    htserror.InternalServerError,
 	"HtsgetNumBlocks":  htserror.InternalServerError,
@@ -263,9 +263,6 @@ func (v *ParamValidator) ValidateEnd(htsgetReq *HtsgetRequest, end int) (bool, s
 		return false, "'end' must be greater than or equal to zero"
 	}
 
-	fmt.Println("checking end")
-	fmt.Println(end)
-
 	// if start is specified, end must be greater than start
 	if start != -1 {
 		if start >= end {
@@ -304,7 +301,7 @@ func (v *ParamValidator) ValidateTags(htsgetReq *HtsgetRequest, tags []string) (
 // ValidateNoTags validates the 'notags' query string parameter. checks that
 // there is no overlap between tags included by 'tags' and tags excluded by
 // 'notags'
-func ValidateNoTags(htsgetReq *HtsgetRequest, notags []string) (bool, string) {
+func (v *ParamValidator) ValidateNoTags(htsgetReq *HtsgetRequest, notags []string) (bool, string) {
 
 	// incompatible with header only request
 	if htsgetReq.HeaderOnlyRequested() {
@@ -316,6 +313,47 @@ func ValidateNoTags(htsgetReq *HtsgetRequest, notags []string) (bool, string) {
 		for _, notagItem := range notags {
 			if tagItem == notagItem {
 				return false, "'" + tagItem + "' cannot be in both 'tags' and 'notags'"
+			}
+		}
+	}
+	return true, ""
+}
+
+func (v *ParamValidator) ValidateRegions(htsgetReq *HtsgetRequest, regions []*Region) (bool, string) {
+
+	allowedReferenceNames, err := getReferenceNames(htsgetReq)
+	if err != nil {
+		return false, err.Error()
+	}
+
+	for _, region := range regions {
+
+		if region.ReferenceNameRequested() {
+			if !htsutils.IsItemInArray(region.GetReferenceName(), allowedReferenceNames) {
+				return false, "Invalid referenceName in regions list: '" + region.GetReferenceName()
+			}
+		}
+
+		if region.StartRequested() {
+			if !region.ReferenceNameRequested() {
+				return false, "Invalid region(s): 'start' cannot be set without 'referenceName'"
+			}
+			if !isGreaterThanEqualToZero(region.GetStart()) {
+				return false, "Invalid region(s): 'start' must be greater than or equal to zero"
+			}
+		}
+
+		if region.EndRequested() {
+			if !region.ReferenceNameRequested() {
+				return false, "Invalid region(s): 'end' cannot be set without 'referenceName'"
+			}
+			if !isGreaterThanEqualToZero(region.GetEnd()) {
+				return false, "Invalid regions(s): 'end' MUST be greater than or equal to zero"
+			}
+			if region.StartRequested() {
+				if region.GetStart() >= region.GetEnd() {
+					return false, "Invalid region(s): 'end' MUST be greater than 'start'"
+				}
 			}
 		}
 	}

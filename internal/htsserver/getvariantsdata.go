@@ -65,11 +65,13 @@ func constructBcftoolsCommand(htsgetReq *htsrequest.HtsgetRequest, fileURL strin
 		args = append(args, "-H")
 
 		// translate "referenceName", "start", "end" params into bcftools command
+		start := htsgetReq.GetStart()
+		end := htsgetReq.GetEnd()
 		if htsgetReq.ReferenceNameRequested() {
 			region := &htsrequest.Region{
 				ReferenceName: htsgetReq.GetReferenceName(),
-				Start:         htsgetReq.GetStart(),
-				End:           htsgetReq.GetEnd(),
+				Start:         &start,
+				End:           &end,
 			}
 			args = append(args, "-r", region.ExportBcftools())
 		}

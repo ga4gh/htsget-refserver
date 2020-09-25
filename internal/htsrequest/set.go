@@ -8,9 +8,7 @@
 package htsrequest
 
 import (
-	"encoding/json"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"reflect"
@@ -400,41 +398,39 @@ var orderedParamsMap = map[htsconstants.HTTPMethod]map[htsconstants.APIEndpoint]
 			},
 			{
 				htsconstants.ParamLocReqBody,
-				"Format",
+				"format",
 				"NoTransform",
 				"ValidateFormat",
 				"SetFormat",
 			},
 			{
 				htsconstants.ParamLocReqBody,
-				"Fields",
+				"fields",
 				"NoTransform",
 				"ValidateFields",
 				"SetFields",
 			},
 			{
 				htsconstants.ParamLocReqBody,
-				"Tags",
+				"tags",
 				"NoTransform",
 				"ValidateTags",
 				"SetTags",
 			},
 			{
 				htsconstants.ParamLocReqBody,
-				"NoTags",
+				"notags",
 				"NoTransform",
 				"ValidateNoTags",
 				"SetNoTags",
 			},
-			/*
-				{
-					htsconstants.ParamLocReqBody,
-					"Regions",
-					"NoTransform",
-					"ValidateRegions",
-					"SetRegions",
-				},
-			*/
+			{
+				htsconstants.ParamLocReqBody,
+				"regions",
+				"NoTransform",
+				"ValidateRegions",
+				"SetRegions",
+			},
 		},
 	},
 }
@@ -443,83 +439,81 @@ var orderedParamsMap = map[htsconstants.HTTPMethod]map[htsconstants.APIEndpoint]
 // to the HtsgetRequest object. if the parameter value is not valid,
 // returns an error
 func setSingleParameter(request *http.Request, setParamTuple SetParameterTuple,
-	postRequestBody *PostRequestBody, htsgetReq *HtsgetRequest) error {
+	requestBodyBytes []byte, htsgetReq *HtsgetRequest) error {
 
-	fmt.Println("-")
-	fmt.Println(setParamTuple.name)
-
-	var value string
+	var rawValue string              // raw string value parsed from query string, path, or header
+	var reflectedValue reflect.Value // post-transform, post-reflection representation of param
 	var found bool
+
 	// lookup if parameter is found on path/query/header,
 	// and if a scalar or list is expected
 	location := setParamTuple.location
 	paramName := setParamTuple.name
 
-	// parse the request parameter by path, query string, or header
+	// parse the request parameter by path, query string, header, or request body
 	switch location {
 	case htsconstants.ParamLocPath:
-		value, found = parsePathParam(request, paramName)
+		rawValue, found = parsePathParam(request, paramName)
 	case htsconstants.ParamLocQuery:
 		v, f, err := parseQueryParam(request.URL.Query(), paramName)
-		value = v
+		rawValue = v
 		found = f
 		if err != nil {
 			return err
 		}
 	case htsconstants.ParamLocHeader:
-		value, found = parseHeaderParam(request, paramName)
+		rawValue, found = parseHeaderParam(request, paramName)
 	case htsconstants.ParamLocReqBody:
-		value, found = parseReqBodyParam(postRequestBody, paramName)
+		v, f, err := parseReqBodyParam(requestBodyBytes, paramName)
+		reflectedValue = v
+		found = f
+		if err != nil {
+			return err
+		}
 	}
 
-	fmt.Println("found?")
-	fmt.Println(found)
-
 	// use reflect to get the param setter method for the request
-	fmt.Println("A")
 	htsgetReqReflect := reflect.ValueOf(htsgetReq)
-	fmt.Println("B")
 	htsgetParamSetter := htsgetReqReflect.MethodByName(setParamTuple.setFunc)
-	fmt.Println("C")
 
-	// if a value is found, then transform, validate, and set
+	// if the value was found in path, query, header, or req body
 	if found {
-		// use reflection to call the transformation function by name
-		transformer := NewParamTransformer()
-		transformerReflect := reflect.ValueOf(transformer)
-		transformFunc := transformerReflect.MethodByName(setParamTuple.transformFunc)
-		transformResult := transformFunc.Call([]reflect.Value{reflect.ValueOf(value)})
-		transformed := transformResult[0]
-		message := transformResult[1].String()
-		if message != "" {
-			return errors.New(message)
+
+		// path, query, and header params must be transformed from a string to another
+		// datatype (if necessary), and then reflected via reflect API
+		// req body params do not undergo this step as they are inherently in their
+		// own datatype, and have been reflected
+		if location == htsconstants.ParamLocPath || location == htsconstants.ParamLocQuery || location == htsconstants.ParamLocHeader {
+			// use reflection to call the transformation function by name
+			transformer := NewParamTransformer()
+			transformerReflect := reflect.ValueOf(transformer)
+			transformFunc := transformerReflect.MethodByName(setParamTuple.transformFunc)
+			transformResult := transformFunc.Call([]reflect.Value{reflect.ValueOf(rawValue)})
+			reflectedValue = transformResult[0]
+			message := transformResult[1].String()
+			if message != "" {
+				return errors.New(message)
+			}
 		}
 
 		// use reflection to call the validation function by name
 		validator := NewParamValidator()
 		validatorReflect := reflect.ValueOf(validator)
 		validateFunc := validatorReflect.MethodByName(setParamTuple.validateFunc)
-		resultMsg := validateFunc.Call([]reflect.Value{reflect.ValueOf(htsgetReq), transformed})
+		resultMsg := validateFunc.Call([]reflect.Value{reflect.ValueOf(htsgetReq), reflectedValue})
 		result := resultMsg[0].Bool()
-		message = resultMsg[1].String()
+		msg := resultMsg[1].String()
 		if !result {
-			return errors.New(message)
+			return errors.New(msg)
 		}
 
 		// if validation passed, set the transformed value
-		htsgetParamSetter.Call([]reflect.Value{transformed})
+		htsgetParamSetter.Call([]reflect.Value{reflectedValue})
 		return nil
 	}
-	fmt.Println("D")
-
 	// if no param value is found, set the default value
 	defaultValueReflect := reflect.ValueOf(defaultParameterValues[paramName])
-	fmt.Println("E")
-	fmt.Println(paramName)
-	fmt.Println(defaultParameterValues[paramName])
-	fmt.Println(htsgetParamSetter)
 	htsgetParamSetter.Call([]reflect.Value{defaultValueReflect})
-	fmt.Println("F")
 	return nil
 }
 
@@ -533,15 +527,11 @@ func SetAllParameters(method htsconstants.HTTPMethod, endpoint htsconstants.APIE
 
 	// for POST requests, unmarshal the JSON body once and pass to individual
 	// setting methods
-	var postRequestBody *PostRequestBody
+	var requestBodyBytes []byte
 	if method == htsconstants.PostMethod {
-		bytes, err := ioutil.ReadAll(request.Body)
+		rbb, err := ioutil.ReadAll(request.Body)
+		requestBodyBytes = rbb
 		msg := "Request body malformed"
-		if err != nil {
-			htserror.InvalidInput(writer, &msg)
-			return htsgetReq, err
-		}
-		err = json.Unmarshal(bytes, &postRequestBody)
 		if err != nil {
 			htserror.InvalidInput(writer, &msg)
 			return htsgetReq, err
@@ -551,7 +541,7 @@ func SetAllParameters(method htsconstants.HTTPMethod, endpoint htsconstants.APIE
 	for i := 0; i < len(orderedParams); i++ {
 		param := orderedParams[i]
 		paramName := param.name
-		err := setSingleParameter(request, param, postRequestBody, htsgetReq)
+		err := setSingleParameter(request, param, requestBodyBytes, htsgetReq)
 		if err != nil {
 			htsgetErrorFunc := errorsByParam[paramName]
 			msg := err.Error()

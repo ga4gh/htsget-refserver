@@ -34,10 +34,12 @@ func getReadsDataHandler(handler *requestHandler) {
 		return
 	}
 
+	start := handler.HtsReq.GetStart()
+	end := handler.HtsReq.GetEnd()
 	region := &htsrequest.Region{
 		ReferenceName: handler.HtsReq.GetReferenceName(),
-		Start:         handler.HtsReq.GetStart(),
-		End:           handler.HtsReq.GetEnd(),
+		Start:         &start,
+		End:           &end,
 	}
 
 	args := getSamtoolsCmdArgs(region, handler.HtsReq, fileURL)

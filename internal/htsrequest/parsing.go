@@ -7,8 +7,8 @@
 package htsrequest
 
 import (
+	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"net/url"
 	"reflect"
@@ -16,14 +16,6 @@ import (
 	"github.com/ga4gh/htsget-refserver/internal/htsutils"
 	"github.com/go-chi/chi"
 )
-
-type PostRequestBody struct {
-	Format  *string    `json:"format"`
-	Fields  *[]string  `json:"fields"`
-	Tags    *[]string  `json:"tags"`
-	NoTags  *[]string  `json:"notags"`
-	Regions *[]*Region `json:"regions"`
-}
 
 // parsePathParam parses a single url path parameter as a string
 func parsePathParam(request *http.Request, key string) (string, bool) {
@@ -58,20 +50,80 @@ func parseHeaderParam(request *http.Request, key string) (string, bool) {
 	return value, found
 }
 
-func parseReqBodyParam(requestBody *PostRequestBody, key string) (string, bool) {
-	fmt.Println("Your requst body")
-	fmt.Println(requestBody)
+// parsing of partial request body
 
-	foo := reflect.TypeOf(requestBody)
-	fmt.Println(foo)
+type partialRequestBody interface {
+	getattr() reflect.Value
+}
 
-	/*
-		requestBodyReflect := reflect.ValueOf(requestBody).Type()
-		requestFieldReflect := requestBodyReflect.FieldByName(key)
-		fmt.Println(requestFieldReflect)
+type partialRequestBodyFormat struct {
+	Format *string `json:"format"`
+}
 
-		fmt.Println("Your key")
-		fmt.Println(key)
-	*/
-	return "", false
+type partialRequestBodyFields struct {
+	Fields *[]string `json:"fields"`
+}
+
+type partialRequestBodyTags struct {
+	Tags *[]string `json:"tags"`
+}
+
+type partialRequestBodyNoTags struct {
+	NoTags *[]string `json:"notags"`
+}
+
+type partialRequestBodyRegions struct {
+	Regions *[]*Region `json:"regions"`
+}
+
+func (rb *partialRequestBodyFormat) getattr() reflect.Value {
+	return reflect.ValueOf(rb.Format)
+}
+
+func (rb *partialRequestBodyFields) getattr() reflect.Value {
+	return reflect.ValueOf(rb.Fields)
+}
+
+func (rb *partialRequestBodyTags) getattr() reflect.Value {
+	return reflect.ValueOf(rb.Tags)
+}
+
+func (rb *partialRequestBodyNoTags) getattr() reflect.Value {
+	return reflect.ValueOf(rb.NoTags)
+}
+
+func (rb *partialRequestBodyRegions) getattr() reflect.Value {
+	return reflect.ValueOf(rb.Regions)
+}
+
+func NewPartialRequestBody(key string) partialRequestBody {
+
+	var prb partialRequestBody
+	switch key {
+	case "format":
+		prb = new(partialRequestBodyFormat)
+	case "fields":
+		prb = new(partialRequestBodyFields)
+	case "tags":
+		prb = new(partialRequestBodyTags)
+	case "notags":
+		prb = new(partialRequestBodyNoTags)
+	case "regions":
+		prb = new(partialRequestBodyRegions)
+	}
+	return prb
+}
+
+func parseReqBodyParam(requestBodyBytes []byte, key string) (reflect.Value, bool, error) {
+
+	partialRequestBodyObj := NewPartialRequestBody(key)
+	err := json.Unmarshal(requestBodyBytes, partialRequestBodyObj)
+	if err != nil {
+		msg := "Could not parse request body, offending attribute: '" + key + "'. Value is malformed or incorrect datatype"
+		return reflect.ValueOf(nil), false, errors.New(msg)
+	}
+	reflectedPtr := partialRequestBodyObj.getattr()
+	reflectedValue := reflectedPtr.Elem()
+	found := !reflectedPtr.IsNil()
+	return reflectedValue, found, nil
 }
