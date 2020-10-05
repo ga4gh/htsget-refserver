@@ -264,6 +264,11 @@ func (r *HtsgetRequest) AllTagsRequested() bool {
 	return r.TagsNotSpecified() && r.NoTagsNotSpecified()
 }
 
+func (r *HtsgetRequest) IsHeaderBlock() bool {
+	current, _ := strconv.Atoi(r.GetHtsgetCurrentBlock())
+	return current == 0
+}
+
 func (r *HtsgetRequest) IsFinalBlock() bool {
 	current, _ := strconv.Atoi(r.GetHtsgetCurrentBlock())
 	total, _ := strconv.Atoi(r.GetHtsgetTotalBlocks())

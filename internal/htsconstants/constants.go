@@ -50,6 +50,11 @@ var BamExcludedValues []string = []string{
 	"*",   // QUAL
 }
 
+// BamBGZF bytes marking BGZF Block
+var BamBGZF, _ = hex.DecodeString("1f8b08040000000000ff060042430200")
+
+var BamBGZFLen = len(BamBGZF)
+
 // BamEOF BAM end of file byte sequence
 var BamEOF, _ = hex.DecodeString("1f8b08040000000000ff0600424302001b0003000000000000000000")
 
@@ -57,7 +62,7 @@ var BamEOF, _ = hex.DecodeString("1f8b08040000000000ff0600424302001b000300000000
 var BamEOFLen = len(BamEOF)
 
 // BamHeaderEOFLen length (number of bytes) of BAM header end marker
-var BamHeaderEOFLen = 12
+// var BamHeaderEOFLen = 12
 
 // ReadsDataURLPath path to reads data endpoint
 var ReadsDataURLPath = "reads/data/"
