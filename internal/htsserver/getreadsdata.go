@@ -132,7 +132,12 @@ func modifySam(htsgetReq *htsrequest.HtsgetRequest) *htscli.Command {
 		modifySam.SetFields(htsgetReq.GetFields())
 	}
 	if !htsgetReq.TagsNotSpecified() {
-		modifySam.SetTags(htsgetReq.GetTags())
+		tags := htsgetReq.GetTags()
+		if len(tags) == 1 && tags[0] == "" {
+			modifySam.SetTags([]string{"NONE"})
+		} else {
+			modifySam.SetTags(tags)
+		}
 	}
 	if !htsgetReq.NoTagsNotSpecified() {
 		modifySam.SetNoTags(htsgetReq.GetNoTags())
