@@ -6,11 +6,11 @@ import (
 	"github.com/ga4gh/htsget-refserver/internal/htsconstants"
 )
 
-func getVariantsTicket(writer http.ResponseWriter, request *http.Request) {
+func postReadsTicket(writer http.ResponseWriter, request *http.Request) {
 	newRequestHandler(
-		htsconstants.GetMethod,
-		htsconstants.APIEndpointVariantsTicket,
-		addRegionFromQueryString,
+		htsconstants.PostMethod,
+		htsconstants.APIEndpointReadsTicket,
+		noAfterSetup,
 		ticketRequestHandler,
 	).handleRequest(writer, request)
 }

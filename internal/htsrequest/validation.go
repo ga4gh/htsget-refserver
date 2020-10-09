@@ -12,7 +12,6 @@ import (
 	"os"
 	"os/exec"
 	"regexp"
-	"strconv"
 	"strings"
 
 	"github.com/ga4gh/htsget-refserver/internal/htsconfig"
@@ -21,25 +20,10 @@ import (
 	"github.com/ga4gh/htsget-refserver/internal/htsutils"
 )
 
-// validationByParam (map[string]func(string, *HtsgetRequest) (bool, string)):
-// the correct validation function for each request parameter name. each function
-// returns a boolean indicating whether the parameter passed validation, and a
-// string indicating why validation failed (if it failed)
-var validationByParam = map[string]func(string, *HtsgetRequest) (bool, string){
-	"id":               validateID,
-	"format":           validateFormat,
-	"class":            validateClass,
-	"referenceName":    validateReferenceName,
-	"start":            validateStart,
-	"end":              validateEnd,
-	"fields":           validateFields,
-	"tags":             validateTags,
-	"notags":           validateNoTags,
-	"HtsgetBlockClass": validateClass,
-	"HtsgetBlockId":    noValidation,
-	"HtsgetNumBlocks":  noValidation,
-	"HtsgetFilePath":   noValidation,
-	"Range":            noValidation,
+type ParamValidator struct{}
+
+func NewParamValidator() *ParamValidator {
+	return new(ParamValidator)
 }
 
 // errorsByParam (map[string]func(http.ResponseWriter, *string)): the correct
@@ -54,6 +38,7 @@ var errorsByParam = map[string]func(http.ResponseWriter, *string){
 	"fields":           htserror.InvalidInput,
 	"tags":             htserror.InvalidInput,
 	"notags":           htserror.InvalidInput,
+	"regions":          htserror.InvalidRange,
 	"HtsgetBlockClass": htserror.InvalidInput,
 	"HtsgetBlockId":    htserror.InternalServerError,
 	"HtsgetNumBlocks":  htserror.InternalServerError,
@@ -61,61 +46,24 @@ var errorsByParam = map[string]func(http.ResponseWriter, *string){
 	"Range":            htserror.InternalServerError,
 }
 
-// isInteger determines if a string can be parsed as an integer
-//
-// Arguments
-//	value (string): string to check
-// Returns
-//	(bool): true if the string can be converted to an integer, false if not
-func isInteger(value string) bool {
-	_, err := strconv.Atoi(value)
-	if err != nil {
-		return false
-	}
-	return true
-}
-
 // isGreaterThanEqualToZero determines if a string can be parsed as an integer,
 // and is greater than or equal to zero
-//
-// Arguments
-//	value (string): string to check
-// Returns
-// (bool): true if string is a valid integer greater than or equal to zero
-func isGreaterThanEqualToZero(value string) bool {
-	if !isInteger(value) {
-		return false
-	}
-	num, _ := strconv.Atoi(value)
+func isGreaterThanEqualToZero(num int) bool {
 	if num < 0 {
 		return false
 	}
 	return true
 }
 
-// noValidation is an empty validation function for request parameters that do
+// NoValidation is an empty validation function for request parameters that do
 // not need to be validated. always returns true
-//
-// Arguments
-//	value (string): parameter value
-//	htsgetReq (*HtsgetRequest): htsget request object
-// Returns
-//	(bool): always true
-//	(string): always empty
-func noValidation(value string, htsgetReq *HtsgetRequest) (bool, string) {
+func (v *ParamValidator) NoValidation(htsgetReq *HtsgetRequest, value string) (bool, string) {
 	return true, ""
 }
 
-// validateID validates the 'id' path parameter. checks if an object matching
+// ValidateID validates the 'id' parameter. checks if an object matching
 // the 'id' could be found from the data source
-//
-// Arguments:
-//	id (string): id parameter value
-//	htsgetReq (*HtsgetRequest): htsget request object
-// Returns
-//	(bool): true if a resource matching id could be found from the data source
-//	(string): diagnostic message if error encountered
-func validateID(id string, htsgetReq *HtsgetRequest) (bool, string) {
+func (v *ParamValidator) ValidateID(htsgetReq *HtsgetRequest, id string) (bool, string) {
 	objPath, err := htsconfig.GetObjectPath(htsgetReq.GetEndpoint(), id)
 	if err != nil {
 		return false, "The requested resource could not be associated with a registered data source"
@@ -141,34 +89,19 @@ func validateID(id string, htsgetReq *HtsgetRequest) (bool, string) {
 	return true, ""
 }
 
-// validateFormat validates the 'format' query string parameter. checks if the
-// requested format is one of the allowed options
-//
-// Arguments
-//	format (string): format parameter value
-//	htsgetReq (*HtsgetRequest): htsget request object
-// Returns
-//	(bool): true if an allowed format was requested
-//	(string): diagnostic message if error encountered
-func validateFormat(format string, htsgetReq *HtsgetRequest) (bool, string) {
-	formatUpper := strings.ToUpper(format)
+// ValidateFormat validates the 'format' parameter. checks if the requested
+// format is one of the allowed options based on endpoint
+func (v *ParamValidator) ValidateFormat(htsgetReq *HtsgetRequest, format string) (bool, string) {
 	allowedFormats := htsgetReq.GetEndpoint().AllowedFormats()
-	if !htsutils.IsItemInArray(formatUpper, allowedFormats) {
-		return false, "file format: '" + formatUpper + "' not supported"
+	if !htsutils.IsItemInArray(format, allowedFormats) {
+		return false, "file format: '" + format + "' not supported"
 	}
 	return true, ""
 }
 
-// validateClass validates the 'class' query string parameter. checks if the
-// requested class is one of the allowed options
-//
-// Arguments
-//	class (string): class parameter value
-//	htsgetReq (*HtsgetRequest): htsget request object
-// Returns
-//	(bool): true if an allowed class was requested
-//	(string): diagnostic message if error encountered
-func validateClass(class string, htsgetReq *HtsgetRequest) (bool, string) {
+// ValidateClass validates the 'class' parameter. checks if the requested class
+// is one of the allowed options
+func (v *ParamValidator) ValidateClass(htsgetReq *HtsgetRequest, class string) (bool, string) {
 	switch strings.ToLower(class) {
 	case htsconstants.ClassHeader:
 		return true, ""
@@ -182,7 +115,7 @@ func validateClass(class string, htsgetReq *HtsgetRequest) (bool, string) {
 func getReferenceNamesInReadsObject(htsgetReq *HtsgetRequest) ([]string, error) {
 
 	var referenceNames []string
-	fileURL, err := htsconfig.GetObjectPath(htsgetReq.GetEndpoint(), htsgetReq.ID())
+	fileURL, err := htsconfig.GetObjectPath(htsgetReq.GetEndpoint(), htsgetReq.GetID())
 	if err != nil {
 		return nil, err
 	}
@@ -209,7 +142,7 @@ func getReferenceNamesInReadsObject(htsgetReq *HtsgetRequest) ([]string, error) 
 
 func getReferenceNamesInVariantsObject(htsgetReq *HtsgetRequest) ([]string, error) {
 	var referenceNames []string
-	fileURL, err := htsconfig.GetObjectPath(htsgetReq.GetEndpoint(), htsgetReq.ID())
+	fileURL, err := htsconfig.GetObjectPath(htsgetReq.GetEndpoint(), htsgetReq.GetID())
 	if err != nil {
 		return nil, err
 	}
@@ -247,18 +180,11 @@ func getReferenceNames(htsgetReq *HtsgetRequest) ([]string, error) {
 	return functions[htsgetReq.endpoint](htsgetReq)
 }
 
-// validateReferenceName validates the 'referenceName' query string
+// ValidateReferenceName validates the 'referenceName' query string
 // parameter. checks if the requested reference contig/chromosome is in the
 // BAM/CRAM header sequence dictionary. if unplaced unmapped reads are requested
 // (*), do not perform validation
-//
-// Arguments
-//	referenceName (string): referenceName parameter value
-//	htsgetReq (*HtsgetRequest): htsget request object
-// Returns
-//	(bool): true if requested reference sequence name is in sequence dictionary
-//	(string): diagnostic message if error encountered
-func validateReferenceName(referenceName string, htsgetReq *HtsgetRequest) (bool, string) {
+func (v *ParamValidator) ValidateReferenceName(htsgetReq *HtsgetRequest, referenceName string) (bool, string) {
 
 	// incompatible with header only request
 	if htsgetReq.HeaderOnlyRequested() {
@@ -281,17 +207,10 @@ func validateReferenceName(referenceName string, htsgetReq *HtsgetRequest) (bool
 	return false, "invalid 'referenceName': " + referenceName
 }
 
-// validateStart validates the 'start' query string parameter. checks that it is
+// ValidateStart validates the 'start' query string parameter. checks that it is
 // a valid, non-zero integer, and that it is being used correctly in conjunction
 // with 'referenceName'
-//
-// Arguments
-//	start (string): start parameter value
-//	htsgetReq (*HtsgetRequest): htsget request object
-// Returns
-//	(bool): true if start is correctly specified
-//	(string): diagnostic message if error encountered
-func validateStart(start string, htsgetReq *HtsgetRequest) (bool, string) {
+func (v *ParamValidator) ValidateStart(htsgetReq *HtsgetRequest, start int) (bool, string) {
 
 	// incompatible with header only request
 	if htsgetReq.HeaderOnlyRequested() {
@@ -304,13 +223,8 @@ func validateStart(start string, htsgetReq *HtsgetRequest) (bool, string) {
 	}
 
 	// start requires referenceName to be specified as well
-	if htsgetReq.AllRegionsRequested() {
+	if !htsgetReq.ReferenceNameRequested() {
 		return false, "'start' cannot be set without 'referenceName'"
-	}
-
-	// start must be an integer
-	if !isInteger(start) {
-		return false, "'start' is not a valid integer"
 	}
 
 	// start must be >= 0
@@ -321,25 +235,18 @@ func validateStart(start string, htsgetReq *HtsgetRequest) (bool, string) {
 	return true, ""
 }
 
-// validateEnd validates the 'end' query string parameter. checks that it is a
+// ValidateEnd validates the 'end' query string parameter. checks that it is a
 // valid, non-zero integer, that it's being used correctly in conjunction with
 // 'referenceName', and that the end coordinate is greater than the start
 // coordinate
-//
-// Arguments
-//	end (string): end parameter value
-//	htsgetReq (*HtsgetRequest): htsget request object
-// Returns
-//	(bool): true if end is correctly specified
-//	(string): diagnostic message if error encountered
-func validateEnd(end string, htsgetReq *HtsgetRequest) (bool, string) {
+func (v *ParamValidator) ValidateEnd(htsgetReq *HtsgetRequest, end int) (bool, string) {
 
 	// incompatible with header only request
 	if htsgetReq.HeaderOnlyRequested() {
 		return false, "'end' incompatible with header-only request"
 	}
 
-	start := htsgetReq.Start()
+	start := htsgetReq.GetStart()
 
 	// end requires referenceName to specify a true chromosome
 	if htsgetReq.UnplacedUnmappedReadsRequested() {
@@ -347,13 +254,8 @@ func validateEnd(end string, htsgetReq *HtsgetRequest) (bool, string) {
 	}
 
 	// end requires referenceName to be specified as well
-	if htsgetReq.AllRegionsRequested() {
+	if !htsgetReq.ReferenceNameRequested() {
 		return false, "'end' cannot be set without 'referenceName'"
-	}
-
-	// end must be an integer
-	if !isInteger(end) {
-		return false, "'end' is not a valid integer"
 	}
 
 	// end must be >= 0
@@ -362,37 +264,24 @@ func validateEnd(end string, htsgetReq *HtsgetRequest) (bool, string) {
 	}
 
 	// if start is specified, end must be greater than start
-	if start != "-1" {
-		startNum, startErr := strconv.Atoi(start)
-		endNum, endErr := strconv.Atoi(end)
-		if startErr != nil || endErr != nil {
-			return false, "error converting 'start' and/or 'end' to integers"
-		}
-		if startNum >= endNum {
+	if start != -1 {
+		if start >= end {
 			return false, "'end' MUST be higher than 'start'"
 		}
 	}
 	return true, ""
 }
 
-// validateFields validates the 'fields' query string parameter. checks that
-// every requested field is an acceptable value (an expected BAM/CRAM field)
-//
-// Arguments
-//	fields (string): unsplit fields parameter value
-//	htsgetReq (*HtsgetRequest): htsget request object
-// Returns
-//	(bool): true if all requested fields are canonical field names
-//	(string): diagnostic message if error encountered
-func validateFields(fields string, htsgetReq *HtsgetRequest) (bool, string) {
+// ValidateFields validates 'fields' parameter. every requested field must
+// have an acceptable BAM/CRAM column name
+func (v *ParamValidator) ValidateFields(htsgetReq *HtsgetRequest, fields []string) (bool, string) {
 
 	// incompatible with header only request
 	if htsgetReq.HeaderOnlyRequested() {
 		return false, "'fields' incompatible with header-only request"
 	}
 
-	fieldsList := splitAndUppercase(fields)
-	for _, fieldItem := range fieldsList {
+	for _, fieldItem := range fields {
 		if _, ok := htsconstants.BamFields[fieldItem]; !ok {
 			return false, "'" + fieldItem + "' not an acceptable field"
 		}
@@ -400,46 +289,71 @@ func validateFields(fields string, htsgetReq *HtsgetRequest) (bool, string) {
 	return true, ""
 }
 
-// validateTags only validates that tags hasn't been requested alongside
+// ValidateTags only validates that tags hasn't been requested alongside
 // a header only request
-//
-// Arguments
-//	tags (string): unsplit tags parameter value
-//	htsgetReq (*HtsgetRequest): htsget request object
-// Returns
-//	(bool): true if tags has been requested for a header and body request
-//	(string): diagnostic message if error encountered
-func validateTags(tags string, htsgetReq *HtsgetRequest) (bool, string) {
+func (v *ParamValidator) ValidateTags(htsgetReq *HtsgetRequest, tags []string) (bool, string) {
 	if htsgetReq.HeaderOnlyRequested() {
 		return false, "'tags' incompatible with header-only request"
 	}
 	return true, ""
 }
 
-// validateNoTags validates the 'notags' query string parameter. checks that
+// ValidateNoTags validates the 'notags' query string parameter. checks that
 // there is no overlap between tags included by 'tags' and tags excluded by
 // 'notags'
-//
-// Arguments
-//	notags (string): unsplit notags parameter value
-//	htsgetReq (*HtsgetRequest): htsget request object
-// Returns
-//	(bool): true if there is no overlap between tags and notags
-//	(string): diagnostic message if error encountered
-func validateNoTags(notags string, htsgetReq *HtsgetRequest) (bool, string) {
+func (v *ParamValidator) ValidateNoTags(htsgetReq *HtsgetRequest, notags []string) (bool, string) {
 
 	// incompatible with header only request
 	if htsgetReq.HeaderOnlyRequested() {
 		return false, "'notags' incompatible with header-only request"
 	}
 
-	tagsList := htsgetReq.Tags()
-	notagsList := splitOnComma(notags)
-
-	for _, tagItem := range tagsList {
-		for _, notagItem := range notagsList {
+	tags := htsgetReq.GetTags()
+	for _, tagItem := range tags {
+		for _, notagItem := range notags {
 			if tagItem == notagItem {
 				return false, "'" + tagItem + "' cannot be in both 'tags' and 'notags'"
+			}
+		}
+	}
+	return true, ""
+}
+
+func (v *ParamValidator) ValidateRegions(htsgetReq *HtsgetRequest, regions []*Region) (bool, string) {
+
+	allowedReferenceNames, err := getReferenceNames(htsgetReq)
+	if err != nil {
+		return false, err.Error()
+	}
+
+	for _, region := range regions {
+
+		if region.ReferenceNameRequested() {
+			if !htsutils.IsItemInArray(region.GetReferenceName(), allowedReferenceNames) {
+				return false, "Invalid referenceName in regions list: '" + region.GetReferenceName()
+			}
+		}
+
+		if region.StartRequested() {
+			if !region.ReferenceNameRequested() {
+				return false, "Invalid region(s): 'start' cannot be set without 'referenceName'"
+			}
+			if !isGreaterThanEqualToZero(region.GetStart()) {
+				return false, "Invalid region(s): 'start' must be greater than or equal to zero"
+			}
+		}
+
+		if region.EndRequested() {
+			if !region.ReferenceNameRequested() {
+				return false, "Invalid region(s): 'end' cannot be set without 'referenceName'"
+			}
+			if !isGreaterThanEqualToZero(region.GetEnd()) {
+				return false, "Invalid regions(s): 'end' MUST be greater than or equal to zero"
+			}
+			if region.StartRequested() {
+				if region.GetStart() >= region.GetEnd() {
+					return false, "Invalid region(s): 'end' MUST be greater than 'start'"
+				}
 			}
 		}
 	}

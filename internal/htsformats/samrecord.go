@@ -66,8 +66,8 @@ func (samRecord *SAMRecord) emitCustomFields(fields []string) []string {
 // notags parameters of HTTP request). exluded tags are removed from the output
 func (samRecord *SAMRecord) emitCustomTags(htsgetReq *htsrequest.HtsgetRequest) []string {
 
-	tags := htsgetReq.Tags()
-	notags := htsgetReq.NoTags()
+	tags := htsgetReq.GetTags()
+	notags := htsgetReq.GetNoTags()
 	n := htsconstants.BamFieldsN
 	emittedTags := make([]string, 0)
 
@@ -112,7 +112,7 @@ func (samRecord *SAMRecord) CustomEmit(htsgetReq *htsrequest.HtsgetRequest) stri
 	if htsgetReq.AllFieldsRequested() {
 		emittedFields = samRecord.columns[0:11]
 	} else {
-		emittedFields = samRecord.emitCustomFields(htsgetReq.Fields())
+		emittedFields = samRecord.emitCustomFields(htsgetReq.GetFields())
 	}
 
 	// only run the custom emit tags function if the client has requested

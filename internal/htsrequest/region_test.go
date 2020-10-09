@@ -1,7 +1,11 @@
-// Package htsformats manipulates bioinformatic data encountered by htsget
+// Package htsrequest provides operations for parsing htsget-related
+// parameters from the HTTP request, and performing validation and
+// transformation
 //
 // Module region_test tests region module
-package htsformats
+package htsrequest
+
+/*
 
 import (
 	"testing"
@@ -47,3 +51,5 @@ func TestExportBcftools(t *testing.T) {
 		assert.Equal(t, tc.exp, r.ExportBcftools())
 	}
 }
+
+*/

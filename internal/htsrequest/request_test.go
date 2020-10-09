@@ -1,5 +1,7 @@
 package htsrequest
 
+/*
+
 import (
 	"testing"
 
@@ -485,3 +487,5 @@ func TestRequestGetServiceInfo(t *testing.T) {
 		assert.Equal(t, tc.expDatatype, si.HtsgetExtension.Datatype)
 	}
 }
+
+*/
