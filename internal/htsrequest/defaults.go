@@ -2,10 +2,10 @@
 // parameters from the HTTP request, and performing validation and
 // transformation
 //
-// Module defaults.go contains default values for each parameter
+// Module defaults contains default values for each parameter
 package htsrequest
 
-var defaultId = ""
+var defaultID = ""
 var defaultFormat = "BAM"
 var defaultClass = ""
 var defaultReferenceName = ""
@@ -18,7 +18,7 @@ var defaultRegions = []*Region{}
 var defaultHtsgetBlockClass = ""
 
 var defaultParameterValues = map[string]interface{}{
-	"id":               defaultId,
+	"id":               defaultID,
 	"format":           defaultFormat,
 	"class":            defaultClass,
 	"referenceName":    defaultReferenceName,

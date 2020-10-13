@@ -1,3 +1,6 @@
+// Package htsconstants contains program constants
+//
+// Module serviceinfo contains default properties for the service-info response
 package htsconstants
 
 /* **************************************************

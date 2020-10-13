@@ -1,3 +1,6 @@
+// Package htsconstants contains program constants
+//
+// Module serverprops contains default properties for the serverprops configuration
 package htsconstants
 
 /* **************************************************

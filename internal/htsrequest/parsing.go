@@ -2,7 +2,7 @@
 // parameters from the HTTP request, and performing validation and
 // transformation
 //
-// Module parsing.go contains operations for parsing various parameter types
+// Module parsing contains operations for parsing various parameter types
 // from an HTTP request
 package htsrequest
 
