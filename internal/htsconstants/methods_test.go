@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// methodsTC test cases for Method enum
 var methodsTC = []struct {
 	e   HTTPMethod
 	exp string
@@ -17,6 +18,7 @@ var methodsTC = []struct {
 	{PostMethod, "POST"},
 }
 
+// TestMethod tests Method enum
 func TestMethod(t *testing.T) {
 	for _, tc := range methodsTC {
 		assert.Equal(t, tc.exp, tc.e.String())
