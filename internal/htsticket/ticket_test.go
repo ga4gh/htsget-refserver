@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// ticketSetContainerTC test cases for SetContainer
 var ticketSetContainerTC = []struct {
 	format               string
 	urls                 []string
@@ -37,6 +38,7 @@ var ticketSetContainerTC = []struct {
 	},
 }
 
+// TestTicketFinalizeTicket tests FinalizeTicket function
 func TestTicketFinalizeTicket(t *testing.T) {
 
 	for _, tc := range ticketSetContainerTC {
@@ -51,22 +53,5 @@ func TestTicketFinalizeTicket(t *testing.T) {
 		FinalizeTicket(tc.format, urls, writer)
 		assert.Equal(t, tc.expBody, writer.Body.String())
 		assert.Equal(t, tc.expContentTypeHeader, writer.HeaderMap[htsconstants.ContentTypeHeader.String()][0])
-
-		// assert.Equal(t, "a", "b")
-
-		/*
-			ticket := NewTicket()
-			container := NewContainer()
-			container.setFormat(tc.format)
-
-			container.SetURLS(urls)
-			ticket.SetContainer(container)
-
-			assert.Equal(t, tc.format, ticket.HTSget.Format)
-
-			for i := 0; i < len(tc.urls); i++ {
-				assert.Equal(t, tc.urls[i], ticket.HTSget.URLS[i].URL)
-			}
-		*/
 	}
 }
