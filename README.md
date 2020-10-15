@@ -227,9 +227,9 @@ To execute unit and end-to-end tests on the entire package, run:
 ```
 go test ./... -coverprofile=cp.out
 ```
-The go coverage report will be available at `./cp.out`. To execute tests for a specific package (for example the `htsformats` package) run:
+The go coverage report will be available at `./cp.out`. To execute tests for a specific package (for example the `htsrequest` package) run:
 ```
-go test ./internal/htsformats -coverprofile=cp.out
+go test ./internal/htsrequest -coverprofile=cp.out
 ```
 
 ## Changelog
