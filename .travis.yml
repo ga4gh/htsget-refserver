@@ -1,12 +1,16 @@
 language: go
 go:
     - 1.13
+env:
+    - INSTALL_SAMTOOLS=./scripts/ci/install-samtools.sh
+    - INSTALL_BCFTOOLS=./scripts/ci/install-bcftools.sh
+    - INSTALL_HTSGET_REFSERVER_UTILS=./scripts/ci/install-htsget-refserver-utils.sh
 before_install:
     - go get github.com/mattn/goveralls
 before_script:
-    - chmod 744 ./scripts/install-samtools.sh
-    - source ./scripts/install-samtools.sh
-    - samtools --version
+    - chmod 700 ${INSTALL_SAMTOOLS} && source ${INSTALL_SAMTOOLS} && samtools --version
+    - chmod 700 ${INSTALL_BCFTOOLS} && source ${INSTALL_BCFTOOLS} && bcftools --version
+    - chmod 700 ${INSTALL_HTSGET_REFSERVER_UTILS} && source ${INSTALL_HTSGET_REFSERVER_UTILS}
 script:
     - go test ./...
 after_success:
