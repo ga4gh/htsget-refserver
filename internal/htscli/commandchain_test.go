@@ -61,8 +61,12 @@ var commandChainExecuteCommandChainTC = []struct {
 				baseCommand: "wc",
 				args:        []string{"-l"},
 			},
+			&Command{
+				baseCommand: "tr",
+				args:        []string{"-d", "' '"},
+			},
 		},
-		"       5\n",
+		"5\n",
 	},
 }
 
