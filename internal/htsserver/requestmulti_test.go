@@ -40,6 +40,7 @@ var httpRequestMultiTC = []struct {
 		nil,
 		"reads-tc-00.bam",
 	},
+
 	// READS, SPECIFY REFERENCE NAME, START, END, FIELDS
 
 	{
@@ -88,7 +89,7 @@ func downloadFilepart(server *httptest.Server, i int, ticketURL *htsticket.URL, 
 	request, _ := http.NewRequest("GET", ticketURL.URL, nil)
 
 	h := ticketURL.Headers
-	headerKeys := []string{"HtsgetCurrentBlock", "HtsgetTotalBlocks", "HtsgetRange", "HtsgetBlockClass", "HtsgetFilePath"}
+	headerKeys := []string{"HtsgetCurrentBlock", "HtsgetTotalBlocks", "Range", "HtsgetBlockClass", "HtsgetFilePath"}
 	headerVals := []string{h.CurrentBlock, h.TotalBlocks, h.Range, h.BlockClass, h.FilePath}
 	for a := range headerKeys {
 		if headerVals[a] != "" {
@@ -97,11 +98,13 @@ func downloadFilepart(server *httptest.Server, i int, ticketURL *htsticket.URL, 
 	}
 
 	resp, err := http.DefaultClient.Do(request)
+
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
+
+	// defer resp.Body.Close()
+	body, _ := ioutil.ReadAll(resp.Body)
 	writer.Write(body)
 	writer.Flush()
 	return nil
@@ -152,6 +155,7 @@ func TestHTTPRequestMulti(t *testing.T) {
 	for _, tc := range httpRequestMultiTC {
 		// create the temp outputfile that htsget data response blocks will be
 		// written to
+
 		outputFilepath := htsconfig.GetTempfilePath("testoutput")
 		outputFile, err := htsconfig.CreateTempfile("testoutput")
 		if err != nil {

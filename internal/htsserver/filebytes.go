@@ -22,7 +22,6 @@ func getFileBytes(writer http.ResponseWriter, request *http.Request) {
 }
 
 func getFileBytesHandler(handler *requestHandler) {
-
 	start, end, err := htsutils.ParseRangeHeader(handler.HtsReq.GetHtsgetRange())
 	if err != nil {
 		return
