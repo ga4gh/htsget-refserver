@@ -88,8 +88,8 @@ func downloadFilepart(server *httptest.Server, i int, ticketURL *htsticket.URL, 
 	request, _ := http.NewRequest("GET", ticketURL.URL, nil)
 
 	h := ticketURL.Headers
-	headerKeys := []string{"HtsgetBlockId", "HtsgetNumBlocks", "Range", "HtsgetBlockClass", "HtsgetFilePath"}
-	headerVals := []string{h.BlockID, h.NumBlocks, h.Range, h.Class, h.FilePath}
+	headerKeys := []string{"HtsgetCurrentBlock", "HtsgetTotalBlocks", "HtsgetRange", "HtsgetBlockClass", "HtsgetFilePath"}
+	headerVals := []string{h.CurrentBlock, h.TotalBlocks, h.Range, h.BlockClass, h.FilePath}
 	for a := range headerKeys {
 		if headerVals[a] != "" {
 			request.Header.Set(headerKeys[a], headerVals[a])

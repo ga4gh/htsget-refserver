@@ -5,9 +5,7 @@ import (
 	"path/filepath"
 
 	"github.com/ga4gh/htsget-refserver/internal/htsconfig"
-
 	"github.com/ga4gh/htsget-refserver/internal/htsconstants"
-
 	"github.com/go-chi/chi"
 )
 

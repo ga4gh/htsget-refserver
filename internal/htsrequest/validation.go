@@ -2,12 +2,13 @@
 // parameters from the HTTP request, and performing validation and
 // transformation
 //
-// Module validation.go defines functions for validating whether the value of
+// Module validation defines functions for validating whether the value of
 // HTTP request parameters are acceptable
 package htsrequest
 
 import (
 	"bufio"
+	"errors"
 	"net/http"
 	"os"
 	"os/exec"
@@ -20,8 +21,10 @@ import (
 	"github.com/ga4gh/htsget-refserver/internal/htsutils"
 )
 
+// ParamValidator validates request parameters
 type ParamValidator struct{}
 
+// NewParamValidator instantiates a new ParamValidator object
 func NewParamValidator() *ParamValidator {
 	return new(ParamValidator)
 }
@@ -119,6 +122,7 @@ func getReferenceNamesInReadsObject(htsgetReq *HtsgetRequest) ([]string, error) 
 	if err != nil {
 		return nil, err
 	}
+
 	cmd := exec.Command("samtools", "view", "-H", fileURL)
 	pipe, err := cmd.StdoutPipe()
 	if err != nil {
@@ -136,7 +140,14 @@ func getReferenceNamesInReadsObject(htsgetReq *HtsgetRequest) ([]string, error) 
 			referenceNames = append(referenceNames, submatches[1])
 		}
 	}
-	cmd.Wait()
+
+	// wait till job completes, if the exit code wasn't 0, then raise an error
+	// likely the file was not found
+	err = cmd.Wait()
+	if err != nil {
+		return nil, errors.New("Could not get referenceNames from requested alignment file")
+	}
+
 	return referenceNames, nil
 }
 
@@ -163,7 +174,13 @@ func getReferenceNamesInVariantsObject(htsgetReq *HtsgetRequest) ([]string, erro
 			referenceNames = append(referenceNames, submatches[1])
 		}
 	}
-	cmd.Wait()
+
+	// wait till job completes, if the exit code wasn't 0, then raise an error
+	// likely the file was not found
+	err = cmd.Wait()
+	if err != nil {
+		return nil, errors.New("Could not get referenceNames from requested variant file")
+	}
 	return referenceNames, nil
 }
 
@@ -319,6 +336,8 @@ func (v *ParamValidator) ValidateNoTags(htsgetReq *HtsgetRequest, notags []strin
 	return true, ""
 }
 
+// ValidateRegions validates whether every region within an array of regions is
+// valid, that is, contains acceptable referenceName, start, and end values
 func (v *ParamValidator) ValidateRegions(htsgetReq *HtsgetRequest, regions []*Region) (bool, string) {
 
 	allowedReferenceNames, err := getReferenceNames(htsgetReq)
@@ -330,7 +349,7 @@ func (v *ParamValidator) ValidateRegions(htsgetReq *HtsgetRequest, regions []*Re
 
 		if region.ReferenceNameRequested() {
 			if !htsutils.IsItemInArray(region.GetReferenceName(), allowedReferenceNames) {
-				return false, "Invalid referenceName in regions list: '" + region.GetReferenceName()
+				return false, "Invalid referenceName in regions list: '" + region.GetReferenceName() + "'"
 			}
 		}
 
@@ -339,7 +358,7 @@ func (v *ParamValidator) ValidateRegions(htsgetReq *HtsgetRequest, regions []*Re
 				return false, "Invalid region(s): 'start' cannot be set without 'referenceName'"
 			}
 			if !isGreaterThanEqualToZero(region.GetStart()) {
-				return false, "Invalid region(s): 'start' must be greater than or equal to zero"
+				return false, "Invalid region(s): 'start' MUST be greater than or equal to zero"
 			}
 		}
 
@@ -348,7 +367,7 @@ func (v *ParamValidator) ValidateRegions(htsgetReq *HtsgetRequest, regions []*Re
 				return false, "Invalid region(s): 'end' cannot be set without 'referenceName'"
 			}
 			if !isGreaterThanEqualToZero(region.GetEnd()) {
-				return false, "Invalid regions(s): 'end' MUST be greater than or equal to zero"
+				return false, "Invalid region(s): 'end' MUST be greater than or equal to zero"
 			}
 			if region.StartRequested() {
 				if region.GetStart() >= region.GetEnd() {

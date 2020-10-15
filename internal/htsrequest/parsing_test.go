@@ -83,8 +83,52 @@ var parseHeaderParamTC = []struct {
 var parseReqBodyParamTC = []struct {
 	rawBody, key       string
 	expError, expFound bool
-	expValue           string
-}{}
+	expDatatype        string
+}{
+
+	{
+		"{\"format\":\"BAM\"}",
+		"format",
+		false,
+		true,
+		"string",
+	},
+	{
+		"{\"fields\":[\"QNAME\",\"SEQ\",\"QUAL\"]}",
+		"fields",
+		false,
+		true,
+		"[]string",
+	},
+	{
+		"{\"tags\":[\"HI\",\"MD\",\"NZ\"]}",
+		"tags",
+		false,
+		true,
+		"[]string",
+	},
+	{
+		"{\"notags\":[\"HI\",\"MD\",\"NZ\"]}",
+		"notags",
+		false,
+		true,
+		"[]string",
+	},
+	{
+		"{\"regions\":[{\"referenceName\":\"chr1\"}]}",
+		"regions",
+		false,
+		true,
+		"[]*htsrequest.Region",
+	},
+	{
+		"{\"format\":123}",
+		"format",
+		true,
+		false,
+		"",
+	},
+}
 
 // TestParsePathParam tests parsePathParam function
 func TestParsePathParam(t *testing.T) {
@@ -134,8 +178,18 @@ func TestParseHeaderParam(t *testing.T) {
 	}
 }
 
+// TestParseReqBodyParam tests parseReqBody function
 func TestParseReqBodyParam(t *testing.T) {
-	// for _, tc := range parseReqBodyParamTC {
-	//
-	// }
+	for _, tc := range parseReqBodyParamTC {
+
+		reflectedValue, found, err := parseReqBodyParam([]byte(tc.rawBody), tc.key)
+		if tc.expError {
+			assert.NotNil(t, err)
+		} else {
+			assert.Nil(t, err)
+			assert.Equal(t, tc.expFound, found)
+			datatype := reflectedValue.Type().String()
+			assert.Equal(t, tc.expDatatype, datatype)
+		}
+	}
 }

@@ -52,51 +52,65 @@ func parseHeaderParam(request *http.Request, key string) (string, bool) {
 
 // parsing of partial request body
 
+// partialRequestBody interface enabling the return of a single attribute from
+// the request body
 type partialRequestBody interface {
 	getattr() reflect.Value
 }
 
+// partialRequestBodyFormat parses single format parameter from request body
 type partialRequestBodyFormat struct {
 	Format *string `json:"format"`
 }
 
+// partialRequestBodyFields parses single fields parameter from request body
 type partialRequestBodyFields struct {
 	Fields *[]string `json:"fields"`
 }
 
+// partialRequestBodyTags parses single tags parameter from request body
 type partialRequestBodyTags struct {
 	Tags *[]string `json:"tags"`
 }
 
+// partialRequestBodyNoTags parses single notags parameter from request body
 type partialRequestBodyNoTags struct {
 	NoTags *[]string `json:"notags"`
 }
 
+// partialRequestBodyRegions parses single regions parameter from request body
 type partialRequestBodyRegions struct {
 	Regions *[]*Region `json:"regions"`
 }
 
+// getattr returns reflected format value
 func (rb *partialRequestBodyFormat) getattr() reflect.Value {
 	return reflect.ValueOf(rb.Format)
 }
 
+// getattr returns reflected fields value
 func (rb *partialRequestBodyFields) getattr() reflect.Value {
 	return reflect.ValueOf(rb.Fields)
 }
 
+// getattr returns reflected tags value
 func (rb *partialRequestBodyTags) getattr() reflect.Value {
 	return reflect.ValueOf(rb.Tags)
 }
 
+// getattr returns reflected notags value
 func (rb *partialRequestBodyNoTags) getattr() reflect.Value {
 	return reflect.ValueOf(rb.NoTags)
 }
 
+// getattr returns reflected regions value
 func (rb *partialRequestBodyRegions) getattr() reflect.Value {
 	return reflect.ValueOf(rb.Regions)
 }
 
-func NewPartialRequestBody(key string) partialRequestBody {
+// newPartialRequestBody constructs an empty partialRequestBody, holding a
+// single parameter based on the passed key
+func newPartialRequestBody(key string) partialRequestBody {
 
 	var prb partialRequestBody
 	switch key {
@@ -114,14 +128,18 @@ func NewPartialRequestBody(key string) partialRequestBody {
 	return prb
 }
 
+// parseReqBodyParam parses a single parameter from an overall request body
 func parseReqBodyParam(requestBodyBytes []byte, key string) (reflect.Value, bool, error) {
 
-	partialRequestBodyObj := NewPartialRequestBody(key)
+	// construct a single parameter, partial request body and unmarshal JSON
+	partialRequestBodyObj := newPartialRequestBody(key)
 	err := json.Unmarshal(requestBodyBytes, partialRequestBodyObj)
 	if err != nil {
 		msg := "Could not parse request body, offending attribute: '" + key + "'. Value is malformed or incorrect datatype"
 		return reflect.ValueOf(nil), false, errors.New(msg)
 	}
+
+	// checks if the value is nil (ie. a nil pointer means no value was found)
 	reflectedPtr := partialRequestBodyObj.getattr()
 	reflectedValue := reflectedPtr.Elem()
 	found := !reflectedPtr.IsNil()

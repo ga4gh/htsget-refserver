@@ -14,52 +14,61 @@ type Region struct {
 	End           *int   `json:"end"`
 }
 
-/* CONSTRUCTOR */
-
+// NewRegion instantiates a Region instance
 func NewRegion() *Region {
 	return new(Region)
 }
 
 /* SETTERS AND GETTERS */
 
+// SetReferenceName sets a region's reference name
 func (region *Region) SetReferenceName(referenceName string) {
 	region.ReferenceName = referenceName
 }
 
+// GetReferenceName retrieves a region's reference name
 func (region *Region) GetReferenceName() string {
 	return region.ReferenceName
 }
 
+// SetStart sets a region's start position
 func (region *Region) SetStart(start int) {
 	region.Start = &start
 }
 
+// GetStart retrieves a region's start position
 func (region *Region) GetStart() int {
 	return *region.Start
 }
 
+// SetEnd sets a region's end position
 func (region *Region) SetEnd(end int) {
 	region.End = &end
 }
 
+// GetEnd retrieves a region's end position
 func (region *Region) GetEnd() int {
 	return *region.End
 }
 
+// StartString retrieves the start position as a string
 func (region *Region) StartString() string {
 	return strconv.Itoa(region.GetStart())
 }
 
+// EndString retrieves the end position as a string
 func (region *Region) EndString() string {
 	return strconv.Itoa(region.GetEnd())
 }
 
 /* API METHODS */
 
+// ReferenceNameRequested validates whether a real reference name has been requested
 func (region *Region) ReferenceNameRequested() bool {
 	return !(region.GetReferenceName() == "")
 }
 
+// StartRequested validates whether a real start position has been requested
 func (region *Region) StartRequested() bool {
 	if region.Start == nil {
 		return false
@@ -67,6 +76,7 @@ func (region *Region) StartRequested() bool {
 	return !(region.GetStart() == -1)
 }
 
+// EndRequested validates whether a real end position has been requested
 func (region *Region) EndRequested() bool {
 	if region.End == nil {
 		return false

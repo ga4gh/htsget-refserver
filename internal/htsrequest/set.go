@@ -2,7 +2,7 @@
 // parameters from the HTTP request, and performing validation and
 // transformation
 //
-// Module set.go defines operations for setting request parameters to an
+// Module set defines operations for setting request parameters to an
 // HtsgetRequest, which first involves correct parsing, validation, and
 // transformation. Sets parameters correctly based on request route
 package htsrequest
@@ -18,6 +18,8 @@ import (
 	"github.com/ga4gh/htsget-refserver/internal/htsconstants"
 )
 
+// SetParameterTuple describes how a single request parameter will be parsed,
+// transformed, validated, and then set to the mature htsgetrequest object
 type SetParameterTuple struct {
 	location      htsconstants.ParamLoc
 	name          string

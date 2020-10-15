@@ -2,7 +2,7 @@
 // parameters from the HTTP request, and performing validation and
 // transformation
 //
-// Module request.go defines structs and operations for a mature htsget
+// Module request defines structs and operations for a mature htsget
 // request, which holds all htsget-related parameters and has insight into
 // what information was requested by the client
 package htsrequest
@@ -18,10 +18,6 @@ import (
 )
 
 // HtsgetRequest contains htsget-related parameters
-//
-// Attributes
-//	ScalarParams (map[string]string): map holding scalar parameter values
-//	ListParams (map[string][]string): map holding list parameter values
 type HtsgetRequest struct {
 	endpoint           htsconstants.APIEndpoint
 	id                 string
@@ -41,153 +37,186 @@ type HtsgetRequest struct {
 	htsgetRange        string
 }
 
-// NewHtsgetRequest instantiates a new HtsgetRequest struct instance
+// NewHtsgetRequest instantiates a new HtsgetRequest instance
 func NewHtsgetRequest() *HtsgetRequest {
 	r := new(HtsgetRequest)
 	r.SetRegions([]*Region{})
 	return r
 }
 
-/* SETTERS AND GETTERS */
-
+// SetEndpoint sets the API endpoint associated with request
 func (r *HtsgetRequest) SetEndpoint(endpoint htsconstants.APIEndpoint) {
 	r.endpoint = endpoint
 }
 
+// GetEndpoint retrieves the API endpoint associated with request
 func (r *HtsgetRequest) GetEndpoint() htsconstants.APIEndpoint {
 	return r.endpoint
 }
 
+// SetID sets request ID
 func (r *HtsgetRequest) SetID(id string) {
 	r.id = id
 }
 
+// GetID retrieves request ID
 func (r *HtsgetRequest) GetID() string {
 	return r.id
 }
 
+// SetFormat sets the requested file format
 func (r *HtsgetRequest) SetFormat(format string) {
 	r.format = format
 }
 
+// GetFormat retrieves the requested file format
 func (r *HtsgetRequest) GetFormat() string {
 	return r.format
 }
 
+// SetClass sets the requested class (ie. for header requests)
 func (r *HtsgetRequest) SetClass(class string) {
 	r.class = class
 }
 
+// GetClass retrieves the requested class
 func (r *HtsgetRequest) GetClass() string {
 	return r.class
 }
 
+// SetReferenceName sets the requested chromosome/reference sequence name
 func (r *HtsgetRequest) SetReferenceName(referenceName string) {
 	r.referenceName = referenceName
 }
 
+// GetReferenceName retrieves the requested chromosome/reference sequence name
 func (r *HtsgetRequest) GetReferenceName() string {
 	return r.referenceName
 }
 
+// SetStart sets the requested region start position
 func (r *HtsgetRequest) SetStart(start int) {
 	r.start = start
 }
 
+// GetStart retrieves the requested region start position
 func (r *HtsgetRequest) GetStart() int {
 	return r.start
 }
 
+// SetEnd sets the requested region end position
 func (r *HtsgetRequest) SetEnd(end int) {
 	r.end = end
 }
 
+// GetEnd retrieves the requested region end position
 func (r *HtsgetRequest) GetEnd() int {
 	return r.end
 }
 
+// SetFields sets the requested emitted fields
 func (r *HtsgetRequest) SetFields(fields []string) {
 	r.fields = fields
 }
 
+// GetFields retrieves the requested emitted fields
 func (r *HtsgetRequest) GetFields() []string {
 	return r.fields
 }
 
+// SetTags sets the requested emitted tags
 func (r *HtsgetRequest) SetTags(tags []string) {
 	r.tags = tags
 }
 
+// GetTags retrieves the requested emitted tags
 func (r *HtsgetRequest) GetTags() []string {
 	return r.tags
 }
 
+// SetNoTags sets the requested set of tags to be excluded from results
 func (r *HtsgetRequest) SetNoTags(noTags []string) {
 	r.noTags = noTags
 }
 
+// GetNoTags retrieves the requested set of tags to be excluded from results
 func (r *HtsgetRequest) GetNoTags() []string {
 	return r.noTags
 }
 
+// SetRegions sets the requested list of genomic regions to be returned
 func (r *HtsgetRequest) SetRegions(regions []*Region) {
 	r.regions = regions
 }
 
+// AddRegion adds a single region to the list of requested genomic regions
 func (r *HtsgetRequest) AddRegion(region *Region) {
 	r.regions = append(r.regions, region)
 }
 
+// GetRegions retrieves the requested list of genomic regions
 func (r *HtsgetRequest) GetRegions() []*Region {
 	return r.regions
 }
 
+// SetHtsgetBlockClass sets the request block class
 func (r *HtsgetRequest) SetHtsgetBlockClass(htsgetBlockClass string) {
 	r.htsgetBlockClass = htsgetBlockClass
 }
 
+// GetHtsgetBlockClass retrieves the requested block class
 func (r *HtsgetRequest) GetHtsgetBlockClass() string {
 	return r.htsgetBlockClass
 }
 
+// SetHtsgetCurrentBlock sets the current url data block number
 func (r *HtsgetRequest) SetHtsgetCurrentBlock(htsgetCurrentBlock string) {
 	r.htsgetCurrentBlock = htsgetCurrentBlock
 }
 
+// GetHtsgetCurrentBlock retrieves the current url data block number
 func (r *HtsgetRequest) GetHtsgetCurrentBlock() string {
 	return r.htsgetCurrentBlock
 }
 
+// SetHtsgetTotalBlocks sets the total number of expected url data blocks /
+// fileparts for a single file download
 func (r *HtsgetRequest) SetHtsgetTotalBlocks(htsgetTotalBlocks string) {
 	r.htsgetTotalBlocks = htsgetTotalBlocks
 }
 
+// GetHtsgetTotalBlocks retrieves the total number of expected url data blocks /
+// fileparts for a single file download
 func (r *HtsgetRequest) GetHtsgetTotalBlocks() string {
 	return r.htsgetTotalBlocks
 }
 
+// SetHtsgetFilePath sets the path to the requested source file
 func (r *HtsgetRequest) SetHtsgetFilePath(htsgetFilePath string) {
 	r.htsgetFilePath = htsgetFilePath
 }
 
+// GetHtsgetFilePath retrieves the path to the requested source file
 func (r *HtsgetRequest) GetHtsgetFilePath() string {
 	return r.htsgetFilePath
 }
 
+// SetHtsgetRange sets the byte range for a requested file
 func (r *HtsgetRequest) SetHtsgetRange(htsgetRange string) {
 	r.htsgetRange = htsgetRange
 }
 
+// GetHtsgetRange retrieves the byte range for a requested file
 func (r *HtsgetRequest) GetHtsgetRange() string {
 	return r.htsgetRange
 }
 
-/* OTHER API METHODS */
-
+// isDefaultString checks if a given string property matches the expected default value
 func (r *HtsgetRequest) isDefaultString(val string, def string) bool {
 	return val == def
 }
 
+// isDefaultInt checks if a given int property matches the expected default value
 func (r *HtsgetRequest) isDefaultInt(val int, def int) bool {
 	return val == def
 }
@@ -218,18 +247,23 @@ func (r *HtsgetRequest) UnplacedUnmappedReadsRequested() bool {
 	return r.GetReferenceName() == "*"
 }
 
+// ReferenceNameRequested checks whether a reference name was specified in the
+// request
 func (r *HtsgetRequest) ReferenceNameRequested() bool {
 	return !r.isDefaultString(r.GetReferenceName(), defaultReferenceName)
 }
 
+// StartRequested checks whether a genomic start position was specified in the request
 func (r *HtsgetRequest) StartRequested() bool {
 	return !r.isDefaultInt(r.GetStart(), defaultStart)
 }
 
+// EndRequested checks whether a genomic end position was specified in the request
 func (r *HtsgetRequest) EndRequested() bool {
 	return !r.isDefaultInt(r.GetEnd(), defaultEnd)
 }
 
+// NRegions returns the number of requested genomic loci
 func (r *HtsgetRequest) NRegions() int {
 	return len(r.GetRegions())
 }
@@ -264,11 +298,15 @@ func (r *HtsgetRequest) AllTagsRequested() bool {
 	return r.TagsNotSpecified() && r.NoTagsNotSpecified()
 }
 
+// IsHeaderBlock checks whether the current data block / filepart represents
+// the header of the genomic file
 func (r *HtsgetRequest) IsHeaderBlock() bool {
 	current, _ := strconv.Atoi(r.GetHtsgetCurrentBlock())
 	return current == 0
 }
 
+// IsFinalBlock checks whether the current data block / filepart is the final
+// block in a list of blocks, altogether constituting a single file
 func (r *HtsgetRequest) IsFinalBlock() bool {
 	current, _ := strconv.Atoi(r.GetHtsgetCurrentBlock())
 	total, _ := strconv.Atoi(r.GetHtsgetTotalBlocks())
@@ -321,10 +359,12 @@ func (r *HtsgetRequest) ConstructDataEndpointURL(useRegion bool, regionI int) (s
 	return dataEndpoint.String(), nil
 }
 
+// GetDataSourceRegistry retrieves the data sources associated with the endpoint
 func (r *HtsgetRequest) GetDataSourceRegistry() *htsconfig.DataSourceRegistry {
 	return htsconfig.GetDataSourceRegistry(r.GetEndpoint())
 }
 
+// GetServiceInfo retrieves the service info object associated with the endpoint
 func (r *HtsgetRequest) GetServiceInfo() *htsconfig.ServiceInfo {
 	return htsconfig.GetServiceInfo(r.GetEndpoint())
 }
