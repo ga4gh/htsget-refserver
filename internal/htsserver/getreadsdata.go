@@ -39,15 +39,19 @@ func getReadsDataHandler(handler *requestHandler) {
 		// in a different block
 		headerByteSize, _ := getHeaderByteSize(handler.HtsReq.GetID(), fileURL)
 		removedHeadBytes = headerByteSize
+		var region *htsrequest.Region = nil
+		if !handler.HtsReq.AllRegionsRequested() {
+			region = handler.HtsReq.GetRegions()[0]
+		}
 
 		if handler.HtsReq.AllFieldsRequested() && handler.HtsReq.AllTagsRequested() {
 			// simple streaming of single block without field/tag modification
-			commandChain.AddCommand(samtoolsViewHeaderExcludedBAM(fileURL, handler.HtsReq.GetRegions()[0]))
+			commandChain.AddCommand(samtoolsViewHeaderExcludedBAM(fileURL, region))
 
 		} else {
 			// specific fields/tags requested, requires chaining of samtools
 			// with htsget-refserver-utils modify sam commands
-			commandChain.AddCommand(samtoolsViewHeaderIncludedSAM(fileURL, handler.HtsReq.GetRegions()[0]))
+			commandChain.AddCommand(samtoolsViewHeaderIncludedSAM(fileURL, region))
 			commandChain.AddCommand(modifySam(handler.HtsReq))
 			commandChain.AddCommand(samtoolsViewSamToBamStream())
 		}
@@ -93,10 +97,6 @@ func commandWriteStream(commandChain *htscli.CommandChain, removeHeadBytes int, 
 		writer.Write(bufferBytes)
 	}
 	return nil
-}
-
-func writeBamBGZFBytes(writer http.ResponseWriter) {
-	writer.Write(htsconstants.BamBGZF)
 }
 
 func writeBamEOF(writer http.ResponseWriter) {

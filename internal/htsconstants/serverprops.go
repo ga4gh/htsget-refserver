@@ -44,3 +44,9 @@ var DfltVariantsDataSource1000GPattern = "^1000genomes\\.(?P<accession>.*)$"
 
 // DfltVariantsDataSource1000GPath resolved path to 1000 genomes vcf files
 var DfltVariantsDataSource1000GPath = "https://ftp-trace.ncbi.nih.gov/1000genomes/ftp/phase1/analysis_results/integrated_call_sets/{accession}.vcf.gz"
+
+// DfltVariantsDataSourceGIABTestPattern regex pattern for GIAB filtered test vcfs
+var DfltVariantsDataSourceGIABTestPattern = "^(?P<accession>.*)_GIAB$"
+
+// DfltVariantsDataSourceGIABTestPath resolved path to GIAB filtered test vcfs
+var DfltVariantsDataSourceGIABTestPath = "./data/test/sources/giab/{accession}_GIAB.filtered.vcf.gz"

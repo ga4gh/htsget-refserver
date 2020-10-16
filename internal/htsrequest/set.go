@@ -26,6 +26,7 @@ type SetParameterTuple struct {
 	transformFunc string
 	validateFunc  string
 	setFunc       string
+	defaultValue  interface{}
 }
 
 var orderedParamsMap = map[htsconstants.HTTPMethod]map[htsconstants.APIEndpoint][]SetParameterTuple{
@@ -47,6 +48,7 @@ var orderedParamsMap = map[htsconstants.HTTPMethod]map[htsconstants.APIEndpoint]
 				"NoTransform",
 				"ValidateID",
 				"SetID",
+				defaultID,
 			},
 			{
 				htsconstants.ParamLocQuery,
@@ -54,6 +56,7 @@ var orderedParamsMap = map[htsconstants.HTTPMethod]map[htsconstants.APIEndpoint]
 				"TransformStringUppercase",
 				"ValidateFormat",
 				"SetFormat",
+				"BAM",
 			},
 
 			{
@@ -62,6 +65,7 @@ var orderedParamsMap = map[htsconstants.HTTPMethod]map[htsconstants.APIEndpoint]
 				"TransformStringLowercase",
 				"ValidateClass",
 				"SetClass",
+				"",
 			},
 			{
 				htsconstants.ParamLocQuery,
@@ -69,6 +73,7 @@ var orderedParamsMap = map[htsconstants.HTTPMethod]map[htsconstants.APIEndpoint]
 				"NoTransform",
 				"ValidateReferenceName",
 				"SetReferenceName",
+				"",
 			},
 			{
 				htsconstants.ParamLocQuery,
@@ -76,6 +81,7 @@ var orderedParamsMap = map[htsconstants.HTTPMethod]map[htsconstants.APIEndpoint]
 				"TransformStringToInt",
 				"ValidateStart",
 				"SetStart",
+				defaultStart,
 			},
 			{
 				htsconstants.ParamLocQuery,
@@ -83,6 +89,7 @@ var orderedParamsMap = map[htsconstants.HTTPMethod]map[htsconstants.APIEndpoint]
 				"TransformStringToInt",
 				"ValidateEnd",
 				"SetEnd",
+				defaultEnd,
 			},
 			{
 				htsconstants.ParamLocQuery,
@@ -90,6 +97,7 @@ var orderedParamsMap = map[htsconstants.HTTPMethod]map[htsconstants.APIEndpoint]
 				"TransformSplitAndUppercase",
 				"ValidateFields",
 				"SetFields",
+				defaultFields,
 			},
 			{
 				htsconstants.ParamLocQuery,
@@ -97,6 +105,7 @@ var orderedParamsMap = map[htsconstants.HTTPMethod]map[htsconstants.APIEndpoint]
 				"TransformSplit",
 				"ValidateTags",
 				"SetTags",
+				defaultTags,
 			},
 			{
 				htsconstants.ParamLocQuery,
@@ -104,6 +113,7 @@ var orderedParamsMap = map[htsconstants.HTTPMethod]map[htsconstants.APIEndpoint]
 				"TransformSplit",
 				"ValidateNoTags",
 				"SetNoTags",
+				defaultNoTags,
 			},
 		},
 
@@ -118,6 +128,7 @@ var orderedParamsMap = map[htsconstants.HTTPMethod]map[htsconstants.APIEndpoint]
 				"NoTransform",
 				"ValidateID",
 				"SetID",
+				defaultID,
 			},
 			{
 				htsconstants.ParamLocQuery,
@@ -125,6 +136,7 @@ var orderedParamsMap = map[htsconstants.HTTPMethod]map[htsconstants.APIEndpoint]
 				"TransformStringUppercase",
 				"ValidateFormat",
 				"SetFormat",
+				defaultFormatReads,
 			},
 			{
 				htsconstants.ParamLocQuery,
@@ -132,6 +144,7 @@ var orderedParamsMap = map[htsconstants.HTTPMethod]map[htsconstants.APIEndpoint]
 				"NoTransform",
 				"ValidateReferenceName",
 				"SetReferenceName",
+				defaultReferenceName,
 			},
 			{
 				htsconstants.ParamLocQuery,
@@ -139,6 +152,7 @@ var orderedParamsMap = map[htsconstants.HTTPMethod]map[htsconstants.APIEndpoint]
 				"TransformStringToInt",
 				"ValidateStart",
 				"SetStart",
+				defaultStart,
 			},
 			{
 				htsconstants.ParamLocQuery,
@@ -146,6 +160,7 @@ var orderedParamsMap = map[htsconstants.HTTPMethod]map[htsconstants.APIEndpoint]
 				"TransformStringToInt",
 				"ValidateEnd",
 				"SetEnd",
+				defaultEnd,
 			},
 			{
 				htsconstants.ParamLocQuery,
@@ -153,6 +168,7 @@ var orderedParamsMap = map[htsconstants.HTTPMethod]map[htsconstants.APIEndpoint]
 				"TransformSplitAndUppercase",
 				"ValidateFields",
 				"SetFields",
+				defaultFields,
 			},
 			{
 				htsconstants.ParamLocQuery,
@@ -160,6 +176,7 @@ var orderedParamsMap = map[htsconstants.HTTPMethod]map[htsconstants.APIEndpoint]
 				"TransformSplit",
 				"ValidateTags",
 				"SetTags",
+				defaultTags,
 			},
 			{
 				htsconstants.ParamLocQuery,
@@ -167,6 +184,7 @@ var orderedParamsMap = map[htsconstants.HTTPMethod]map[htsconstants.APIEndpoint]
 				"TransformSplit",
 				"ValidateNoTags",
 				"SetNoTags",
+				defaultNoTags,
 			},
 			{
 				htsconstants.ParamLocHeader,
@@ -174,6 +192,7 @@ var orderedParamsMap = map[htsconstants.HTTPMethod]map[htsconstants.APIEndpoint]
 				"TransformStringLowercase",
 				"NoValidation",
 				"SetHtsgetBlockClass",
+				defaultHtsgetBlockClass,
 			},
 			{
 				htsconstants.ParamLocHeader,
@@ -181,6 +200,7 @@ var orderedParamsMap = map[htsconstants.HTTPMethod]map[htsconstants.APIEndpoint]
 				"NoTransform",
 				"NoValidation",
 				"SetHtsgetCurrentBlock",
+				defaultHtsgetCurrentBlock,
 			},
 			{
 				htsconstants.ParamLocHeader,
@@ -188,6 +208,7 @@ var orderedParamsMap = map[htsconstants.HTTPMethod]map[htsconstants.APIEndpoint]
 				"NoTransform",
 				"NoValidation",
 				"SetHtsgetTotalBlocks",
+				defaultHtsgetTotalBlocks,
 			},
 		},
 
@@ -208,6 +229,7 @@ var orderedParamsMap = map[htsconstants.HTTPMethod]map[htsconstants.APIEndpoint]
 				"NoTransform",
 				"ValidateID",
 				"SetID",
+				defaultID,
 			},
 			{
 				htsconstants.ParamLocQuery,
@@ -215,6 +237,7 @@ var orderedParamsMap = map[htsconstants.HTTPMethod]map[htsconstants.APIEndpoint]
 				"TransformStringUppercase",
 				"ValidateFormat",
 				"SetFormat",
+				defaultFormatVariants,
 			},
 
 			{
@@ -223,6 +246,7 @@ var orderedParamsMap = map[htsconstants.HTTPMethod]map[htsconstants.APIEndpoint]
 				"TransformStringLowercase",
 				"ValidateClass",
 				"SetClass",
+				defaultClass,
 			},
 			{
 				htsconstants.ParamLocQuery,
@@ -230,6 +254,7 @@ var orderedParamsMap = map[htsconstants.HTTPMethod]map[htsconstants.APIEndpoint]
 				"NoTransform",
 				"ValidateReferenceName",
 				"SetReferenceName",
+				defaultReferenceName,
 			},
 			{
 				htsconstants.ParamLocQuery,
@@ -237,6 +262,7 @@ var orderedParamsMap = map[htsconstants.HTTPMethod]map[htsconstants.APIEndpoint]
 				"TransformStringToInt",
 				"ValidateStart",
 				"SetStart",
+				defaultStart,
 			},
 			{
 				htsconstants.ParamLocQuery,
@@ -244,6 +270,7 @@ var orderedParamsMap = map[htsconstants.HTTPMethod]map[htsconstants.APIEndpoint]
 				"TransformStringToInt",
 				"ValidateEnd",
 				"SetEnd",
+				defaultEnd,
 			},
 			{
 				htsconstants.ParamLocQuery,
@@ -251,6 +278,7 @@ var orderedParamsMap = map[htsconstants.HTTPMethod]map[htsconstants.APIEndpoint]
 				"TransformSplitAndUppercase",
 				"ValidateFields",
 				"SetFields",
+				defaultFields,
 			},
 			{
 				htsconstants.ParamLocQuery,
@@ -258,6 +286,7 @@ var orderedParamsMap = map[htsconstants.HTTPMethod]map[htsconstants.APIEndpoint]
 				"TransformSplit",
 				"ValidateTags",
 				"SetTags",
+				defaultTags,
 			},
 			{
 				htsconstants.ParamLocQuery,
@@ -265,6 +294,7 @@ var orderedParamsMap = map[htsconstants.HTTPMethod]map[htsconstants.APIEndpoint]
 				"TransformSplit",
 				"ValidateNoTags",
 				"SetNoTags",
+				defaultNoTags,
 			},
 		},
 
@@ -279,6 +309,7 @@ var orderedParamsMap = map[htsconstants.HTTPMethod]map[htsconstants.APIEndpoint]
 				"NoTransform",
 				"ValidateID",
 				"SetID",
+				defaultID,
 			},
 			{
 				htsconstants.ParamLocQuery,
@@ -286,6 +317,7 @@ var orderedParamsMap = map[htsconstants.HTTPMethod]map[htsconstants.APIEndpoint]
 				"TransformStringUppercase",
 				"ValidateFormat",
 				"SetFormat",
+				defaultFormatVariants,
 			},
 			{
 				htsconstants.ParamLocQuery,
@@ -293,6 +325,7 @@ var orderedParamsMap = map[htsconstants.HTTPMethod]map[htsconstants.APIEndpoint]
 				"NoTransform",
 				"ValidateReferenceName",
 				"SetReferenceName",
+				defaultReferenceName,
 			},
 			{
 				htsconstants.ParamLocQuery,
@@ -300,6 +333,7 @@ var orderedParamsMap = map[htsconstants.HTTPMethod]map[htsconstants.APIEndpoint]
 				"TransformStringToInt",
 				"ValidateStart",
 				"SetStart",
+				defaultStart,
 			},
 			{
 				htsconstants.ParamLocQuery,
@@ -307,6 +341,7 @@ var orderedParamsMap = map[htsconstants.HTTPMethod]map[htsconstants.APIEndpoint]
 				"TransformStringToInt",
 				"ValidateEnd",
 				"SetEnd",
+				defaultEnd,
 			},
 			{
 				htsconstants.ParamLocQuery,
@@ -314,6 +349,7 @@ var orderedParamsMap = map[htsconstants.HTTPMethod]map[htsconstants.APIEndpoint]
 				"TransformSplitAndUppercase",
 				"ValidateFields",
 				"SetFields",
+				defaultFields,
 			},
 			{
 				htsconstants.ParamLocQuery,
@@ -321,6 +357,7 @@ var orderedParamsMap = map[htsconstants.HTTPMethod]map[htsconstants.APIEndpoint]
 				"TransformSplit",
 				"ValidateTags",
 				"SetTags",
+				defaultTags,
 			},
 			{
 				htsconstants.ParamLocQuery,
@@ -328,6 +365,7 @@ var orderedParamsMap = map[htsconstants.HTTPMethod]map[htsconstants.APIEndpoint]
 				"TransformSplit",
 				"ValidateNoTags",
 				"SetNoTags",
+				defaultNoTags,
 			},
 			{
 				htsconstants.ParamLocHeader,
@@ -335,6 +373,7 @@ var orderedParamsMap = map[htsconstants.HTTPMethod]map[htsconstants.APIEndpoint]
 				"TransformStringLowercase",
 				"NoValidation",
 				"SetHtsgetBlockClass",
+				defaultHtsgetBlockClass,
 			},
 			{
 				htsconstants.ParamLocHeader,
@@ -342,6 +381,7 @@ var orderedParamsMap = map[htsconstants.HTTPMethod]map[htsconstants.APIEndpoint]
 				"NoTransform",
 				"NoValidation",
 				"SetHtsgetCurrentBlock",
+				defaultHtsgetCurrentBlock,
 			},
 			{
 				htsconstants.ParamLocHeader,
@@ -349,6 +389,7 @@ var orderedParamsMap = map[htsconstants.HTTPMethod]map[htsconstants.APIEndpoint]
 				"NoTransform",
 				"NoValidation",
 				"SetHtsgetTotalBlocks",
+				defaultHtsgetTotalBlocks,
 			},
 		},
 
@@ -369,6 +410,7 @@ var orderedParamsMap = map[htsconstants.HTTPMethod]map[htsconstants.APIEndpoint]
 				"NoTransform",
 				"NoValidation",
 				"SetHtsgetFilePath",
+				defaultHtsgetFilePath,
 			},
 			{
 				htsconstants.ParamLocHeader,
@@ -376,6 +418,7 @@ var orderedParamsMap = map[htsconstants.HTTPMethod]map[htsconstants.APIEndpoint]
 				"NoTransform",
 				"NoValidation",
 				"SetHtsgetRange",
+				defaultHtsgetRange,
 			},
 		},
 	},
@@ -397,6 +440,7 @@ var orderedParamsMap = map[htsconstants.HTTPMethod]map[htsconstants.APIEndpoint]
 				"NoTransform",
 				"ValidateID",
 				"SetID",
+				defaultID,
 			},
 			{
 				htsconstants.ParamLocReqBody,
@@ -404,6 +448,7 @@ var orderedParamsMap = map[htsconstants.HTTPMethod]map[htsconstants.APIEndpoint]
 				"NoTransform",
 				"ValidateFormat",
 				"SetFormat",
+				defaultFormatReads,
 			},
 			{
 				htsconstants.ParamLocReqBody,
@@ -411,6 +456,7 @@ var orderedParamsMap = map[htsconstants.HTTPMethod]map[htsconstants.APIEndpoint]
 				"NoTransform",
 				"ValidateFields",
 				"SetFields",
+				defaultFields,
 			},
 			{
 				htsconstants.ParamLocReqBody,
@@ -418,6 +464,7 @@ var orderedParamsMap = map[htsconstants.HTTPMethod]map[htsconstants.APIEndpoint]
 				"NoTransform",
 				"ValidateTags",
 				"SetTags",
+				defaultTags,
 			},
 			{
 				htsconstants.ParamLocReqBody,
@@ -425,6 +472,7 @@ var orderedParamsMap = map[htsconstants.HTTPMethod]map[htsconstants.APIEndpoint]
 				"NoTransform",
 				"ValidateNoTags",
 				"SetNoTags",
+				defaultNoTags,
 			},
 			{
 				htsconstants.ParamLocReqBody,
@@ -432,6 +480,7 @@ var orderedParamsMap = map[htsconstants.HTTPMethod]map[htsconstants.APIEndpoint]
 				"NoTransform",
 				"ValidateRegions",
 				"SetRegions",
+				defaultRegions,
 			},
 		},
 	},
@@ -514,7 +563,7 @@ func setSingleParameter(request *http.Request, setParamTuple SetParameterTuple,
 		return nil
 	}
 	// if no param value is found, set the default value
-	defaultValueReflect := reflect.ValueOf(defaultParameterValues[paramName])
+	defaultValueReflect := reflect.ValueOf(setParamTuple.defaultValue)
 	htsgetParamSetter.Call([]reflect.Value{defaultValueReflect})
 	return nil
 }

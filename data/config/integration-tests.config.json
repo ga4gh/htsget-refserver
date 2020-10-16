@@ -16,7 +16,15 @@
       }
     },
     "variants": {
-      "enabled": true
+      "enabled": true,
+      "dataSourceRegistry": {
+        "sources": [
+          {
+            "pattern": "^(?P<accession>.*)_GIAB$",
+            "path": "../../data/test/sources/giab/{accession}_GIAB.filtered.vcf.gz"
+          }
+        ]
+      }
     }
   }
 }

@@ -6,7 +6,8 @@
 package htsrequest
 
 var defaultID = ""
-var defaultFormat = "BAM"
+var defaultFormatReads = "BAM"
+var defaultFormatVariants = "VCF"
 var defaultClass = ""
 var defaultReferenceName = ""
 var defaultStart = -1
@@ -16,7 +17,12 @@ var defaultTags = []string{"ALL"}
 var defaultNoTags = []string{"NONE"}
 var defaultRegions = []*Region{}
 var defaultHtsgetBlockClass = ""
+var defaultHtsgetCurrentBlock = "0"
+var defaultHtsgetTotalBlocks = "1"
+var defaultHtsgetFilePath = ""
+var defaultHtsgetRange = ""
 
+/*
 var defaultParameterValues = map[string]interface{}{
 	"id":               defaultID,
 	"format":           defaultFormat,
@@ -30,3 +36,4 @@ var defaultParameterValues = map[string]interface{}{
 	"regions":          defaultRegions,
 	"HtsgetBlockClass": defaultHtsgetBlockClass,
 }
+*/

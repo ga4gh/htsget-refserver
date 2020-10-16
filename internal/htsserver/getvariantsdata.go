@@ -56,7 +56,8 @@ func constructBcftoolsCommand(htsgetReq *htsrequest.HtsgetRequest, fileURL strin
 	args := []string{"view", fileURL}
 
 	// translate "format" param into bcftools command
-	args = append(args, "-O", "v") // request uncompressed VCF
+	args = append(args, "-O", "v")      // request uncompressed VCF
+	args = append(args, "--no-version") // do not add bcftools version to VCF header
 
 	// translate "HtsgetBlockClass" param into bcftools command
 	if htsgetReq.GetHtsgetBlockClass() == "header" {
