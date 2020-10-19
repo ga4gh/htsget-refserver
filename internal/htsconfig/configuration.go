@@ -23,7 +23,7 @@ import (
 // Attributes
 //	ReadsDataSourceRegistry (*DataSourceRegistry): data sources for reads endpoint
 type Configuration struct {
-	Container *configurationContainer `json:"htsgetconfig"`
+	Container *configurationContainer `json:"htsgetConfig"`
 }
 
 type configurationContainer struct {
@@ -35,8 +35,9 @@ type configurationContainer struct {
 type configurationServerProps struct {
 	Port    string `json:"port"`
 	Host    string `json:"host"`
-	Tempdir string `json:"tempdir"`
-	Logfile string `json:"logfile"`
+	DocsDir string `json:"docsDir"`
+	TempDir string `json:"tempdir"`
+	LogFile string `json:"logFile"`
 }
 
 type configurationEndpoint struct {
@@ -147,24 +148,28 @@ func GetHost() string {
 	return htsutils.AddTrailingSlash(getServerProps().Host)
 }
 
-func GetTempdir() string {
-	return htsutils.AddTrailingSlash(getServerProps().Tempdir)
+func GetDocsDir() string {
+	return getServerProps().DocsDir
 }
 
-func GetTempfilePath(filename string) string {
-	return filepath.Join(GetTempdir(), filename)
+func GetTempDir() string {
+	return htsutils.AddTrailingSlash(getServerProps().TempDir)
 }
 
-func CreateTempfile(filename string) (*os.File, error) {
-	return os.Create(GetTempfilePath(filename))
+func GetTempFilePath(filename string) string {
+	return filepath.Join(GetTempDir(), filename)
+}
+
+func CreateTempFile(filename string) (*os.File, error) {
+	return os.Create(GetTempFilePath(filename))
 }
 
 func RemoveTempfile(file *os.File) error {
 	return os.Remove(file.Name())
 }
 
-func GetLogfile() string {
-	return getServerProps().Logfile
+func GetLogFile() string {
+	return getServerProps().LogFile
 }
 
 func getEndpointConfig(ep htsconstants.APIEndpoint) *configurationEndpoint {

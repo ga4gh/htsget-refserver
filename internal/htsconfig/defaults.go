@@ -28,8 +28,9 @@ var DefaultConfiguration = &Configuration{
 		ServerProps: &configurationServerProps{
 			Port:    htsconstants.DfltServerPropsPort,
 			Host:    htsconstants.DfltServerPropsHost,
-			Tempdir: htsconstants.DfltServerPropsTempdir,
-			Logfile: htsconstants.DfltServerPropsLogfile,
+			DocsDir: htsconstants.DfltServerPropsDocsDir,
+			TempDir: htsconstants.DfltServerPropsTempDir,
+			LogFile: htsconstants.DfltServerPropsLogFile,
 		},
 		ReadsConfig: &configurationEndpoint{
 			Enabled: &defaultEnabledReads,

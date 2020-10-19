@@ -13,11 +13,14 @@ var DfltServerPropsPort = "3000"
 // DfltServerPropsHost default hostname the server refers to when pointing to data endpoints
 var DfltServerPropsHost = "http://localhost:3000/"
 
-// DfltServerPropsTempdir default temporary file directory
-var DfltServerPropsTempdir = "."
+// DfltServerPropsDocsDir default static files directory
+var DfltServerPropsDocsDir = ""
 
-// DfltServerPropsLogfile default logfile to write logs
-var DfltServerPropsLogfile = "htsget-refserver.log"
+// DfltServerPropsTempDir default temporary file directory
+var DfltServerPropsTempDir = "."
+
+// DfltServerPropsLogFile default logfile to write logs
+var DfltServerPropsLogFile = "htsget-refserver.log"
 
 /* **************************************************
  * READS DATA SOURCE REGISTRY
