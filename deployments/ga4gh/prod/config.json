@@ -1,10 +1,11 @@
 {
-  "htsgetconfig": {
+  "htsgetConfig": {
     "props": {
       "port": "3000",
       "host": "https://htsget.ga4gh.org/",
-      "tempdir": "/tmp/",
-      "logfile": "/usr/src/app/htsget-refserver.log"
+      "docsDir": "./deployments/ga4gh/prod/docs/",
+      "tempDir": "/tmp/",
+      "logFile": "/usr/src/app/htsget-refserver.log"
     },
     "reads": {
       "enabled": true,

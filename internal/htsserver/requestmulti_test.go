@@ -277,8 +277,8 @@ func TestHTTPRequestMulti(t *testing.T) {
 		// create the temp outputfile that htsget data response blocks will be
 		// written to
 
-		outputFilepath := htsconfig.GetTempfilePath("testoutput")
-		outputFile, err := htsconfig.CreateTempfile("testoutput")
+		outputFilepath := htsconfig.GetTempFilePath("testoutput")
+		outputFile, err := htsconfig.CreateTempFile("testoutput")
 		if err != nil {
 			t.Fatal(err)
 		}

@@ -151,7 +151,7 @@ func samtoolsViewSamToBamStream() *htscli.Command {
 
 func getHeaderByteSize(id string, fileURL string) (int, error) {
 	cmd := exec.Command("samtools", "view", "-H", "-b", fileURL)
-	tmpHeader, err := htsconfig.CreateTempfile(id + "_header")
+	tmpHeader, err := htsconfig.CreateTempFile(id + "_header")
 	if err != nil {
 		return 0, err
 	}
