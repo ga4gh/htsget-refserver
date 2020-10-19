@@ -66,9 +66,7 @@ func writeHtsgetErrorToHTTPError(writer http.ResponseWriter, code int, err strin
 // in the response body if no message is passed. a message pointer can be passed
 // to overall the default message
 func htsgetErrorTemplate(writer http.ResponseWriter, errorName string, msgPtr *string) {
-	code, codeParseErr := strconv.Atoi(errorInfoMap[errorName]["code"])
-	if codeParseErr != nil {
-	}
+	code, _ := strconv.Atoi(errorInfoMap[errorName]["code"])
 
 	// use the default message if the message pointer is nil
 	msg := errorInfoMap[errorName]["dfltMsg"]

@@ -94,13 +94,8 @@ func ParseRangeHeader(rangeHeader string) (int64, int64, error) {
 		return 0, 0, err
 	}
 
-	start, err := strconv.Atoi(matchMap["start"][0])
-	if err != nil {
-		return 0, 0, err
-	}
-	end, err := strconv.Atoi(matchMap["end"][0])
-	if err != nil {
-		return 0, 0, err
-	}
+	start, _ := strconv.Atoi(matchMap["start"][0])
+	end, _ := strconv.Atoi(matchMap["end"][0])
+
 	return int64(start), int64(end), nil
 }

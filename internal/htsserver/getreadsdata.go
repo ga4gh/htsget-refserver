@@ -2,19 +2,13 @@ package htsserver
 
 import (
 	"bufio"
-	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"os/exec"
-	"path/filepath"
-	"strconv"
 
-	"github.com/biogo/hts/bam"
+	"github.com/ga4gh/htsget-refserver/internal/htscli"
 	"github.com/ga4gh/htsget-refserver/internal/htsconfig"
 	"github.com/ga4gh/htsget-refserver/internal/htsconstants"
-	"github.com/ga4gh/htsget-refserver/internal/htserror"
-	"github.com/ga4gh/htsget-refserver/internal/htsformats"
 	"github.com/ga4gh/htsget-refserver/internal/htsrequest"
 )
 
@@ -22,237 +16,140 @@ func getReadsData(writer http.ResponseWriter, request *http.Request) {
 	newRequestHandler(
 		htsconstants.GetMethod,
 		htsconstants.APIEndpointReadsData,
+		addRegionFromQueryString,
 		getReadsDataHandler,
 	).handleRequest(writer, request)
 }
 
-// getReadsData serves the actual data from AWS back to client
 func getReadsDataHandler(handler *requestHandler) {
-	fileURL, err := htsconfig.GetObjectPath(handler.HtsReq.GetEndpoint(), handler.HtsReq.ID())
+	fileURL, err := htsconfig.GetObjectPath(handler.HtsReq.GetEndpoint(), handler.HtsReq.GetID())
 	if err != nil {
 		return
 	}
 
-	region := &htsformats.Region{
-		Name:  handler.HtsReq.ReferenceName(),
-		Start: handler.HtsReq.Start(),
-		End:   handler.HtsReq.End(),
-	}
+	commandChain := htscli.NewCommandChain()
+	removedHeadBytes := 0
+	removedTailBytes := htsconstants.BamEOFLen
 
-	args := getSamtoolsCmdArgs(region, handler.HtsReq, fileURL)
-	cmd := exec.Command("samtools", args...)
-	pipe, err := cmd.StdoutPipe()
-
-	if err != nil {
-		msg := err.Error()
-		htserror.InternalServerError(handler.Writer, &msg)
-		return
-	}
-
-	err = cmd.Start()
-	if err != nil {
-		msg := err.Error()
-		htserror.InternalServerError(handler.Writer, &msg)
-		return
-	}
-
-	reader := bufio.NewReader(pipe)
-
-	var eofLen int
-	if handler.HtsReq.HtsgetBlockClass() == "header" {
-		eofLen = htsconstants.BamHeaderEOFLen
+	if handler.HtsReq.IsHeaderBlock() {
+		// only get the header for header blocks
+		commandChain.AddCommand(samtoolsViewHeaderOnlyBAM(fileURL))
 	} else {
-		eofLen = htsconstants.BamEOFLen
-	}
-
-	if (handler.HtsReq.AllFieldsRequested() && handler.HtsReq.AllTagsRequested()) || handler.HtsReq.HtsgetBlockClass() == "header" {
-		if handler.HtsReq.HtsgetBlockClass() != "header" { // remove header
-			headerLen, err := headerLen(handler.HtsReq.ID(), fileURL)
-			handler.Writer.Header().Set("header-len", strconv.FormatInt(headerLen, 10))
-			if err != nil {
-				msg := err.Error()
-				htserror.InternalServerError(handler.Writer, &msg)
-				return
-			}
-			headerBuf := make([]byte, headerLen)
-			io.ReadFull(reader, headerBuf)
+		// body-based requests will remove header bytes, as they are streamed
+		// in a different block
+		headerByteSize, _ := getHeaderByteSize(handler.HtsReq.GetID(), fileURL)
+		removedHeadBytes = headerByteSize
+		var region *htsrequest.Region = nil
+		if !handler.HtsReq.AllRegionsRequested() {
+			region = handler.HtsReq.GetRegions()[0]
 		}
-		if handler.HtsReq.HtsgetBlockID() != handler.HtsReq.HtsgetNumBlocks() { // remove EOF if current block is not the last block
-			bufSize := 65536
-			buf := make([]byte, bufSize)
-			n, err := io.ReadFull(reader, buf)
-			if err != nil && err.Error() != "unexpected EOF" {
-				msg := err.Error()
-				htserror.InternalServerError(handler.Writer, &msg)
-				return
-			}
 
-			eofBuf := make([]byte, eofLen)
-			for n == bufSize {
-				copy(eofBuf, buf[n-eofLen:])
-				handler.Writer.Write(buf[:n-eofLen])
-				n, err = io.ReadFull(reader, buf)
-				if err != nil && err.Error() != "unexpected EOF" {
-					msg := err.Error()
-					htserror.InternalServerError(handler.Writer, &msg)
-					return
-				}
-				if n == bufSize {
-					handler.Writer.Write(eofBuf)
-				}
-			}
+		if handler.HtsReq.AllFieldsRequested() && handler.HtsReq.AllTagsRequested() {
+			// simple streaming of single block without field/tag modification
+			commandChain.AddCommand(samtoolsViewHeaderExcludedBAM(fileURL, region))
 
-			if n >= eofLen {
-				handler.Writer.Write(buf[:n-eofLen])
-			} else {
-				handler.Writer.Write(eofBuf[:eofLen-n])
-			}
 		} else {
-			io.Copy(handler.Writer, reader)
-		}
-	} else {
-		columns := make([]bool, 11)
-		for _, field := range handler.HtsReq.Fields() {
-			columns[htsconstants.BamFields[field]] = true
-		}
-
-		tmpPath := htsconfig.GetTempfilePath(handler.HtsReq.ID())
-		tmp, err := htsconfig.CreateTempfile(handler.HtsReq.ID())
-		if err != nil {
-			msg := err.Error()
-			htserror.InternalServerError(handler.Writer, &msg)
-			return
-		}
-
-		/* Write the BAM Header to the temporary SAM file */
-		tmpHeaderPath := htsconfig.GetTempfilePath(handler.HtsReq.ID() + ".header.bam")
-		headerCmd := exec.Command("samtools", "view", "-H", "-O", "SAM", "-o", tmpHeaderPath, fileURL)
-		if err != nil {
-			msg := err.Error()
-			htserror.InternalServerError(handler.Writer, &msg)
-		}
-		err = headerCmd.Start()
-		headerCmd.Wait()
-		f, err := os.Open(tmpHeaderPath)
-		headerReader := bufio.NewReader(f)
-		hl, _, eof := headerReader.ReadLine()
-		for ; eof == nil; hl, _, eof = headerReader.ReadLine() {
-			_, err = tmp.Write([]byte(string(hl) + "\n"))
-			if err != nil {
-				msg := err.Error()
-				htserror.InternalServerError(handler.Writer, &msg)
-				return
-			}
-		}
-
-		/* Write the custom SAM Records to the temporary SAM file */
-		l, _, eof := reader.ReadLine()
-		for ; eof == nil; l, _, eof = reader.ReadLine() {
-			if l[0] != 64 {
-				samRecord := htsformats.NewSAMRecord(string(l))
-				newSamRecord := samRecord.CustomEmit(handler.HtsReq)
-				l = []byte(newSamRecord + "\n")
-			} else {
-				l = append(l, "\n"...)
-			}
-			_, err = tmp.Write(l)
-			if err != nil {
-				msg := err.Error()
-				htserror.InternalServerError(handler.Writer, &msg)
-				return
-			}
-		}
-
-		tmp.Close()
-		bamCmd := exec.Command("samtools", "view", "-b", tmpPath)
-		bamPipe, err := bamCmd.StdoutPipe()
-		if err != nil {
-			msg := err.Error()
-			htserror.InternalServerError(handler.Writer, &msg)
-			return
-		}
-
-		err = bamCmd.Start()
-		if err != nil {
-			msg := err.Error()
-			htserror.InternalServerError(handler.Writer, &msg)
-			return
-		}
-
-		// remove header bytes from 'body' class data streams
-		headerByteCount, _ := headerLen(handler.HtsReq.ID(), fileURL)
-		bamReader := bufio.NewReader(bamPipe)
-		headerBuf := make([]byte, headerByteCount)
-		io.ReadFull(bamReader, headerBuf)
-		io.Copy(handler.Writer, bamReader)
-
-		err = bamCmd.Wait()
-		if err != nil {
-			msg := err.Error()
-			htserror.InternalServerError(handler.Writer, &msg)
-			return
-		}
-
-		err = htsconfig.RemoveTempfile(tmp)
-		if err != nil {
-			msg := err.Error()
-			htserror.InternalServerError(handler.Writer, &msg)
-			return
+			// specific fields/tags requested, requires chaining of samtools
+			// with htsget-refserver-utils modify sam commands
+			commandChain.AddCommand(samtoolsViewHeaderIncludedSAM(fileURL, region))
+			commandChain.AddCommand(modifySam(handler.HtsReq))
+			commandChain.AddCommand(samtoolsViewSamToBamStream())
 		}
 	}
-	cmd.Wait()
+
+	// execute command chain and stream output
+	commandWriteStream(commandChain, removedHeadBytes, removedTailBytes, handler.Writer)
+
+	// write EOF on the last block
+	if handler.HtsReq.IsFinalBlock() {
+		writeBamEOF(handler.Writer)
+	}
 }
 
-func getTempPath(id string, blockID int) (string, error) {
-	cwd, err := os.Getwd()
-	if err != nil {
-		return "", err
-	}
-	parent := filepath.Dir(cwd)
-	tempPath := parent + "/temp/" + id + "_" + strconv.Itoa(blockID)
+func commandWriteStream(commandChain *htscli.CommandChain, removeHeadBytes int, removeTailBytes int, writer http.ResponseWriter) error {
 
-	exists, err := fileExists(parent + "/temp")
-	if err != nil {
-		return "", err
-	}
-	if !exists {
-		os.Mkdir(parent+"/temp/", 0755)
-	} else {
-		isDir, err := isDir(parent + "/temp")
-		if err != nil {
-			return "", err
+	commandChain.SetupCommandChain()
+	pipe := commandChain.ExecuteCommandChain()
+	reader := bufio.NewReader(pipe)
+	bufferSize := 65536
+	firstLoop := true
+	eofNotReached := true
+
+	for ok := true; ok; ok = eofNotReached {
+		bufferBytes := make([]byte, bufferSize)
+		nBytesRead, _ := io.ReadFull(reader, bufferBytes)
+
+		// indicates this is the last loop
+		if nBytesRead != bufferSize {
+			// remove all unread bytes after EOF,
+			// then remove bytes specified by removeTailBytes
+			bufferBytes = bufferBytes[:nBytesRead]
+			bufferBytes = bufferBytes[:len(bufferBytes)-removeTailBytes]
+			eofNotReached = false
 		}
-		if !isDir {
-			os.Mkdir(parent+"/temp/", 0755)
+
+		// if first loop, remove bytes specified by removeHeadBytes
+		if firstLoop {
+			firstLoop = false
+			bufferBytes = bufferBytes[removeHeadBytes:]
 		}
+
+		writer.Write(bufferBytes)
 	}
-	return tempPath, nil
+	return nil
 }
 
-func getSamtoolsCmdArgs(region *htsformats.Region, htsgetReq *htsrequest.HtsgetRequest, fileURL string) []string {
-	args := []string{"view", fileURL}
-	if htsgetReq.HtsgetBlockClass() == "header" {
-		args = append(args, "-H")
-		args = append(args, "-b")
-	} else {
-		if htsgetReq.AllFieldsRequested() && htsgetReq.AllTagsRequested() {
-			args = append(args, "-b")
-		}
-		if region.ExportSamtools() != "" {
-			args = append(args, region.ExportSamtools())
+func writeBamEOF(writer http.ResponseWriter) {
+	writer.Write(htsconstants.BamEOF)
+}
+
+// for header requests
+func samtoolsViewHeaderOnlyBAM(fileURL string) *htscli.Command {
+	return htscli.SamtoolsView().AddFilePath(fileURL).HeaderOnly().OutputBAM().GetCommand()
+}
+
+// requests for all fields/tags
+func samtoolsViewHeaderExcludedBAM(fileURL string, region *htsrequest.Region) *htscli.Command {
+	samtoolsView := htscli.SamtoolsView().AddFilePath(fileURL).OutputBAM()
+	if region != nil {
+		samtoolsView.AddRegion(region)
+	}
+	return samtoolsView.GetCommand()
+}
+
+// commands used when custom fields/tags are requested
+func samtoolsViewHeaderIncludedSAM(fileURL string, region *htsrequest.Region) *htscli.Command {
+	samtoolsView := htscli.SamtoolsView().AddFilePath(fileURL).HeaderIncluded()
+	if region != nil {
+		samtoolsView.AddRegion(region)
+	}
+	return samtoolsView.GetCommand()
+}
+
+func modifySam(htsgetReq *htsrequest.HtsgetRequest) *htscli.Command {
+	modifySam := htscli.ModifySam()
+	if !htsgetReq.AllFieldsRequested() {
+		modifySam.SetFields(htsgetReq.GetFields())
+	}
+	if !htsgetReq.TagsNotSpecified() {
+		tags := htsgetReq.GetTags()
+		if len(tags) == 1 && tags[0] == "" {
+			modifySam.SetTags([]string{"NONE"})
+		} else {
+			modifySam.SetTags(tags)
 		}
 	}
-	return args
+	if !htsgetReq.NoTagsNotSpecified() {
+		modifySam.SetNoTags(htsgetReq.GetNoTags())
+	}
+	return modifySam.GetCommand()
 }
 
-func samToBam(tempPath string) string {
-	bamPath := tempPath + "_bam"
-	cmd := exec.Command("samtools", "view", "-h", "-b", tempPath, "-o", bamPath)
-	cmd.Run()
-	return bamPath
+func samtoolsViewSamToBamStream() *htscli.Command {
+	return htscli.SamtoolsView().OutputBAM().StreamFromStdin().GetCommand()
 }
 
-func headerLen(id string, fileURL string) (int64, error) {
+func getHeaderByteSize(id string, fileURL string) (int, error) {
 	cmd := exec.Command("samtools", "view", "-H", "-b", fileURL)
 	tmpHeader, err := htsconfig.CreateTempfile(id + "_header")
 	if err != nil {
@@ -267,69 +164,8 @@ func headerLen(id string, fileURL string) (int64, error) {
 		return 0, err
 	}
 
-	size := fi.Size() - 12
+	size := fi.Size() - 28
 	tmpHeader.Close()
 	htsconfig.RemoveTempfile(tmpHeader)
-	return size, nil
-}
-
-func removeHeader(path string) error {
-	fin, err := os.Open(path)
-	if err != nil {
-		return err
-	}
-	defer fin.Close()
-	fin.Seek(0, 0)
-	b, err := bam.NewReader(fin, 0)
-	if err != nil {
-		return err
-	}
-
-	b.Header()
-	b.Read()
-	lastChunk := b.LastChunk()
-	hLen := lastChunk.Begin.File
-
-	fDest, err := os.Create(path + "_copy")
-	if err != nil {
-		return err
-	}
-
-	fin.Seek(hLen, 0)
-	io.Copy(fin, fDest)
-
-	os.Remove(path)
-	os.Rename(path+"_copy", path)
-	return nil
-}
-
-func removeEOF(tempPath string) error {
-	fi, err := os.Stat(tempPath)
-	if err != nil {
-		return err
-	}
-	return os.Truncate(tempPath, fi.Size()-28)
-}
-
-// exists returns whether the given file or directory exists.
-func fileExists(path string) (bool, error) {
-	_, err := os.Stat(path)
-	if err == nil || !os.IsNotExist(err) {
-		return true, err
-	}
-	return false, nil
-}
-
-// isDir returns whether the given path is directory
-func isDir(path string) (bool, error) {
-	src, err := os.Stat(path)
-	if err != nil {
-		return false, err
-	}
-
-	if src.Mode().IsRegular() {
-		fmt.Println(path + " already exist as a file!")
-		return false, nil
-	}
-	return true, nil
+	return int(size), nil
 }

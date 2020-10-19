@@ -76,6 +76,10 @@ var DefaultConfiguration = &Configuration{
 						Pattern: htsconstants.DfltVariantsDataSource1000GPattern,
 						Path:    htsconstants.DfltVariantsDataSource1000GPath,
 					},
+					&DataSource{
+						Pattern: htsconstants.DfltVariantsDataSourceGIABTestPattern,
+						Path:    htsconstants.DfltVariantsDataSourceGIABTestPath,
+					},
 				},
 			},
 			ServiceInfo: &ServiceInfo{

@@ -10,18 +10,21 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var headersSetBlockIDTC = []struct {
-	blockID string
+// headersSetCurrentBlockTC test cases for SetCurrentBlock
+var headersSetCurrentBlockTC = []struct {
+	currentBlock string
 }{
 	{"1"}, {"2"}, {"3"},
 }
 
-var headersSetNumBlocksTC = []struct {
-	numblocks string
+// headersSetTotalBlocksTC test cases for SetTotalBlocks
+var headersSetTotalBlocksTC = []struct {
+	totalblocks string
 }{
 	{"10"}, {"20"}, {"100"},
 }
 
+// headersSetRangeHeaderTC test cases for SetRangeHeader
 var headersSetRangeHeaderTC = []struct {
 	start, end int64
 	exp        string
@@ -31,6 +34,7 @@ var headersSetRangeHeaderTC = []struct {
 	{999, 1000, "bytes=999-1000"},
 }
 
+// headersSetFilePathHeaderTC test cases for SetFilePathHeader
 var headersSetFilePathHeaderTC = []struct {
 	filepath string
 }{
@@ -38,22 +42,25 @@ var headersSetFilePathHeaderTC = []struct {
 	{"./data/gcp/gatk-test-data/wgs_bam/NA12878_20k_b37.bam"},
 }
 
-func TestHeadersSetBlockID(t *testing.T) {
-	for _, tc := range headersSetBlockIDTC {
+// TestHeadersSetCurrentBlock tests SetCurrentBlock function
+func TestHeadersSetCurrentBlock(t *testing.T) {
+	for _, tc := range headersSetCurrentBlockTC {
 		h := NewHeaders()
-		h.SetBlockID(tc.blockID)
-		assert.Equal(t, tc.blockID, h.BlockID)
+		h.SetCurrentBlock(tc.currentBlock)
+		assert.Equal(t, tc.currentBlock, h.CurrentBlock)
 	}
 }
 
-func TestHeadersSetNumBlocks(t *testing.T) {
-	for _, tc := range headersSetNumBlocksTC {
+// TestHeadersSetNumBlocks tests SetTotalBlocks function
+func TestHeadersSetTotalBlocks(t *testing.T) {
+	for _, tc := range headersSetTotalBlocksTC {
 		h := NewHeaders()
-		h.SetNumBlocks(tc.numblocks)
-		assert.Equal(t, tc.numblocks, h.NumBlocks)
+		h.SetTotalBlocks(tc.totalblocks)
+		assert.Equal(t, tc.totalblocks, h.TotalBlocks)
 	}
 }
 
+// TestHeadersSetRangeHeader tests SetRangeHeader function
 func TestHeadersSetRangeHeader(t *testing.T) {
 	for _, tc := range headersSetRangeHeaderTC {
 		h := NewHeaders()
@@ -62,6 +69,7 @@ func TestHeadersSetRangeHeader(t *testing.T) {
 	}
 }
 
+// TestHeadersSetClass tests SetClass function
 func TestHeadersSetClass(t *testing.T) {
 	h := NewHeaders()
 	functions := []func() *Headers{
@@ -75,10 +83,11 @@ func TestHeadersSetClass(t *testing.T) {
 
 	for i := 0; i < len(functions); i++ {
 		functions[i]()
-		assert.Equal(t, exp[i], h.Class)
+		assert.Equal(t, exp[i], h.BlockClass)
 	}
 }
 
+// TestHeadersSetFilePath tests SetFilePath function
 func TestHeadersSetFilePath(t *testing.T) {
 	for _, tc := range headersSetFilePathHeaderTC {
 		h := NewHeaders()

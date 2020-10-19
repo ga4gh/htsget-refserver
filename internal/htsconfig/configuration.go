@@ -137,6 +137,10 @@ func GetPort() string {
 	return getServerProps().Port
 }
 
+func SetHost(host string) {
+	getServerProps().Host = host
+}
+
 // GetHost gets the current configuration 'host' setting, the host base url the
 // service is running at
 func GetHost() string {

@@ -5,9 +5,7 @@ import (
 	"path/filepath"
 
 	"github.com/ga4gh/htsget-refserver/internal/htsconfig"
-
 	"github.com/ga4gh/htsget-refserver/internal/htsconstants"
-
 	"github.com/go-chi/chi"
 )
 
@@ -28,6 +26,7 @@ func SetRouter() (*chi.Mux, error) {
 	// if reads enabled, add reads routes
 	if htsconfig.IsEndpointEnabled(htsconstants.APIEndpointReadsTicket) {
 		router.Get(htsconstants.APIEndpointReadsTicket.String(), getReadsTicket)
+		router.Post(htsconstants.APIEndpointReadsTicket.String(), postReadsTicket)
 		router.Get(htsconstants.APIEndpointReadsData.String(), getReadsData)
 		router.Get(htsconstants.APIEndpointReadsServiceInfo.String(), getReadsServiceInfo)
 	}

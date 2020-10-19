@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// containerSetUrlsTC test cases for SetUrls
 var containerSetUrlsTC = []struct {
 	urls []string
 }{
@@ -26,6 +27,7 @@ var containerSetUrlsTC = []struct {
 	},
 }
 
+// TestContainerSetFormat tests SetFormat function
 func TestContainerSetFormat(t *testing.T) {
 	container := NewContainer()
 	functions := []func() *Container{
@@ -42,6 +44,7 @@ func TestContainerSetFormat(t *testing.T) {
 	}
 }
 
+// TestContainerSetUrls tests SetUrls function
 func TestContainerSetUrls(t *testing.T) {
 	for _, tc := range containerSetUrlsTC {
 		container := NewContainer()

@@ -2,70 +2,62 @@
 // parameters from the HTTP request, and performing validation and
 // transformation
 //
-// Module transformations.go defines operations for transforming the raw string
+// Module transformations defines operations for transforming the raw string
 // parsed from the HTTP request into a mature value that is usable by the program
 package htsrequest
 
 import (
+	"fmt"
+	"strconv"
 	"strings"
 )
 
-// transformationScalarByParam (map[string]func(string) string): map of
-// functions. the correct transformation function for each scalar parameter
-var transformationScalarByParam = map[string]func(string) string{
-	"id":               noTransform,
-	"format":           strings.ToUpper,
-	"class":            strings.ToLower,
-	"referenceName":    noTransform,
-	"start":            noTransform,
-	"end":              noTransform,
-	"HtsgetBlockClass": strings.ToLower,
-	"HtsgetBlockId":    noTransform,
-	"HtsgetNumBlocks":  noTransform,
-	"HtsgetFilePath":   noTransform,
-	"Range":            noTransform,
+// ParamTransformer transforms request parameters on query string to expected datatype
+type ParamTransformer struct{}
+
+// NewParamTransformer instantiates a new ParamTransformer object
+func NewParamTransformer() *ParamTransformer {
+	return new(ParamTransformer)
 }
 
-// transformationScalarByParam (map[string]func(string) []string): map of
-// functions. the correct transformation function for each list parameter
-var transformationListByParam = map[string]func(string) []string{
-	"fields": splitAndUppercase,
-	"tags":   splitOnComma,
-	"notags": splitOnComma,
+// NoTransform performs no param transformation, returning the exact same value
+func (t *ParamTransformer) NoTransform(s string) (string, string) {
+	return s, ""
 }
 
-// noTransform performs no transformation on a request parameter
-//
-// Arguments
-//	s (string): request parameter
-// Returns
-//	(string): unmodified request parameter
-func noTransform(s string) string {
-	return s
-}
-
-// splitOnComma splits a single string into a list of strings, using the comma
-// as delimiter
-//
-// Arguments
-//	s (string): request parameter string
-// Returns
-//	([]string): list representation of the passed string
-func splitOnComma(s string) []string {
-	return strings.Split(s, ",")
-}
-
-// splitAndUppercase splits into a list of strings, and makes each string
+// TransformStringUppercase transforms a param with lowercase characters to all
 // uppercase
-//
-// Arguments
-//	s (string): request parameter string
-// Returns
-// ([]string): list of strings, with each string uppercased
-func splitAndUppercase(s string) []string {
-	sList := splitOnComma(s)
+func (t *ParamTransformer) TransformStringUppercase(s string) (string, string) {
+	return strings.ToUpper(s), ""
+}
+
+// TransformStringLowercase transforms a param with uppercase characters to all
+// lowercase
+func (t *ParamTransformer) TransformStringLowercase(s string) (string, string) {
+	return strings.ToLower(s), ""
+}
+
+// TransformStringToInt converts a request param to integer datatype
+func (t *ParamTransformer) TransformStringToInt(s string) (int, string) {
+	msg := ""
+	value, err := strconv.Atoi(s)
+	if err != nil {
+		msg = fmt.Sprintf("Could not parse value: '%s', integer expected", s)
+	}
+	return value, msg
+}
+
+// TransformSplit splits a string into a list of strings, delimited by comma
+func (t *ParamTransformer) TransformSplit(s string) ([]string, string) {
+	return strings.Split(s, ","), ""
+}
+
+// TransformSplitAndUppercase splits a string into a list of strings, and
+// uppercases each element
+func (t *ParamTransformer) TransformSplitAndUppercase(s string) ([]string, string) {
+	sList, _ := t.TransformSplit(s)
 	for i := 0; i < len(sList); i++ {
 		sList[i] = strings.ToUpper(sList[i])
 	}
-	return sList
+	return sList, ""
 }

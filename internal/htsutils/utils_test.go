@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// utilsAddTrailingSlashTC test cases for AddTrailingSlash
 var utilsAddTrailingSlashTC = []struct {
 	url, exp string
 }{
@@ -18,6 +19,7 @@ var utilsAddTrailingSlashTC = []struct {
 	{"https://htsget.ga4gh.org/", "https://htsget.ga4gh.org/"},
 }
 
+// utilsRemoveTrailingSlashTC test cases for RemoveTrailingSlash
 var utilsRemoveTrailingSlashTC = []struct {
 	url, exp string
 }{
@@ -27,6 +29,7 @@ var utilsRemoveTrailingSlashTC = []struct {
 	{"https://htsget.ga4gh.org/", "https://htsget.ga4gh.org"},
 }
 
+// utilsGetTagNameTC test cases for GetTagName
 var utilsGetTagNameTC = []struct {
 	tag, exp string
 }{
@@ -36,6 +39,7 @@ var utilsGetTagNameTC = []struct {
 	{"MD:Z:100", "MD"},
 }
 
+// utilsIsItemInArrayTC test cases for IsItemInArray
 var utilsIsItemInArrayTC = []struct {
 	item  string
 	array []string
@@ -45,6 +49,7 @@ var utilsIsItemInArrayTC = []struct {
 	{"NX", []string{"MD", "HI", "NM", "NH"}, false},
 }
 
+// utilsStringIsEmptyTC test cases for StringIsEmpty
 var utilsStringIsEmptyTC = []struct {
 	s   string
 	exp bool
@@ -54,6 +59,7 @@ var utilsStringIsEmptyTC = []struct {
 	{"NH:i:1", false},
 }
 
+// utilsIsValidURLTC test cases for IsValidURL
 var utilsIsValidURLTC = []struct {
 	url string
 	exp bool
@@ -63,6 +69,7 @@ var utilsIsValidURLTC = []struct {
 	{"relative/path/to/object.bam", false},
 }
 
+// utilsParseRangeHeaderTC test cases for ParseRangeHeader
 var utilsParseRangeHeaderTC = []struct {
 	rangeHeader string
 	expStart    int64
@@ -74,18 +81,21 @@ var utilsParseRangeHeaderTC = []struct {
 	{"bytes=10.2-20.4", 0, 0, false},
 }
 
+// TestUtilsAddTrailingSlash tests AddTrailingSlash function
 func TestUtilsAddTrailingSlash(t *testing.T) {
 	for _, tc := range utilsAddTrailingSlashTC {
 		assert.Equal(t, tc.exp, AddTrailingSlash(tc.url))
 	}
 }
 
+// TestUtilsRemoveTrailingSlash tests RemoveTrailingSlash function
 func TestUtilsRemoveTrailingSlash(t *testing.T) {
 	for _, tc := range utilsRemoveTrailingSlashTC {
 		assert.Equal(t, tc.exp, RemoveTrailingSlash(tc.url))
 	}
 }
 
+// TestUtilsGetTagName tests GetTagName function
 func TestUtilsGetTagName(t *testing.T) {
 	for _, tc := range utilsGetTagNameTC {
 
@@ -93,24 +103,28 @@ func TestUtilsGetTagName(t *testing.T) {
 	}
 }
 
+// TestUtilsIsItemInArray tests IsItemInArray function
 func TestUtilsIsItemInArray(t *testing.T) {
 	for _, tc := range utilsIsItemInArrayTC {
 		assert.Equal(t, tc.exp, IsItemInArray(tc.item, tc.array))
 	}
 }
 
+// TestUtilsStringIsEmpty tests StringIsEmpty function
 func TestUtilsStringIsEmpty(t *testing.T) {
 	for _, tc := range utilsStringIsEmptyTC {
 		assert.Equal(t, tc.exp, StringIsEmpty(tc.s))
 	}
 }
 
+// TestUtilsIsValidUrl tests IsValidUrl function
 func TestUtilsIsValidUrl(t *testing.T) {
 	for _, tc := range utilsIsValidURLTC {
 		assert.Equal(t, tc.exp, IsValidURL(tc.url))
 	}
 }
 
+// TestUtilsParseRangeHeader tests ParseRangeHeader function
 func TestUtilsParseRangeHeader(t *testing.T) {
 	for _, tc := range utilsParseRangeHeaderTC {
 		s, e, err := ParseRangeHeader(tc.rangeHeader)
