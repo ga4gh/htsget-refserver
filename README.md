@@ -68,29 +68,30 @@ The htsget web service can be configured with runtime parameters via a JSON conf
 
 Examples of valid JSON config files are available in this repository:
 
-* [example 0 config](./data/config/example-0.config.json)
+* [ga4gh instance config](./deployments/ga4gh/prod/config.json) - used to run the GA4GH-hosted instance at https://htsget.ga4gh.org
 * [integration tests config](./data/config/integration-tests.config.json) - used for integration testing on Travis CI builds
-* [ga4gh instance config](./data/config/ga4gh-production.config.json) - used to run the GA4GH-hosted instance at https://htsget.ga4gh.org
+* [example 0 config](./data/config/example-0.config.json)
 * [empty config](./data/config/example-empty.config.json)
 
-In the JSON file, the root object must have a single "htsget" property, containing all sub-properties. ie:
+In the JSON file, the root object must have a single "htsgetConfig" property, containing all sub-properties. ie:
 
 ```
 {
-    "htsget": {}
+    "htsgetConfig": {}
 }
 ```
 
 ### Configuration - "props" object
 
-Under the `htsget` property, the `props` object overrides application-wide settings. The following table indicates the attributes of `props` and what settings they affect.
+Under the `htsgetConfig` property, the `props` object overrides application-wide settings. The following table indicates the attributes of `props` and what settings they affect.
 
 | Name | Description |  Default Value | 
 |------|-------------|----------------|
 | port | the port on which the service will run | 3000 | 
 | host | web service hostname. The JSON ticket returned by the server will reference other endpoints, using this hostname/base url to provide a complete url. | http://localhost:3000/ | 
-| tempdir | writes temporary files used in request processing to this directory | . |
-| logfile | writes application logs to this file | htsget-refserver.log |
+| docsDir | path to static file directory containing server documentation (e.g. OpenAPI). the server will serve its contents at the `/docs/` endpoint | NONE |
+| tempDir | writes temporary files used in request processing to this directory | . |
+| logFile | writes application logs to this file | htsget-refserver.log |
 
 Example `props` object:
 
@@ -109,7 +110,7 @@ Example `props` object:
 
 ### Configuration - "reads" object
 
-Under the `htsget` property, the `reads` object overrides settings for reads-related data and endpoints. The following properties can be set:
+Under the `htsgetConfig` property, the `reads` object overrides settings for reads-related data and endpoints. The following properties can be set:
 
 * `enabled` (boolean): if true, the server will set up reads-related routes (ie. `/reads/{id}`, `/reads/service-info`). True by default.
 * `dataSourceRegistry` (object): allows the server to serve alignment data from multiple cloud or local storage sources by mapping request object id patterns to registered data sources. A single `sources` property contains an array of data sources. For each data source, the following properties are required:
@@ -131,7 +132,7 @@ Example `reads` object:
 
 ```
 {
-    "htsget": {
+    "htsgetConfig": {
         "reads": {
             "enabled": true,
             "dataSourceRegistry": {
@@ -168,7 +169,7 @@ Example `reads` object:
 
 ### Configuration - "variants" object
 
-Under the `htsget` property, the `variants` object overrides settings for variants-related data and endpoints. The following properties can be set:
+Under the `htsgetConfig` property, the `variants` object overrides settings for variants-related data and endpoints. The following properties can be set:
 
 * `enabled` (boolean): if true, the server will set up variants-related routes (ie. `/variants/{id}`, `/variants/service-info`). True by default.
 * `dataSourceRegistry` (object): allows the server to serve variant data from multiple cloud or local storage sources by mapping request object id patterns to registered data sources. A single `sources` property contains an array of data sources. For each data source, the following properties are required:
@@ -190,7 +191,7 @@ Example `variants` object:
 
 ```
 {
-    "htsget": {
+    "htsgetConfig": {
         "variants": {
             "enabled": true,
             "dataSourceRegistry": {

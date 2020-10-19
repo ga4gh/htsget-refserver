@@ -1,5 +1,5 @@
 {
-  "htsgetconfig": {
+  "htsgetConfig": {
     "props": {
       "port": "80",
       "host": "http://localhost/"
