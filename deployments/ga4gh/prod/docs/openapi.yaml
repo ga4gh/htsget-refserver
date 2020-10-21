@@ -3,22 +3,140 @@ info:
     title: GA4GH htsget reference server (prod)
     description: |
         Welcome to the GA4GH-hosted, production deployment of the htsget
-        reference server 
+        reference server.
+
+        This is a running deployment of the
+        [htsget reference server codebase](https://github.com/ga4gh/htsget-refserver),
+        which streams open alignment and variant datasets according to the
+        [GA4GH htsget protocol](http://samtools.github.io/hts-specs/htsget.html).
 
         The API's base url is: https://htsget.ga4gh.org/
         * ex: https://htsget.ga4gh.org/reads/service-info
         * ex: https://htsget.ga4gh.org/variants/service-info
 
-
-        # Introduction
-
-        Introduction
-
         # Datasets
+        This section lists the various open datasets that are available via the
+        htsget reference server, and how to go about requesting sample files.
 
         ## Reads Datasets
 
+        `IDs` described here can be provided to the `/reads/{id}` endpoint to
+        stream alignment data according to the htsget protocol.
+
+        #### Tabula Muris SmartSeq2 FACS BAM files
+
+        FACS-based full length transcripts from the
+        [Tabula Muris](https://tabula-muris.ds.czbiohub.org/) dataset can be
+        streamed via the API.
+        
+        [This resource](https://github.com/czbiohub/tabula-muris/blob/master/tabula-muris-on-aws.md)
+        outlines where these BAM files are located on AWS S3. Using the AWS
+        Command Line Interface, the bucket files can be listed with the following
+        command:
+        `aws s3 ls s3://czbiohub-tabula-muris/facs_bam_files/`
+
+        To convert a desired file into an `ID` for the htsget API, `tabulamuris.`
+        must be prepended to the filename, and `.mus.Aligned.out.sorted.bam`
+        must be removed. For example, for the filename 
+        `A1-B000126-3_39_F-1-1_R1.mus.Aligned.out.sorted.bam`, the `ID` provided to
+        the API would be `tabulamuris.A1-B000126-3_39_F-1-1_R1`
+
+        There are 99,840 Tabula Muris FACS BAMs available for streaming, some IDs include:
+        `tabulamuris.A1-B000126-3_39_F-1-1_R1`,
+        `tabulamuris.A1-B000126-3_39_F-1-1_R2`,
+        `tabulamuris.A1-B000127-3_38_F-1-1_R1`,
+        `tabulamuris.A1-B000127-3_38_F-1-1_R2`
+
+        #### Tabula Muris 10x BAM files
+
+        10x single-cell transcripts from the
+        [Tabula Muris](https://tabula-muris.ds.czbiohub.org/) dataset can be
+        streamed via the API.
+        
+        [This resource](https://github.com/czbiohub/tabula-muris/blob/master/tabula-muris-on-aws.md)
+        outlines where these BAM files are located on AWS S3. Using the AWS
+        Command Line Interface, the bucket files can be listed with the following
+        command:
+        `aws s3 ls s3://czbiohub-tabula-muris/10x_bam_files/`
+
+        To convert a desired file into an `ID` for the htsget API, `tabulamuris.`
+        must be prepended to the filename, and `_possorted_genome.bam`
+        must be removed. For example, for the filename 
+        `A1-B000126-3_39_F-1-1_R1.mus.Aligned.out.sorted.bam`, the `ID` provided to
+        the API would be `tabulamuris.A1-B000126-3_39_F-1-1_R1`
+
+        There are 28 Tabula Muris 10x BAMs available for streaming, some IDs include:
+        `tabulamuris.10X_P4_0`,
+        `tabulamuris.10X_P4_1`,
+        `tabulamuris.10X_P4_2`,
+        `tabulamuris.10X_P4_3`
+
+        #### Genome in a Bottle NA12878/HG001 BAMs
+
+        Lane-level BAMs from one individual (NA12878/HG001) from the
+        [Genome in a Bottle Consortium](https://www.nist.gov/programs-projects/genome-bottle)
+        project can be streamed via the API. The BAMs within
+        [this FTP directory](https://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/NA12878/Garvan_NA12878_HG001_HiSeq_Exome/)
+        are available.
+
+        According to the [README](https://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/NA12878/Garvan_NA12878_HG001_HiSeq_Exome/Garvan_NA12878_HG001_HiSeq_Exome.README),
+        2 DNA libraries (NIST7035 and NIST7086) were prepared from the individual,
+        and each library was sequenced on 2 lanes, for a total of 4 lane level BAMs.
+
+        Any of the following IDs may be provided to the `/reads/{id}` endpoint
+        to stream the different lane-level BAMs:
+        `giab.NA12878.NIST7035.1`, `giab.NA12878.NIST7035.2`,
+        `giab.NA12878.NIST7086.1`, `giab.NA12878.NIST7086.2`,
+
+        #### GATK Test Data
+
+        Small test BAMs used for building and testing of the 
+        [Genome Analysis Toolkit](https://gatk.broadinstitute.org/)
+        can be streamed via the API.
+
+        The following IDs may be provided to the `/reads/{id}` endpoint to
+        stream the GATK test BAMs:
+        `gatk.NA12878`, `gatk.NA12878_20k_b37`
+
         ## Variants Datasets
+
+        `IDs` described here can be provided to the `/variants/{id}` endpoint to
+        stream variant data according to the htsget protocol.
+
+        #### 1000 Genomes Phase 1 Integrated Call Sets
+
+        Integrated variant data from phase 1 of the
+        [1000 Genomes Project](https://www.internationalgenome.org/)
+        can be streamed when using the `1000genomes.phase1` identifier prefix.
+        Essentially, the chromosome-specific VCFs within
+        [this FTP directory](https://ftp-trace.ncbi.nih.gov/1000genomes/ftp/phase1/analysis_results/integrated_call_sets/)
+        are available.
+
+        Any of the following IDs may be provided to the `/variants/{id}` endpoint
+        to stream chromosome-specific VCF data:
+        `1000genomes.phase1.chr1`, `1000genomes.phase1.chr2`, `1000genomes.phase1.chr3`,
+        `1000genomes.phase1.chr4`, `1000genomes.phase1.chr5`, `1000genomes.phase1.chr6`,
+        `1000genomes.phase1.chr7`, `1000genomes.phase1.chr8`, `1000genomes.phase1.chr9`, 
+        `1000genomes.phase1.chr10`, `1000genomes.phase1.chr11`, `1000genomes.phase1.chr12`,
+        `1000genomes.phase1.chr13`, `1000genomes.phase1.chr14`, `1000genomes.phase1.chr15`,
+        `1000genomes.phase1.chr16`, `1000genomes.phase1.chr17`, `1000genomes.phase1.chr18`,
+        `1000genomes.phase1.chr19`, `1000genomes.phase1.chr20`, `1000genomes.phase1.chr21`,
+        `1000genomes.phase1.chr22`, `1000genomes.phase1.chrX`, `1000genomes.phase1.chrY`,
+        `1000genomes.phase1.chrMT`
+
+        #### Genome in a Bottle NA12878/HG001 High Confidence calls
+
+        Variants from one individual (NA12878/HG001) from the
+        [Genome in a Bottle Consortium](https://www.nist.gov/programs-projects/genome-bottle)
+        project can be streamed via the API. Essentially, the VCF within
+        [this FTP directory](https://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/release/NA12878_HG001/NISTv3.3/)
+        is available.
+
+        To stream NA12878/HG001 variant data, provide the ID `giab.NA12878` 
+        to the `/variants/{id}` endpoint
+
+
+
     version: 1.3.0
     contact:
         name: GA4GH Tech Team
@@ -119,8 +237,41 @@ paths:
             tags:
                 - Reads
                 - Streaming
-            summary: Get Reads data
-            
+            summary: Stream alignment file part
+            description: |
+                Stream a single file part of a requested alignment file. Streams
+                requested region(s), fields, and tags.
+
+                NOTE: This endpoint, while public, should not be requested as an
+                initial request. Rather, the ticket endpoint `/reads/{id}` will
+                yield `URLs` to the `/reads/data/{id}` endpoint.
+            parameters:
+                - $ref: '#/components/parameters/idPathParam'
+                - $ref: '#/components/parameters/readsFormatParam'
+                - $ref: '#/components/parameters/referenceNameParam'
+                - $ref: '#/components/parameters/startParam'
+                - $ref: '#/components/parameters/endParam'
+                - $ref: '#/components/parameters/readsFieldsParam'
+                - $ref: '#/components/parameters/readsTagsParam'
+                - $ref: '#/components/parameters/readsNoTagsParam'
+                - $ref: '#/components/parameters/htsgetBlockClassHeaderParam'
+                - $ref: '#/components/parameters/htsgetCurrentBlockHeaderParam'
+                - $ref: '#/components/parameters/htsgetTotalBlocksHeaderParam'
+            responses:
+                200:
+                    description: Successfully streamed file part of large genomic alignment file
+                    content:
+                        application/octet-stream:
+                            schema:
+                                type: string
+                                format: binary
+                400:
+                    $ref: '#/components/responses/400BadRequestError'
+                404:
+                    $ref: '#/components/responses/404NotFoundError'
+                5xx:
+                    $ref: '#/components/responses/5xxServerError'
+
     /variants/service-info:
         get:
             tags:
@@ -175,13 +326,68 @@ paths:
             tags:
                 - Variants
                 - Streaming
-            summary: Get Variants Data
+            summary: Stream variant file part
+            description: |
+                Stream a single file part of a requested variant file. Streams
+                requested region(s).
+                
+                NOTE: This endpoint, while public, should not be requested as an
+                initial request. Rather, the ticket endpoint `/variants/{id}` 
+                will yields `URLs` to the `/variants/data/{id}` endpoint.
+            parameters:
+                - $ref: '#/components/parameters/idPathParam'
+                - $ref: '#/components/parameters/variantsFormatParam'
+                - $ref: '#/components/parameters/referenceNameParam'
+                - $ref: '#/components/parameters/startParam'
+                - $ref: '#/components/parameters/endParam'
+                - $ref: '#/components/parameters/variantsFieldsParam'
+                - $ref: '#/components/parameters/variantsTagsParam'
+                - $ref: '#/components/parameters/variantsNoTagsParam'
+                - $ref: '#/components/parameters/htsgetBlockClassHeaderParam'
+                - $ref: '#/components/parameters/htsgetCurrentBlockHeaderParam'
+                - $ref: '#/components/parameters/htsgetTotalBlocksHeaderParam'
+            responses:
+                200:
+                    description: Successfully streamed file part of large genomic variant file
+                    content:
+                        application/octet-stream:
+                            schema:
+                                type: string
+                                format: binary
+                400:
+                    $ref: '#/components/responses/400BadRequestError'
+                404:
+                    $ref: '#/components/responses/404NotFoundError'
+                5xx:
+                    $ref: '#/components/responses/5xxServerError'
     
     /file-bytes:
         get:
             tags:
                 - Streaming
             summary: Stream bytes of a local file
+            description: |
+                Streams a single file part of a requested genomic file (reads or variants).
+                This endpoint performs no region filtering or field/tag modification,
+                rather it streams a file part by simple byte positions.
+            parameters:
+                - $ref: '#/components/parameters/htsgetFilePathHeaderParam'
+                - $ref: '#/components/parameters/rangeHeaderParam'
+            responses:
+                200:
+                    description:
+                        Successfully stream file part of large genomic file
+                    content:
+                        application/octet-stream:
+                            schema:
+                                type: string
+                                format: binary
+                400:
+                    $ref: '#/components/responses/400BadRequestError'
+                404:
+                    $ref: '#/components/responses/404NotFoundError'
+                5xx:
+                    $ref: '#/components/responses/5xxServerError'
 
 tags:
     - name: Reads
@@ -216,18 +422,54 @@ components:
                 type: string
                 enum: [QNAME, FLAG, RNAME, POS, MAPQ, CIGAR, RNEXT, PNEXT, TLEN, SEQ, QUAL]
             example: [QNAME, RNAME]
-        # ReadsTags:
-        #     type: array
-        #     description: Description
-        # ReadsNoTags:
-        #     type: array
-        #     description: Description
+        ReadsTags:
+            type: array
+            description: Tags to include in returned alignment file
+            items:
+                type: string
+            example: [MD, NM]
+        ReadsNoTags:
+            type: array
+            description: Tags to exclude from returned alignment file
+            items:
+                type: string
+            example: [OQ, HI]
         
-        
-
+        # GENOMIC INTERVAL, REUSABLE SCHEMAS
+        ReferenceName:
+            type: string
+            description: Reference sequence name
+            example: chr1
+        Start:
+            type: integer
+            description: The start position of the range on the reference, 0-based, inclusive
+            format: int64
+            minimum: 0
+            example: 12312
+        End:
+            type: integer
+            description: The end position of the range on the reference, 0-based, exclusive
+            format: int64
+            example: 99999
+        Region:
+            type: object
+            description: Represents a genomic interval
+            properties:
+                referenceName:
+                    $ref: '#/components/schemas/ReferenceName'
+                start:
+                    $ref: '#/components/schemas/Start'
+                end:
+                    $ref: '#/components/schemas/End'
+            required:
+                - referenceName
+        Regions:
+            type: array
+            description: A listing of genomic intervals
+            items:
+                $ref: '#/components/schemas/Region'
 
         # SERVICE-INFO SCHEMAS
-
         ServiceInfo:
             '$ref': https://raw.githubusercontent.com/ga4gh-discovery/ga4gh-service-info/v1.0.0/service-info.yaml#/components/schemas/Service
         HtsgetServiceInfoExtension:
@@ -298,40 +540,49 @@ components:
                     $ref: '#/components/schemas/ReadsFormats'
                 fields:
                     $ref: '#/components/schemas/ReadsFields'
-                # tags:
-                #     $ref: '#/components/schemas/ReadsTags'
-                # notags:
-                #     $ref: '#/components/schemas/ReadsNoTags'
-                # regions:
-                #     $ref: '#/components/schemas/Regions'
+                tags:
+                    $ref: '#/components/schemas/ReadsTags'
+                notags:
+                    $ref: '#/components/schemas/ReadsNoTags'
+                regions:
+                    $ref: '#/components/schemas/Regions'
         
         # HTSGET TICKET SCHEMAS
-
+        HtsgetBlockClass:
+            type: string
+            description: When supplied to the data transfer URL, indicates whether a header or body file part is to be returned
+            enum: [header, body]
+            example: header
+        HtsgetCurrentBlock:
+            type: string
+            description: "Indicates the file part's position within the overall downloaded file"
+            example: "0"
+        HtsgetTotalBlocks:
+            type: string
+            description: Indicates how many file parts the overall genomic file transfer has been broken into
+            example: "100"
+        HtsgetFilePath:
+            type: string
+            description: Path to a local file that is to be streamed on simple byte indices
+            example: /data/reads/object00001.bam
+        Range:
+            type: string
+            description: The start/end byte positions of the file to be streamed
+            example: bytes=0-500000
         HtsgetHeaders:
             type: object
             description: Headers that must be supplied in the request to a data transfer URL
             properties:
                 HtsgetBlockClass:
-                    type: string
-                    description: When supplied to the data transfer URL, indicates whether a header or body file part is to be returned
-                    enum: [header, body]
-                    example: header
+                    $ref: '#/components/schemas/HtsgetBlockClass'
                 HtsgetCurrentBlock:
-                    type: string
-                    description: "Indicates the file part's position within the overall downloaded file"
-                    example: "0"
+                    $ref: '#/components/schemas/HtsgetCurrentBlock'
                 HtsgetTotalBlocks:
-                    type: string
-                    description: Indicates how many file parts the overall genomic file transfer has been broken into
-                    example: "100"
-                FilePath:
-                    type: string
-                    description: Path to a local file that is to be streamed on simple byte indices
-                    example: /data/reads/object00001.bam
+                    $ref: '#/components/schemas/HtsgetTotalBlocks'
+                HtsgetFilePath:
+                    $ref: '#/components/schemas/HtsgetFilePath'
                 Range:
-                    type: string
-                    description: The start/end byte positions of the file to be streamed
-                    example: bytes=0-500000
+                    $ref: '#/components/schemas/Range'
         HtsgetUrl:
             type: object
             description: a URL and associated headers that, when requested, perform transfer of a requested file
@@ -396,7 +647,6 @@ components:
                                                             example: "/data/variants/object00001.vcf"
         
         # ERROR SCHEMAS
-
         Error:
             type: object
             properties:
@@ -476,30 +726,21 @@ components:
         referenceNameParam:
             in: query
             name: referenceName
-            description: Reference sequence name
-            example: chr1
             required: false
             schema:
-                type: string
+                $ref: '#/components/schemas/ReferenceName'
         startParam:
             in: query
             name: start
-            description: The start position of the range on the reference, 0-based, inclusive
-            example: 12312
             required: false
             schema:
-                type: integer
-                format: int64
-                minimum: 0
+                $ref: '#/components/schemas/Start'
         endParam:
             in: query
             name: end
-            description: The end position of the range on the reference, 0-based, exclusive
-            example: 99999
             required: false
             schema:
-                type: integer
-                format: int64
+                $ref: '#/components/schemas/End'
         readsFieldsParam:
             in: query
             name: fields
@@ -519,7 +760,7 @@ components:
             example: MD,NM
             required: false
             schema:
-                type: string
+                $ref: '#/components/schemas/ReadsTags'
         variantsTagsParam:
             in: query
             name: tags
@@ -528,14 +769,39 @@ components:
             in: query
             name: notags
             description: A comma-separated list of tags to exclude. By default, i.e., when notags is not specified, no tags will be excluded
-            example: OQ
+            example: OQ,HI
             required: false
             schema:
-                type: string
+                $ref: '#/components/schemas/ReadsNoTags'
         variantsNoTagsParam:
             in: query
             name: notags
             description: Placeholder, currently does not do anything
+        htsgetBlockClassHeaderParam:
+            in: header
+            name: HtsgetBlockClass
+            schema:
+                $ref: '#/components/schemas/HtsgetBlockClass'
+        htsgetCurrentBlockHeaderParam:
+            in: header
+            name: HtsgetCurrentBlock
+            schema:
+                $ref: '#/components/schemas/HtsgetCurrentBlock'
+        htsgetTotalBlocksHeaderParam:
+            in: header
+            name: HtsgetTotalBlocks
+            schema:
+                $ref: '#/components/schemas/HtsgetTotalBlocks'
+        htsgetFilePathHeaderParam:
+            in: header
+            name: HtsgetFilePath
+            schema:
+                $ref: '#/components/schemas/HtsgetFilePath'
+        rangeHeaderParam:
+            in: header
+            name: Range
+            schema:
+                $ref: '#/components/schemas/Range'
     requestBodies:
         ReadsRequestBody:
             description: Specify desired file format, fields, tags, and regions from an alignment file
