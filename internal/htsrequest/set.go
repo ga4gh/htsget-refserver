@@ -483,6 +483,61 @@ var orderedParamsMap = map[htsconstants.HTTPMethod]map[htsconstants.APIEndpoint]
 				defaultRegions,
 			},
 		},
+
+		/* **************************************************
+		 * HTTP POST VARIANTS TICKET
+		 * ************************************************** */
+
+		htsconstants.APIEndpointVariantsTicket: []SetParameterTuple{
+			{
+				htsconstants.ParamLocPath,
+				"id",
+				"NoTransform",
+				"ValidateID",
+				"SetID",
+				defaultID,
+			},
+			{
+				htsconstants.ParamLocReqBody,
+				"format",
+				"NoTransform",
+				"ValidateFormat",
+				"SetFormat",
+				defaultFormatVariants,
+			},
+			{
+				htsconstants.ParamLocReqBody,
+				"fields",
+				"NoTransform",
+				"ValidateFields",
+				"SetFields",
+				defaultFields,
+			},
+			{
+				htsconstants.ParamLocReqBody,
+				"tags",
+				"NoTransform",
+				"ValidateTags",
+				"SetTags",
+				defaultTags,
+			},
+			{
+				htsconstants.ParamLocReqBody,
+				"notags",
+				"NoTransform",
+				"ValidateNoTags",
+				"SetNoTags",
+				defaultNoTags,
+			},
+			{
+				htsconstants.ParamLocReqBody,
+				"regions",
+				"NoTransform",
+				"ValidateRegions",
+				"SetRegions",
+				defaultRegions,
+			},
+		},
 	},
 }
 
