@@ -31,7 +31,7 @@ var httpRequestSingleTC = []struct {
 		nil,
 		"",
 		200,
-		"{\"id\":\"htsgetref.reads\",\"name\":\"GA4GH htsget reference server reads endpoint\",\"type\":{\"group\":\"org.ga4gh\",\"artifact\":\"htsget\",\"version\":\"1.2.0\"},\"description\":\"Stream alignment files (BAM/CRAM) according to GA4GH htsget protocol\",\"organization\":{\"name\":\"Global Alliance for Genomics and Health\",\"url\":\"https://ga4gh.org\"},\"contactUrl\":\"mailto:jeremy.adams@ga4gh.org\",\"documentationUrl\":\"https://ga4gh.org\",\"createdAt\":\"2020-09-01T12:00:00Z\",\"updatedAt\":\"2020-09-01T12:00:00Z\",\"environment\":\"test\",\"version\":\"1.3.0\",\"htsget\":{\"datatype\":\"reads\",\"formats\":[\"BAM\"],\"fieldsParameterEffective\":true,\"tagsParametersEffective\":true}}\n",
+		"{\"id\":\"htsgetref.reads\",\"name\":\"GA4GH htsget reference server reads endpoint\",\"type\":{\"group\":\"org.ga4gh\",\"artifact\":\"htsget\",\"version\":\"1.2.0\"},\"description\":\"Stream alignment files (BAM/CRAM) according to GA4GH htsget protocol\",\"organization\":{\"name\":\"Global Alliance for Genomics and Health\",\"url\":\"https://ga4gh.org\"},\"contactUrl\":\"mailto:jeremy.adams@ga4gh.org\",\"documentationUrl\":\"https://ga4gh.org\",\"createdAt\":\"2020-09-01T12:00:00Z\",\"updatedAt\":\"2020-09-01T12:00:00Z\",\"environment\":\"test\",\"version\":\"1.4.0\",\"htsget\":{\"datatype\":\"reads\",\"formats\":[\"BAM\"],\"fieldsParameterEffective\":true,\"tagsParametersEffective\":true}}\n",
 	},
 	{
 		"GET",
@@ -40,7 +40,7 @@ var httpRequestSingleTC = []struct {
 		nil,
 		"",
 		200,
-		"{\"id\":\"htsgetref.variants\",\"name\":\"GA4GH htsget reference server variants endpoint\",\"type\":{\"group\":\"org.ga4gh\",\"artifact\":\"htsget\",\"version\":\"1.2.0\"},\"description\":\"Stream variant files (VCF/BCF) according to GA4GH htsget protocol\",\"organization\":{\"name\":\"Global Alliance for Genomics and Health\",\"url\":\"https://ga4gh.org\"},\"contactUrl\":\"mailto:jeremy.adams@ga4gh.org\",\"documentationUrl\":\"https://ga4gh.org\",\"createdAt\":\"2020-09-01T12:00:00Z\",\"updatedAt\":\"2020-09-01T12:00:00Z\",\"environment\":\"test\",\"version\":\"1.3.0\",\"htsget\":{\"datatype\":\"variants\",\"formats\":[\"VCF\"],\"fieldsParameterEffective\":false,\"tagsParametersEffective\":false}}\n",
+		"{\"id\":\"htsgetref.variants\",\"name\":\"GA4GH htsget reference server variants endpoint\",\"type\":{\"group\":\"org.ga4gh\",\"artifact\":\"htsget\",\"version\":\"1.2.0\"},\"description\":\"Stream variant files (VCF/BCF) according to GA4GH htsget protocol\",\"organization\":{\"name\":\"Global Alliance for Genomics and Health\",\"url\":\"https://ga4gh.org\"},\"contactUrl\":\"mailto:jeremy.adams@ga4gh.org\",\"documentationUrl\":\"https://ga4gh.org\",\"createdAt\":\"2020-09-01T12:00:00Z\",\"updatedAt\":\"2020-09-01T12:00:00Z\",\"environment\":\"test\",\"version\":\"1.4.0\",\"htsget\":{\"datatype\":\"variants\",\"formats\":[\"VCF\"],\"fieldsParameterEffective\":false,\"tagsParametersEffective\":false}}\n",
 	},
 	/* GET READS TICKET CASES */
 	{
