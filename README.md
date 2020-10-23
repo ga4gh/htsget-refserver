@@ -8,7 +8,7 @@
 
 Reference server implementation of the htsget API protocol for securely streaming genomic data. For more information about htsget, see the [paper](https://academic.oup.com/bioinformatics/article/35/1/119/5040320) or [specification](http://samtools.github.io/hts-specs/htsget.html).
 
-A GA4GH-hosted instance of this server is running at `https://htsget.ga4gh.org/`. To use, see the [OpenAPI documentation](https://ga4gh.github.io/htsget-refserver/docs/index.html).
+A GA4GH-hosted instance of this server is running at `https://htsget.ga4gh.org/`. To use, see the [OpenAPI documentation](https://htsget.ga4gh.org/docs/index.html).
 
 ## Quickstart - Docker
 
@@ -38,6 +38,7 @@ To run and/or develop the server natively on your OS, the following **dependenci
 * [Golang and language tools](https://golang.org/dl/) (tested on version 1.13) 
 * [samtools](http://www.htslib.org/download/) (tested on version 1.9)
 * [bcftools](http://www.htslib.org/download/) (tested on version 1.10.2)
+* [htsget-refserver-utils](https://github.com/ga4gh/htsget-refserver-utils) (1.0.0+)
 
 This project uses [Go modules](https://blog.golang.org/using-go-modules) to manage packages and dependencies.
 
@@ -68,7 +69,7 @@ The htsget web service can be configured with runtime parameters via a JSON conf
 
 Examples of valid JSON config files are available in this repository:
 
-* [ga4gh instance config](./deployments/ga4gh/prod/config.json) - used to run the GA4GH-hosted instance at https://htsget.ga4gh.org
+* [ga4gh instance config](./deployments/ga4gh/prod/config-server.json) - used to run the GA4GH-hosted instance at https://htsget.ga4gh.org
 * [integration tests config](./data/config/integration-tests.config.json) - used for integration testing on Travis CI builds
 * [example 0 config](./data/config/example-0.config.json)
 * [empty config](./data/config/example-empty.config.json)
@@ -234,6 +235,11 @@ go test ./internal/htsrequest -coverprofile=cp.out
 ```
 
 ## Changelog
+
+**v1.4.0**
+* Server supports **experimental** `POST` method for endpoint `/reads/{id}`. Multiple
+genomic regions can be requested in a single request. See
+[hts-specs PR #285](https://github.com/samtools/hts-specs/pull/285) for more info.
 
 **v1.3.0**
 * Server supports reads and/or variants `service-info` endpoints. The attributes of the `service-info` response can be specified via the config file independently for each datatype 

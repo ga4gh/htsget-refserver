@@ -42,7 +42,7 @@ var DfltServiceInfoUpdatedAt = StartupTime
 var DfltServiceInfoEnvironment = "test"
 
 // DfltServiceInfoVersion default application version
-var DfltServiceInfoVersion = "1.3.0"
+var DfltServiceInfoVersion = "1.4.0"
 
 /* **************************************************
  * READS-SPECIFIC DEFAULTS
