@@ -13,6 +13,7 @@ RUN apt-get --yes install autoconf automake make gcc perl zlib1g-dev libbz2-dev 
 COPY go.mod go.sum ./
 COPY cmd cmd
 COPY internal internal
+COPY data/gcp data/gcp
 COPY data/config data/config
 COPY deployments deployments
 RUN mkdir temp
