@@ -28,8 +28,9 @@ var DefaultConfiguration = &Configuration{
 		ServerProps: &configurationServerProps{
 			Port:    htsconstants.DfltServerPropsPort,
 			Host:    htsconstants.DfltServerPropsHost,
-			Tempdir: htsconstants.DfltServerPropsTempdir,
-			Logfile: htsconstants.DfltServerPropsLogfile,
+			DocsDir: htsconstants.DfltServerPropsDocsDir,
+			TempDir: htsconstants.DfltServerPropsTempDir,
+			LogFile: htsconstants.DfltServerPropsLogFile,
 		},
 		ReadsConfig: &configurationEndpoint{
 			Enabled: &defaultEnabledReads,
@@ -75,6 +76,10 @@ var DefaultConfiguration = &Configuration{
 					&DataSource{
 						Pattern: htsconstants.DfltVariantsDataSource1000GPattern,
 						Path:    htsconstants.DfltVariantsDataSource1000GPath,
+					},
+					&DataSource{
+						Pattern: htsconstants.DfltVariantsDataSourceGIABTestPattern,
+						Path:    htsconstants.DfltVariantsDataSourceGIABTestPath,
 					},
 				},
 			},

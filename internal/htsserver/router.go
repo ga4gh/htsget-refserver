@@ -5,9 +5,7 @@ import (
 	"path/filepath"
 
 	"github.com/ga4gh/htsget-refserver/internal/htsconfig"
-
 	"github.com/ga4gh/htsget-refserver/internal/htsconstants"
-
 	"github.com/go-chi/chi"
 )
 
@@ -15,19 +13,12 @@ import (
 func SetRouter() (*chi.Mux, error) {
 	router := chi.NewRouter()
 
-	// serve index.html at root of api
-	staticPath, err := filepath.Abs("./")
-	if err != nil {
-		return nil, err
-	}
-	fs := http.FileServer(http.Dir(staticPath))
-	router.Handle("/", fs)
-
 	// Add API Routes
 
 	// if reads enabled, add reads routes
 	if htsconfig.IsEndpointEnabled(htsconstants.APIEndpointReadsTicket) {
 		router.Get(htsconstants.APIEndpointReadsTicket.String(), getReadsTicket)
+		router.Post(htsconstants.APIEndpointReadsTicket.String(), postReadsTicket)
 		router.Get(htsconstants.APIEndpointReadsData.String(), getReadsData)
 		router.Get(htsconstants.APIEndpointReadsServiceInfo.String(), getReadsServiceInfo)
 	}
@@ -39,6 +30,18 @@ func SetRouter() (*chi.Mux, error) {
 		router.Get(htsconstants.APIEndpointVariantsServiceInfo.String(), getVariantsServiceInfo)
 	}
 
+	// add the file bytes endpoint for streaming byte indices of local files
 	router.Get(htsconstants.APIEndpointFileBytes.String(), getFileBytes)
-	return router, err
+
+	// add the static files route
+	docsDir := htsconfig.GetDocsDir()
+	if docsDir != "" {
+		absDocsDir, err := filepath.Abs(docsDir)
+		if err != nil {
+			return nil, err
+		}
+		http.Handle("/docs/", http.StripPrefix("/docs/", http.FileServer(http.Dir(absDocsDir))))
+	}
+
+	return router, nil
 }

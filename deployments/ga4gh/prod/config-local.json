@@ -1,0 +1,91 @@
+{
+  "htsgetConfig": {
+    "props": {
+      "port": "3000",
+      "host": "http://localhost:3000/",
+      "docsDir": "./deployments/ga4gh/prod/docs/",
+      "tempDir": "/tmp/",
+      "logFile": "/usr/src/app/htsget-refserver.log"
+    },
+    "reads": {
+      "enabled": true,
+      "dataSourceRegistry": {
+        "sources": [
+          {
+            "pattern": "^tabulamuris\\.(?P<accession>10X.*)$",
+            "path": "https://s3.amazonaws.com/czbiohub-tabula-muris/10x_bam_files/{accession}_possorted_genome.bam"
+          },
+          {
+            "pattern": "^tabulamuris\\.(?P<accession>.*)$",
+            "path": "https://s3.amazonaws.com/czbiohub-tabula-muris/facs_bam_files/{accession}.mus.Aligned.out.sorted.bam"
+          },
+          {
+            "pattern": "^giab\\.NA12878\\.NIST7035\\.(?P<lane>.*)$",
+            "path": "https://giab.s3.amazonaws.com/data/NA12878/Garvan_NA12878_HG001_HiSeq_Exome/project.NIST_NIST7035_H7AP8ADXX_TAAGGCGA_{lane}_NA12878.bwa.markDuplicates.bam"
+          },
+          {
+            "pattern": "^giab\\.NA12878\\.NIST7086\\.(?P<lane>.*)$",
+            "path": "https://giab.s3.amazonaws.com/data/NA12878/Garvan_NA12878_HG001_HiSeq_Exome/project.NIST_NIST7086_H7AP8ADXX_CGTACTAG_{lane}_NA12878.bwa.markDuplicates.bam"
+          },
+          {
+            "pattern": "^gatk\\.(?P<accession>.*)$",
+            "path": "./data/gcp/gatk-test-data/wgs_bam/{accession}.bam"
+          }
+        ]
+      },
+      "serviceInfo": {
+        "id": "org.ga4gh.htsgetreference.reads",
+        "name": "GA4GH htsget reference server reads API",
+        "description": "Reference web service of the GA4GH htsget protocol. Streams alignment data from public datasets, such as Tabula Muris and 1000 Genomes.",
+        "organization": {
+          "name": "Global Alliance for Genomics and Health",
+          "url": "https://ga4gh.org"
+        },
+        "contactUrl": "mailto:jeremy.adams@ga4gh.org",
+        "documentationUrl": "https://ga4gh.github.io/htsget-refserver/docs/index.html",
+        "createdAt": "2019-09-15T12:00:00Z",
+        "updatedAt": "2020-09-04T14:40:00Z",
+        "environment": "production",
+        "version": "1.4.0"
+      }
+    },
+    "variants": {
+      "enabled": true,
+      "dataSourceRegistry": {
+        "sources": [
+          {
+            "pattern": "^1000genomes\\.phase1\\.(?P<accession>chrY)$",
+            "path": "https://ftp-trace.ncbi.nih.gov/1000genomes/ftp/phase1/analysis_results/integrated_call_sets/ALL.{accession}.phase1_samtools_si.20101123.snps.low_coverage.genotypes.vcf.gz"
+          },
+          {
+            "pattern": "^1000genomes\\.phase1\\.(?P<accession>chrMT)$",
+            "path": "https://ftp-trace.ncbi.nih.gov/1000genomes/ftp/phase1/analysis_results/integrated_call_sets/ALL.{accession}.phase1_samtools_si.20101123.snps.low_coverage.genotypes.vcf.gz"
+          },
+          {
+            "pattern": "^1000genomes\\.phase1\\.(?P<accession>.*)$",
+            "path": "https://ftp-trace.ncbi.nih.gov/1000genomes/ftp/phase1/analysis_results/integrated_call_sets/ALL.{accession}.integrated_phase1_v3.20101123.snps_indels_svs.genotypes.vcf.gz"
+          },
+          {
+            "pattern": "^giab\\.(?P<accession>NA12878)$",
+            "path": "https://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/release/{accession}_HG001/NISTv3.3/NA12878_GIAB_highconf_CG-IllFB-IllGATKHC-Ion-Solid-10X_CHROM1-X_v3.3_highconf.vcf.gz"
+          }
+        ]
+      },
+      "serviceInfo": {
+        "id": "org.ga4gh.htsgetreference.variants",
+        "name": "GA4GH htsget reference server variants API",
+        "description": "Reference web service of the GA4GH htsget protocol. Streams variant data from public datasets, such as Tabula Muris and 1000 Genomes.",
+        "organization": {
+          "name": "Global Alliance for Genomics and Health",
+          "url": "https://ga4gh.org"
+        },
+        "contactUrl": "mailto:jeremy.adams@ga4gh.org",
+        "documentationUrl": "https://ga4gh.github.io/htsget-refserver/docs/index.html",
+        "createdAt": "2020-08-31T08:00:00Z",
+        "updatedAt": "2020-09-04T14:40:00Z",
+        "environment": "production",
+        "version": "1.4.0"
+      }
+    }
+  }
+}

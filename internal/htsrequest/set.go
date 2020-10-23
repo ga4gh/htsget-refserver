@@ -2,168 +2,599 @@
 // parameters from the HTTP request, and performing validation and
 // transformation
 //
-// Module set.go defines operations for setting request parameters to an
+// Module set defines operations for setting request parameters to an
 // HtsgetRequest, which first involves correct parsing, validation, and
 // transformation. Sets parameters correctly based on request route
 package htsrequest
 
 import (
 	"errors"
+	"io/ioutil"
 	"net/http"
-	"net/url"
+	"reflect"
+
+	"github.com/ga4gh/htsget-refserver/internal/htserror"
 
 	"github.com/ga4gh/htsget-refserver/internal/htsconstants"
 )
 
-var orderedParametersByMethodAndEndpoint = map[htsconstants.HTTPMethod]map[htsconstants.APIEndpoint][]string{
-	htsconstants.GetMethod: map[htsconstants.APIEndpoint][]string{
-		htsconstants.APIEndpointReadsTicket: []string{
-			"id",
-			"format",
-			"class",
-			"referenceName",
-			"start",
-			"end",
-			"fields",
-			"tags",
-			"notags",
+// SetParameterTuple describes how a single request parameter will be parsed,
+// transformed, validated, and then set to the mature htsgetrequest object
+type SetParameterTuple struct {
+	location      htsconstants.ParamLoc
+	name          string
+	transformFunc string
+	validateFunc  string
+	setFunc       string
+	defaultValue  interface{}
+}
+
+var orderedParamsMap = map[htsconstants.HTTPMethod]map[htsconstants.APIEndpoint][]SetParameterTuple{
+
+	/* **************************************************
+	 * HTTP GET
+	 * ************************************************** */
+
+	htsconstants.GetMethod: map[htsconstants.APIEndpoint][]SetParameterTuple{
+
+		/* **************************************************
+		 * HTTP GET READS TICKET
+		 * ************************************************** */
+
+		htsconstants.APIEndpointReadsTicket: []SetParameterTuple{
+			{
+				htsconstants.ParamLocPath,
+				"id",
+				"NoTransform",
+				"ValidateID",
+				"SetID",
+				defaultID,
+			},
+			{
+				htsconstants.ParamLocQuery,
+				"format",
+				"TransformStringUppercase",
+				"ValidateFormat",
+				"SetFormat",
+				"BAM",
+			},
+
+			{
+				htsconstants.ParamLocQuery,
+				"class",
+				"TransformStringLowercase",
+				"ValidateClass",
+				"SetClass",
+				"",
+			},
+			{
+				htsconstants.ParamLocQuery,
+				"referenceName",
+				"NoTransform",
+				"ValidateReferenceName",
+				"SetReferenceName",
+				"",
+			},
+			{
+				htsconstants.ParamLocQuery,
+				"start",
+				"TransformStringToInt",
+				"ValidateStart",
+				"SetStart",
+				defaultStart,
+			},
+			{
+				htsconstants.ParamLocQuery,
+				"end",
+				"TransformStringToInt",
+				"ValidateEnd",
+				"SetEnd",
+				defaultEnd,
+			},
+			{
+				htsconstants.ParamLocQuery,
+				"fields",
+				"TransformSplitAndUppercase",
+				"ValidateFields",
+				"SetFields",
+				defaultFields,
+			},
+			{
+				htsconstants.ParamLocQuery,
+				"tags",
+				"TransformSplit",
+				"ValidateTags",
+				"SetTags",
+				defaultTags,
+			},
+			{
+				htsconstants.ParamLocQuery,
+				"notags",
+				"TransformSplit",
+				"ValidateNoTags",
+				"SetNoTags",
+				defaultNoTags,
+			},
 		},
-		htsconstants.APIEndpointReadsData: []string{
-			"id",
-			"format",
-			"referenceName",
-			"start",
-			"end",
-			"fields",
-			"tags",
-			"notags",
-			"HtsgetBlockClass",
-			"HtsgetBlockId",
-			"HtsgetNumBlocks",
+
+		/* **************************************************
+		 * HTTP GET READS DATA
+		 * ************************************************** */
+
+		htsconstants.APIEndpointReadsData: []SetParameterTuple{
+			{
+				htsconstants.ParamLocPath,
+				"id",
+				"NoTransform",
+				"ValidateID",
+				"SetID",
+				defaultID,
+			},
+			{
+				htsconstants.ParamLocQuery,
+				"format",
+				"TransformStringUppercase",
+				"ValidateFormat",
+				"SetFormat",
+				defaultFormatReads,
+			},
+			{
+				htsconstants.ParamLocQuery,
+				"referenceName",
+				"NoTransform",
+				"ValidateReferenceName",
+				"SetReferenceName",
+				defaultReferenceName,
+			},
+			{
+				htsconstants.ParamLocQuery,
+				"start",
+				"TransformStringToInt",
+				"ValidateStart",
+				"SetStart",
+				defaultStart,
+			},
+			{
+				htsconstants.ParamLocQuery,
+				"end",
+				"TransformStringToInt",
+				"ValidateEnd",
+				"SetEnd",
+				defaultEnd,
+			},
+			{
+				htsconstants.ParamLocQuery,
+				"fields",
+				"TransformSplitAndUppercase",
+				"ValidateFields",
+				"SetFields",
+				defaultFields,
+			},
+			{
+				htsconstants.ParamLocQuery,
+				"tags",
+				"TransformSplit",
+				"ValidateTags",
+				"SetTags",
+				defaultTags,
+			},
+			{
+				htsconstants.ParamLocQuery,
+				"notags",
+				"TransformSplit",
+				"ValidateNoTags",
+				"SetNoTags",
+				defaultNoTags,
+			},
+			{
+				htsconstants.ParamLocHeader,
+				"HtsgetBlockClass",
+				"TransformStringLowercase",
+				"NoValidation",
+				"SetHtsgetBlockClass",
+				defaultHtsgetBlockClass,
+			},
+			{
+				htsconstants.ParamLocHeader,
+				"HtsgetCurrentBlock",
+				"NoTransform",
+				"NoValidation",
+				"SetHtsgetCurrentBlock",
+				defaultHtsgetCurrentBlock,
+			},
+			{
+				htsconstants.ParamLocHeader,
+				"HtsgetTotalBlocks",
+				"NoTransform",
+				"NoValidation",
+				"SetHtsgetTotalBlocks",
+				defaultHtsgetTotalBlocks,
+			},
 		},
-		htsconstants.APIEndpointReadsServiceInfo: []string{},
-		htsconstants.APIEndpointVariantsTicket: []string{
-			"id",
-			"format",
-			"class",
-			"referenceName",
-			"start",
-			"end",
-			"fields",
-			"tags",
-			"notags",
+
+		/* **************************************************
+		 * HTTP GET READS SERVICE INFO
+		 * ************************************************** */
+
+		htsconstants.APIEndpointReadsServiceInfo: []SetParameterTuple{},
+
+		/* **************************************************
+		 * HTTP GET VARIANTS TICKET
+		 * ************************************************** */
+
+		htsconstants.APIEndpointVariantsTicket: []SetParameterTuple{
+			{
+				htsconstants.ParamLocPath,
+				"id",
+				"NoTransform",
+				"ValidateID",
+				"SetID",
+				defaultID,
+			},
+			{
+				htsconstants.ParamLocQuery,
+				"format",
+				"TransformStringUppercase",
+				"ValidateFormat",
+				"SetFormat",
+				defaultFormatVariants,
+			},
+
+			{
+				htsconstants.ParamLocQuery,
+				"class",
+				"TransformStringLowercase",
+				"ValidateClass",
+				"SetClass",
+				defaultClass,
+			},
+			{
+				htsconstants.ParamLocQuery,
+				"referenceName",
+				"NoTransform",
+				"ValidateReferenceName",
+				"SetReferenceName",
+				defaultReferenceName,
+			},
+			{
+				htsconstants.ParamLocQuery,
+				"start",
+				"TransformStringToInt",
+				"ValidateStart",
+				"SetStart",
+				defaultStart,
+			},
+			{
+				htsconstants.ParamLocQuery,
+				"end",
+				"TransformStringToInt",
+				"ValidateEnd",
+				"SetEnd",
+				defaultEnd,
+			},
+			{
+				htsconstants.ParamLocQuery,
+				"fields",
+				"TransformSplitAndUppercase",
+				"ValidateFields",
+				"SetFields",
+				defaultFields,
+			},
+			{
+				htsconstants.ParamLocQuery,
+				"tags",
+				"TransformSplit",
+				"ValidateTags",
+				"SetTags",
+				defaultTags,
+			},
+			{
+				htsconstants.ParamLocQuery,
+				"notags",
+				"TransformSplit",
+				"ValidateNoTags",
+				"SetNoTags",
+				defaultNoTags,
+			},
 		},
-		htsconstants.APIEndpointVariantsData: []string{
-			"id",
-			"format",
-			"class",
-			"referenceName",
-			"start",
-			"end",
-			"fields",
-			"tags",
-			"notags",
-			"HtsgetBlockClass",
-			"HtsgetBlockId",
-			"HtsgetNumBlocks",
+
+		/* **************************************************
+		 * HTTP GET VARIANTS DATA
+		 * ************************************************** */
+
+		htsconstants.APIEndpointVariantsData: []SetParameterTuple{
+			{
+				htsconstants.ParamLocPath,
+				"id",
+				"NoTransform",
+				"ValidateID",
+				"SetID",
+				defaultID,
+			},
+			{
+				htsconstants.ParamLocQuery,
+				"format",
+				"TransformStringUppercase",
+				"ValidateFormat",
+				"SetFormat",
+				defaultFormatVariants,
+			},
+			{
+				htsconstants.ParamLocQuery,
+				"referenceName",
+				"NoTransform",
+				"ValidateReferenceName",
+				"SetReferenceName",
+				defaultReferenceName,
+			},
+			{
+				htsconstants.ParamLocQuery,
+				"start",
+				"TransformStringToInt",
+				"ValidateStart",
+				"SetStart",
+				defaultStart,
+			},
+			{
+				htsconstants.ParamLocQuery,
+				"end",
+				"TransformStringToInt",
+				"ValidateEnd",
+				"SetEnd",
+				defaultEnd,
+			},
+			{
+				htsconstants.ParamLocQuery,
+				"fields",
+				"TransformSplitAndUppercase",
+				"ValidateFields",
+				"SetFields",
+				defaultFields,
+			},
+			{
+				htsconstants.ParamLocQuery,
+				"tags",
+				"TransformSplit",
+				"ValidateTags",
+				"SetTags",
+				defaultTags,
+			},
+			{
+				htsconstants.ParamLocQuery,
+				"notags",
+				"TransformSplit",
+				"ValidateNoTags",
+				"SetNoTags",
+				defaultNoTags,
+			},
+			{
+				htsconstants.ParamLocHeader,
+				"HtsgetBlockClass",
+				"TransformStringLowercase",
+				"NoValidation",
+				"SetHtsgetBlockClass",
+				defaultHtsgetBlockClass,
+			},
+			{
+				htsconstants.ParamLocHeader,
+				"HtsgetCurrentBlock",
+				"NoTransform",
+				"NoValidation",
+				"SetHtsgetCurrentBlock",
+				defaultHtsgetCurrentBlock,
+			},
+			{
+				htsconstants.ParamLocHeader,
+				"HtsgetTotalBlocks",
+				"NoTransform",
+				"NoValidation",
+				"SetHtsgetTotalBlocks",
+				defaultHtsgetTotalBlocks,
+			},
 		},
-		htsconstants.APIEndpointFileBytes: []string{
-			"HtsgetFilePath",
-			"Range",
+
+		/* **************************************************
+		 * HTTP GET VARIANTS SERVICE INFO
+		 * ************************************************** */
+
+		htsconstants.APIEndpointVariantsServiceInfo: []SetParameterTuple{},
+
+		/* **************************************************
+		 * HTTP GET FILE BYTES
+		 * ************************************************** */
+
+		htsconstants.APIEndpointFileBytes: []SetParameterTuple{
+			{
+				htsconstants.ParamLocHeader,
+				"HtsgetFilePath",
+				"NoTransform",
+				"NoValidation",
+				"SetHtsgetFilePath",
+				defaultHtsgetFilePath,
+			},
+			{
+				htsconstants.ParamLocHeader,
+				"Range",
+				"NoTransform",
+				"NoValidation",
+				"SetHtsgetRange",
+				defaultHtsgetRange,
+			},
+		},
+	},
+
+	/* **************************************************
+	 * HTTP POST
+	 * ************************************************** */
+
+	htsconstants.PostMethod: map[htsconstants.APIEndpoint][]SetParameterTuple{
+
+		/* **************************************************
+		 * HTTP POST READS TICKET
+		 * ************************************************** */
+
+		htsconstants.APIEndpointReadsTicket: []SetParameterTuple{
+			{
+				htsconstants.ParamLocPath,
+				"id",
+				"NoTransform",
+				"ValidateID",
+				"SetID",
+				defaultID,
+			},
+			{
+				htsconstants.ParamLocReqBody,
+				"format",
+				"NoTransform",
+				"ValidateFormat",
+				"SetFormat",
+				defaultFormatReads,
+			},
+			{
+				htsconstants.ParamLocReqBody,
+				"fields",
+				"NoTransform",
+				"ValidateFields",
+				"SetFields",
+				defaultFields,
+			},
+			{
+				htsconstants.ParamLocReqBody,
+				"tags",
+				"NoTransform",
+				"ValidateTags",
+				"SetTags",
+				defaultTags,
+			},
+			{
+				htsconstants.ParamLocReqBody,
+				"notags",
+				"NoTransform",
+				"ValidateNoTags",
+				"SetNoTags",
+				defaultNoTags,
+			},
+			{
+				htsconstants.ParamLocReqBody,
+				"regions",
+				"NoTransform",
+				"ValidateRegions",
+				"SetRegions",
+				defaultRegions,
+			},
 		},
 	},
 }
 
-// setSingleParameter parses, validates, and sets a valid parameter to the
-// HtsgetRequest object. if the parameter value is not valid, returns an error
-//
-// Arguments
-//	request (*http.Request): HTTP request object
-//	paramKey (string): parameter name to parse, validate, etc.
-//	params (url.Values): query string parameters from HTTP request
-// 	htsgetReq (*HtsgetRequest): object to set transformed parameter value to
-// Returns
-//	(error): client-side error if any parameters fail validation
-func setSingleParameter(request *http.Request, paramKey string,
-	params url.Values, htsgetReq *HtsgetRequest) error {
+// setSingleParameter parses, transforms, validates, and sets a valid parameter
+// to the HtsgetRequest object. if the parameter value is not valid,
+// returns an error
+func setSingleParameter(request *http.Request, setParamTuple SetParameterTuple,
+	requestBodyBytes []byte, htsgetReq *HtsgetRequest) error {
 
-	var value string
+	var rawValue string              // raw string value parsed from query string, path, or header
+	var reflectedValue reflect.Value // post-transform, post-reflection representation of param
 	var found bool
+
 	// lookup if parameter is found on path/query/header,
 	// and if a scalar or list is expected
-	paramLocation := paramLocations[paramKey]
-	paramType := paramTypes[paramKey]
+	location := setParamTuple.location
+	paramName := setParamTuple.name
 
-	// parse the request parameter by path, query string, or header
-	switch paramLocation {
-	case ParamLocPath:
-		value, found = parsePathParam(request, paramKey)
-	case ParamLocQuery:
-		v, f, err := parseQueryParam(params, paramKey)
-		value = v
+	// parse the request parameter by path, query string, header, or request body
+	switch location {
+	case htsconstants.ParamLocPath:
+		rawValue, found = parsePathParam(request, paramName)
+	case htsconstants.ParamLocQuery:
+		v, f, err := parseQueryParam(request.URL.Query(), paramName)
+		rawValue = v
 		found = f
 		if err != nil {
 			return err
 		}
-	case ParamLocHeader:
-		value, found = parseHeaderParam(request, paramKey)
+	case htsconstants.ParamLocHeader:
+		rawValue, found = parseHeaderParam(request, paramName)
+	case htsconstants.ParamLocReqBody:
+		v, f, err := parseReqBodyParam(requestBodyBytes, paramName)
+		reflectedValue = v
+		found = f
+		if err != nil {
+			return err
+		}
 	}
 
-	// if a value is found, then
+	// use reflect to get the param setter method for the request
+	htsgetReqReflect := reflect.ValueOf(htsgetReq)
+	htsgetParamSetter := htsgetReqReflect.MethodByName(setParamTuple.setFunc)
+
+	// if the value was found in path, query, header, or req body
 	if found {
-		// run the validation function, return an error if invalid
-		validationFunc := validationByParam[paramKey]
-		validationResult, validationMsg := validationFunc(value, htsgetReq)
-		if !validationResult {
-			return errors.New(validationMsg)
+
+		// path, query, and header params must be transformed from a string to another
+		// datatype (if necessary), and then reflected via reflect API
+		// req body params do not undergo this step as they are inherently in their
+		// own datatype, and have been reflected
+		if location == htsconstants.ParamLocPath || location == htsconstants.ParamLocQuery || location == htsconstants.ParamLocHeader {
+			// use reflection to call the transformation function by name
+			transformer := NewParamTransformer()
+			transformerReflect := reflect.ValueOf(transformer)
+			transformFunc := transformerReflect.MethodByName(setParamTuple.transformFunc)
+			transformResult := transformFunc.Call([]reflect.Value{reflect.ValueOf(rawValue)})
+			reflectedValue = transformResult[0]
+			message := transformResult[1].String()
+			if message != "" {
+				return errors.New(message)
+			}
 		}
 
-		// if valid, transform the param value and set it to the
-		// HtsgetRequest map
-		switch paramType {
-		case ParamTypeScalar:
-			transformFunc := transformationScalarByParam[paramKey]
-			htsgetReq.AddScalarParam(paramKey, transformFunc(value))
-		case ParamTypeList:
-			transformFunc := transformationListByParam[paramKey]
-			htsgetReq.AddListParam(paramKey, transformFunc(value))
+		// use reflection to call the validation function by name
+		validator := NewParamValidator()
+		validatorReflect := reflect.ValueOf(validator)
+		validateFunc := validatorReflect.MethodByName(setParamTuple.validateFunc)
+		resultMsg := validateFunc.Call([]reflect.Value{reflect.ValueOf(htsgetReq), reflectedValue})
+		result := resultMsg[0].Bool()
+		msg := resultMsg[1].String()
+		if !result {
+			return errors.New(msg)
 		}
+
+		// if validation passed, set the transformed value
+		htsgetParamSetter.Call([]reflect.Value{reflectedValue})
 		return nil
 	}
-
-	// if no param value is found, set the default value to the HtsgetRequest
-	// map
-	switch paramType {
-	case ParamTypeScalar:
-		htsgetReq.AddScalarParam(paramKey, defaultScalarParameterValues[paramKey])
-	case ParamTypeList:
-		htsgetReq.AddListParam(paramKey, defaultListParameterValues[paramKey])
-	}
+	// if no param value is found, set the default value
+	defaultValueReflect := reflect.ValueOf(setParamTuple.defaultValue)
+	htsgetParamSetter.Call([]reflect.Value{defaultValueReflect})
 	return nil
 }
 
-// SetAllParameters parses, validates, transforms, and sets all parameters to
+// SetAllParameters parses, transforms, validates, and sets all parameters to
 // an HtsgetRequest for a given ordered list of expected request parameters
-//
-// Arguments
-//	orderedParams ([]string): route-specific order to parse parameters in
-//	request (*http.Request): HTTP request
-//	writer (http.ResponseWriter): HTTP response writer (to write error if necessary)
-//	params (url.Values): query string parameters
-// Returns
-//	(*HtsgetRequest): object with mature parameters set to it
-//	(error): client-side error if any parameters fail validation
 func SetAllParameters(method htsconstants.HTTPMethod, endpoint htsconstants.APIEndpoint, writer http.ResponseWriter, request *http.Request) (*HtsgetRequest, error) {
 
-	orderedParams := orderedParametersByMethodAndEndpoint[method][endpoint]
+	orderedParams := orderedParamsMap[method][endpoint]
 	htsgetReq := NewHtsgetRequest()
 	htsgetReq.SetEndpoint(endpoint)
-	params := request.URL.Query()
-	for i := 0; i < len(orderedParams); i++ {
-		paramKey := orderedParams[i]
-		err := setSingleParameter(request, paramKey, params, htsgetReq)
+
+	// for POST requests, unmarshal the JSON body once and pass to individual
+	// setting methods
+	var requestBodyBytes []byte
+	if method == htsconstants.PostMethod {
+		rbb, err := ioutil.ReadAll(request.Body)
+		requestBodyBytes = rbb
+		msg := "Request body malformed"
 		if err != nil {
-			htsgetErrorFunc := errorsByParam[paramKey]
+			htserror.InvalidInput(writer, &msg)
+			return htsgetReq, err
+		}
+	}
+
+	for i := 0; i < len(orderedParams); i++ {
+		param := orderedParams[i]
+		paramName := param.name
+		err := setSingleParameter(request, param, requestBodyBytes, htsgetReq)
+		if err != nil {
+			htsgetErrorFunc := errorsByParam[paramName]
 			msg := err.Error()
 			htsgetErrorFunc(writer, &msg)
 			return htsgetReq, err

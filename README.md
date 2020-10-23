@@ -8,7 +8,7 @@
 
 Reference server implementation of the htsget API protocol for securely streaming genomic data. For more information about htsget, see the [paper](https://academic.oup.com/bioinformatics/article/35/1/119/5040320) or [specification](http://samtools.github.io/hts-specs/htsget.html).
 
-A GA4GH-hosted instance of this server is running at `https://htsget.ga4gh.org/`. To use, see the [OpenAPI documentation](https://ga4gh.github.io/htsget-refserver/docs/index.html).
+A GA4GH-hosted instance of this server is running at `https://htsget.ga4gh.org/`. To use, see the [OpenAPI documentation](https://htsget.ga4gh.org/docs/index.html).
 
 ## Quickstart - Docker
 
@@ -38,6 +38,7 @@ To run and/or develop the server natively on your OS, the following **dependenci
 * [Golang and language tools](https://golang.org/dl/) (tested on version 1.13) 
 * [samtools](http://www.htslib.org/download/) (tested on version 1.9)
 * [bcftools](http://www.htslib.org/download/) (tested on version 1.10.2)
+* [htsget-refserver-utils](https://github.com/ga4gh/htsget-refserver-utils) (1.0.0+)
 
 This project uses [Go modules](https://blog.golang.org/using-go-modules) to manage packages and dependencies.
 
@@ -68,29 +69,30 @@ The htsget web service can be configured with runtime parameters via a JSON conf
 
 Examples of valid JSON config files are available in this repository:
 
-* [example 0 config](./data/config/example-0.config.json)
+* [ga4gh instance config](./deployments/ga4gh/prod/config-server.json) - used to run the GA4GH-hosted instance at https://htsget.ga4gh.org
 * [integration tests config](./data/config/integration-tests.config.json) - used for integration testing on Travis CI builds
-* [ga4gh instance config](./data/config/ga4gh-production.config.json) - used to run the GA4GH-hosted instance at https://htsget.ga4gh.org
+* [example 0 config](./data/config/example-0.config.json)
 * [empty config](./data/config/example-empty.config.json)
 
-In the JSON file, the root object must have a single "htsget" property, containing all sub-properties. ie:
+In the JSON file, the root object must have a single "htsgetConfig" property, containing all sub-properties. ie:
 
 ```
 {
-    "htsget": {}
+    "htsgetConfig": {}
 }
 ```
 
 ### Configuration - "props" object
 
-Under the `htsget` property, the `props` object overrides application-wide settings. The following table indicates the attributes of `props` and what settings they affect.
+Under the `htsgetConfig` property, the `props` object overrides application-wide settings. The following table indicates the attributes of `props` and what settings they affect.
 
 | Name | Description |  Default Value | 
 |------|-------------|----------------|
 | port | the port on which the service will run | 3000 | 
 | host | web service hostname. The JSON ticket returned by the server will reference other endpoints, using this hostname/base url to provide a complete url. | http://localhost:3000/ | 
-| tempdir | writes temporary files used in request processing to this directory | . |
-| logfile | writes application logs to this file | htsget-refserver.log |
+| docsDir | path to static file directory containing server documentation (e.g. OpenAPI). the server will serve its contents at the `/docs/` endpoint | NONE |
+| tempDir | writes temporary files used in request processing to this directory | . |
+| logFile | writes application logs to this file | htsget-refserver.log |
 
 Example `props` object:
 
@@ -109,7 +111,7 @@ Example `props` object:
 
 ### Configuration - "reads" object
 
-Under the `htsget` property, the `reads` object overrides settings for reads-related data and endpoints. The following properties can be set:
+Under the `htsgetConfig` property, the `reads` object overrides settings for reads-related data and endpoints. The following properties can be set:
 
 * `enabled` (boolean): if true, the server will set up reads-related routes (ie. `/reads/{id}`, `/reads/service-info`). True by default.
 * `dataSourceRegistry` (object): allows the server to serve alignment data from multiple cloud or local storage sources by mapping request object id patterns to registered data sources. A single `sources` property contains an array of data sources. For each data source, the following properties are required:
@@ -131,7 +133,7 @@ Example `reads` object:
 
 ```
 {
-    "htsget": {
+    "htsgetConfig": {
         "reads": {
             "enabled": true,
             "dataSourceRegistry": {
@@ -168,7 +170,7 @@ Example `reads` object:
 
 ### Configuration - "variants" object
 
-Under the `htsget` property, the `variants` object overrides settings for variants-related data and endpoints. The following properties can be set:
+Under the `htsgetConfig` property, the `variants` object overrides settings for variants-related data and endpoints. The following properties can be set:
 
 * `enabled` (boolean): if true, the server will set up variants-related routes (ie. `/variants/{id}`, `/variants/service-info`). True by default.
 * `dataSourceRegistry` (object): allows the server to serve variant data from multiple cloud or local storage sources by mapping request object id patterns to registered data sources. A single `sources` property contains an array of data sources. For each data source, the following properties are required:
@@ -190,7 +192,7 @@ Example `variants` object:
 
 ```
 {
-    "htsget": {
+    "htsgetConfig": {
         "variants": {
             "enabled": true,
             "dataSourceRegistry": {
@@ -227,12 +229,17 @@ To execute unit and end-to-end tests on the entire package, run:
 ```
 go test ./... -coverprofile=cp.out
 ```
-The go coverage report will be available at `./cp.out`. To execute tests for a specific package (for example the `htsformats` package) run:
+The go coverage report will be available at `./cp.out`. To execute tests for a specific package (for example the `htsrequest` package) run:
 ```
-go test ./internal/htsformats -coverprofile=cp.out
+go test ./internal/htsrequest -coverprofile=cp.out
 ```
 
 ## Changelog
+
+**v1.4.0**
+* Server supports **experimental** `POST` method for endpoint `/reads/{id}`. Multiple
+genomic regions can be requested in a single request. See
+[hts-specs PR #285](https://github.com/samtools/hts-specs/pull/285) for more info.
 
 **v1.3.0**
 * Server supports reads and/or variants `service-info` endpoints. The attributes of the `service-info` response can be specified via the config file independently for each datatype 

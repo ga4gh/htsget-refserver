@@ -7,12 +7,12 @@ package htsconstants
  * HTTP HEADER NAMES
  * ************************************************** */
 
-// HttpHeaderName enum for http header names/keys
-type HttpHeaderName int
+// HTTPHeaderName enum for http header names/keys
+type HTTPHeaderName int
 
 // enum values for HttpHeaderName
 const (
-	ContentTypeHeader HttpHeaderName = 0
+	ContentTypeHeader HTTPHeaderName = 0
 )
 
 // string representations of HttpHeaderName enum
@@ -21,12 +21,12 @@ const (
 )
 
 // httpHeaderNameStringMap maps HttpHeaderName enum values to string representation
-var httpHeaderNameStringMap = map[HttpHeaderName]string{
+var httpHeaderNameStringMap = map[HTTPHeaderName]string{
 	ContentTypeHeader: contentTypeHeaderString,
 }
 
 // String gets the string representation of a HttpHeaderName enum instance
-func (e HttpHeaderName) String() string {
+func (e HTTPHeaderName) String() string {
 	return httpHeaderNameStringMap[e]
 }
 

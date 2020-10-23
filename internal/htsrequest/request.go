@@ -2,240 +2,234 @@
 // parameters from the HTTP request, and performing validation and
 // transformation
 //
-// Module request.go defines structs and operations for a mature htsget
+// Module request defines structs and operations for a mature htsget
 // request, which holds all htsget-related parameters and has insight into
 // what information was requested by the client
 package htsrequest
 
 import (
 	"net/url"
+	"strconv"
 	"strings"
 
-	"github.com/ga4gh/htsget-refserver/internal/htsutils"
-
 	"github.com/ga4gh/htsget-refserver/internal/htsconfig"
-
 	"github.com/ga4gh/htsget-refserver/internal/htsconstants"
+	"github.com/ga4gh/htsget-refserver/internal/htsutils"
 )
 
 // HtsgetRequest contains htsget-related parameters
-//
-// Attributes
-//	ScalarParams (map[string]string): map holding scalar parameter values
-//	ListParams (map[string][]string): map holding list parameter values
 type HtsgetRequest struct {
-	endpoint     htsconstants.APIEndpoint
-	ScalarParams map[string]string
-	ListParams   map[string][]string
+	endpoint           htsconstants.APIEndpoint
+	id                 string
+	format             string
+	class              string
+	referenceName      string
+	start              int
+	end                int
+	fields             []string
+	tags               []string
+	noTags             []string
+	regions            []*Region
+	htsgetBlockClass   string
+	htsgetCurrentBlock string
+	htsgetTotalBlocks  string
+	htsgetFilePath     string
+	htsgetRange        string
 }
 
-// NewHtsgetRequest instantiates a new HtsgetRequest struct instance
-//
-// Returns
-//	(*HtsgetRequest): new HtsgetRequest instance
+// NewHtsgetRequest instantiates a new HtsgetRequest instance
 func NewHtsgetRequest() *HtsgetRequest {
-	htsgetReq := new(HtsgetRequest)
-	htsgetReq.ScalarParams = make(map[string]string)
-	htsgetReq.ListParams = make(map[string][]string)
-	return htsgetReq
+	r := new(HtsgetRequest)
+	r.SetRegions([]*Region{})
+	return r
 }
 
-func (htsgetReq *HtsgetRequest) SetEndpoint(endpoint htsconstants.APIEndpoint) {
-	htsgetReq.endpoint = endpoint
+// SetEndpoint sets the API endpoint associated with request
+func (r *HtsgetRequest) SetEndpoint(endpoint htsconstants.APIEndpoint) {
+	r.endpoint = endpoint
 }
 
-func (htsgetReq *HtsgetRequest) GetEndpoint() htsconstants.APIEndpoint {
-	return htsgetReq.endpoint
+// GetEndpoint retrieves the API endpoint associated with request
+func (r *HtsgetRequest) GetEndpoint() htsconstants.APIEndpoint {
+	return r.endpoint
 }
 
-// AddScalarParam adds a key-value pair to HtsgetRequest scalar parameter map
-//
-// Type: HtsgetRequest
-// Arguments
-//	key (string): parameter name
-//	value (string): parameter value
-func (htsgetReq *HtsgetRequest) AddScalarParam(key string, value string) {
-	htsgetReq.ScalarParams[key] = value
+// SetID sets request ID
+func (r *HtsgetRequest) SetID(id string) {
+	r.id = id
 }
 
-// AddListParam adds a key-value pair to HtsgetRequest list parameter map
-//
-// Type: HtsgetRequest
-// Arguments
-//	key (string): parameter name
-//	value ([]string): parameter value
-func (htsgetReq *HtsgetRequest) AddListParam(key string, value []string) {
-	htsgetReq.ListParams[key] = value
+// GetID retrieves request ID
+func (r *HtsgetRequest) GetID() string {
+	return r.id
 }
 
-// get retrieves a value from the scalar parameter map by its key
-//
-// Type: HtsgetRequest
-// Arguments
-//	key (string): parameter name
-// Returns
-//	(string): parameter value under the given key/name
-func (htsgetReq *HtsgetRequest) get(key string) string {
-	return htsgetReq.ScalarParams[key]
+// SetFormat sets the requested file format
+func (r *HtsgetRequest) SetFormat(format string) {
+	r.format = format
 }
 
-// getList retrieves a value from the list parameter map by its key
-//
-// Type: HtsgetRequest
-// Arguments
-//	key (string): parameter name
-// Returns
-//	(string): parameter value under the given key/name
-func (htsgetReq *HtsgetRequest) getList(key string) []string {
-	return htsgetReq.ListParams[key]
+// GetFormat retrieves the requested file format
+func (r *HtsgetRequest) GetFormat() string {
+	return r.format
 }
 
-// ID gets value of 'id' param
-//
-// Type: HtsgetRequest
-// Returns
-//	(string): value of 'id'
-func (htsgetReq *HtsgetRequest) ID() string {
-	return htsgetReq.get("id")
+// SetClass sets the requested class (ie. for header requests)
+func (r *HtsgetRequest) SetClass(class string) {
+	r.class = class
 }
 
-// Format gets value of 'format' param
-//
-// Type: HtsgetRequest
-// Returns
-//	(string): value of 'format'
-func (htsgetReq *HtsgetRequest) Format() string {
-	return htsgetReq.get("format")
+// GetClass retrieves the requested class
+func (r *HtsgetRequest) GetClass() string {
+	return r.class
 }
 
-// Class gets value of 'class' param
-//
-// Type: HtsgetRequest
-// Returns
-//	(string): value of 'class'
-func (htsgetReq *HtsgetRequest) Class() string {
-	return htsgetReq.get("class")
+// SetReferenceName sets the requested chromosome/reference sequence name
+func (r *HtsgetRequest) SetReferenceName(referenceName string) {
+	r.referenceName = referenceName
 }
 
-// ReferenceName gets value of 'referenceName' param
-//
-// Type: HtsgetRequest
-// Returns
-//	(string): value of 'referenceName'
-func (htsgetReq *HtsgetRequest) ReferenceName() string {
-	return htsgetReq.get("referenceName")
+// GetReferenceName retrieves the requested chromosome/reference sequence name
+func (r *HtsgetRequest) GetReferenceName() string {
+	return r.referenceName
 }
 
-// Start gets value of 'start' param
-//
-// Type: HtsgetRequest
-// Returns
-//	(string): value of 'start'
-func (htsgetReq *HtsgetRequest) Start() string {
-	return htsgetReq.get("start")
+// SetStart sets the requested region start position
+func (r *HtsgetRequest) SetStart(start int) {
+	r.start = start
 }
 
-// End gets value of 'end' param
-//
-// Type: HtsgetRequest
-// Returns
-//	(string): value of 'end'
-func (htsgetReq *HtsgetRequest) End() string {
-	return htsgetReq.get("end")
+// GetStart retrieves the requested region start position
+func (r *HtsgetRequest) GetStart() int {
+	return r.start
 }
 
-// HtsgetBlockClass gets value of 'HtsgetBlockClass' header param
-//
-// Type: HtsgetRequest
-// Returns
-//	(string): value of 'HtsgetBlockClass'
-func (htsgetReq *HtsgetRequest) HtsgetBlockClass() string {
-	return htsgetReq.get("HtsgetBlockClass")
+// SetEnd sets the requested region end position
+func (r *HtsgetRequest) SetEnd(end int) {
+	r.end = end
 }
 
-// HtsgetBlockID gets value of 'HtsgetBlockId' header param
-//
-// Type: HtsgetRequest
-// Returns
-//	(string): value of 'HtsgetBlockId'
-func (htsgetReq *HtsgetRequest) HtsgetBlockID() string {
-	return htsgetReq.get("HtsgetBlockId")
+// GetEnd retrieves the requested region end position
+func (r *HtsgetRequest) GetEnd() int {
+	return r.end
 }
 
-// HtsgetNumBlocks gets value of 'HtsgetNumBlocks' header param
-//
-// Type: HtsgetRequest
-// Returns
-//	(string): value of 'HtsgetNumBlocks'
-func (htsgetReq *HtsgetRequest) HtsgetNumBlocks() string {
-	return htsgetReq.get("HtsgetNumBlocks")
+// SetFields sets the requested emitted fields
+func (r *HtsgetRequest) SetFields(fields []string) {
+	r.fields = fields
 }
 
-func (htsgetReq *HtsgetRequest) HtsgetFilePath() string {
-	return htsgetReq.get("HtsgetFilePath")
+// GetFields retrieves the requested emitted fields
+func (r *HtsgetRequest) GetFields() []string {
+	return r.fields
 }
 
-func (htsgetReq *HtsgetRequest) Range() string {
-	return htsgetReq.get("Range")
+// SetTags sets the requested emitted tags
+func (r *HtsgetRequest) SetTags(tags []string) {
+	r.tags = tags
 }
 
-// Fields gets value of 'fields' param
-//
-// Type: HtsgetRequest
-// Returns
-//	([]string): value of 'fields'
-func (htsgetReq *HtsgetRequest) Fields() []string {
-	return htsgetReq.getList("fields")
+// GetTags retrieves the requested emitted tags
+func (r *HtsgetRequest) GetTags() []string {
+	return r.tags
 }
 
-// Tags gets value of 'tags' param
-//
-// Type: HtsgetRequest
-// Returns
-//	([]string): value of 'tags'
-func (htsgetReq *HtsgetRequest) Tags() []string {
-	return htsgetReq.getList("tags")
+// SetNoTags sets the requested set of tags to be excluded from results
+func (r *HtsgetRequest) SetNoTags(noTags []string) {
+	r.noTags = noTags
 }
 
-// NoTags gets value of 'notags' param
-//
-// Type: HtsgetRequest
-// Returns
-//	([]string): value of 'notags'
-func (htsgetReq *HtsgetRequest) NoTags() []string {
-	return htsgetReq.getList("notags")
+// GetNoTags retrieves the requested set of tags to be excluded from results
+func (r *HtsgetRequest) GetNoTags() []string {
+	return r.noTags
 }
 
-// isDefaultScalar checks if a scalar parameter value matches the default,
+// SetRegions sets the requested list of genomic regions to be returned
+func (r *HtsgetRequest) SetRegions(regions []*Region) {
+	r.regions = regions
+}
+
+// AddRegion adds a single region to the list of requested genomic regions
+func (r *HtsgetRequest) AddRegion(region *Region) {
+	r.regions = append(r.regions, region)
+}
+
+// GetRegions retrieves the requested list of genomic regions
+func (r *HtsgetRequest) GetRegions() []*Region {
+	return r.regions
+}
+
+// SetHtsgetBlockClass sets the request block class
+func (r *HtsgetRequest) SetHtsgetBlockClass(htsgetBlockClass string) {
+	r.htsgetBlockClass = htsgetBlockClass
+}
+
+// GetHtsgetBlockClass retrieves the requested block class
+func (r *HtsgetRequest) GetHtsgetBlockClass() string {
+	return r.htsgetBlockClass
+}
+
+// SetHtsgetCurrentBlock sets the current url data block number
+func (r *HtsgetRequest) SetHtsgetCurrentBlock(htsgetCurrentBlock string) {
+	r.htsgetCurrentBlock = htsgetCurrentBlock
+}
+
+// GetHtsgetCurrentBlock retrieves the current url data block number
+func (r *HtsgetRequest) GetHtsgetCurrentBlock() string {
+	return r.htsgetCurrentBlock
+}
+
+// SetHtsgetTotalBlocks sets the total number of expected url data blocks /
+// fileparts for a single file download
+func (r *HtsgetRequest) SetHtsgetTotalBlocks(htsgetTotalBlocks string) {
+	r.htsgetTotalBlocks = htsgetTotalBlocks
+}
+
+// GetHtsgetTotalBlocks retrieves the total number of expected url data blocks /
+// fileparts for a single file download
+func (r *HtsgetRequest) GetHtsgetTotalBlocks() string {
+	return r.htsgetTotalBlocks
+}
+
+// SetHtsgetFilePath sets the path to the requested source file
+func (r *HtsgetRequest) SetHtsgetFilePath(htsgetFilePath string) {
+	r.htsgetFilePath = htsgetFilePath
+}
+
+// GetHtsgetFilePath retrieves the path to the requested source file
+func (r *HtsgetRequest) GetHtsgetFilePath() string {
+	return r.htsgetFilePath
+}
+
+// SetHtsgetRange sets the byte range for a requested file
+func (r *HtsgetRequest) SetHtsgetRange(htsgetRange string) {
+	r.htsgetRange = htsgetRange
+}
+
+// GetHtsgetRange retrieves the byte range for a requested file
+func (r *HtsgetRequest) GetHtsgetRange() string {
+	return r.htsgetRange
+}
+
+// isDefaultString checks if a given string property matches the expected default value
+func (r *HtsgetRequest) isDefaultString(val string, def string) bool {
+	return val == def
+}
+
+// isDefaultInt checks if a given int property matches the expected default value
+func (r *HtsgetRequest) isDefaultInt(val int, def int) bool {
+	return val == def
+}
+
+// isDefaultList checks if a list parameter value matches the default,
 // unspecfied value, thereby indicating that the parameter was not specified
 // in the HTTP request
-//
-// Type: HtsgetRequest
-// Arguments
-//	key (string): the parameter name to check
-// Returns
-//	(bool): true if the parameter value matches the default, false if not
-func (htsgetReq *HtsgetRequest) isDefaultScalar(key string) bool {
-	return htsgetReq.get(key) == defaultScalarParameterValues[key]
-}
-
-// isDefaultScalar checks if a list parameter value matches the default,
-// unspecfied value, thereby indicating that the parameter was not specified
-// in the HTTP request
-//
-// Type: HtsgetRequest
-// Arguments
-//	key (string): the parameter name to check
-// Returns
-//	(bool): true if the parameter value matches the default, false if not
-func (htsgetReq *HtsgetRequest) isDefaultList(key string) bool {
-	list := htsgetReq.getList(key)
-	defaultList := defaultListParameterValues[key]
-	if len(list) != len(defaultList) {
+func (r *HtsgetRequest) isDefaultList(val []string, def []string) bool {
+	if len(val) != len(def) {
 		return false
 	}
-	for i := 0; i < len(list); i++ {
-		if list[i] != defaultList[i] {
+	for i := 0; i < len(val); i++ {
+		if val[i] != def[i] {
 			return false
 		}
 	}
@@ -243,131 +237,134 @@ func (htsgetReq *HtsgetRequest) isDefaultList(key string) bool {
 }
 
 // HeaderOnlyRequested checks if the client request is only for the header
-//
-// Type: HtsgetRequest
-// Returns
-//	(bool): true if only the header was requested
-func (htsgetReq *HtsgetRequest) HeaderOnlyRequested() bool {
-	return htsgetReq.Class() == htsconstants.ClassHeader
+func (r *HtsgetRequest) HeaderOnlyRequested() bool {
+	return r.GetClass() == htsconstants.ClassHeader
 }
 
 // UnplacedUnmappedReadsRequested checks if the client request is for unplaced,
 // unmapped reads
-//
-// Type: HtsgetRequest
-// Returns
-//	(bool): true if unplaced, unmapped reads were requested
-func (htsgetReq *HtsgetRequest) UnplacedUnmappedReadsRequested() bool {
-	return htsgetReq.ReferenceName() == "*"
+func (r *HtsgetRequest) UnplacedUnmappedReadsRequested() bool {
+	return r.GetReferenceName() == "*"
 }
 
-func (htsgetReq *HtsgetRequest) ReferenceNameRequested() bool {
-	return !htsgetReq.isDefaultScalar("referenceName")
+// ReferenceNameRequested checks whether a reference name was specified in the
+// request
+func (r *HtsgetRequest) ReferenceNameRequested() bool {
+	return !r.isDefaultString(r.GetReferenceName(), defaultReferenceName)
 }
 
-func (htsgetReq *HtsgetRequest) StartRequested() bool {
-	return !htsgetReq.isDefaultScalar("start")
+// StartRequested checks whether a genomic start position was specified in the request
+func (r *HtsgetRequest) StartRequested() bool {
+	return !r.isDefaultInt(r.GetStart(), defaultStart)
 }
 
-func (htsgetReq *HtsgetRequest) EndRequested() bool {
-	return !htsgetReq.isDefaultScalar("end")
+// EndRequested checks whether a genomic end position was specified in the request
+func (r *HtsgetRequest) EndRequested() bool {
+	return !r.isDefaultInt(r.GetEnd(), defaultEnd)
+}
+
+// NRegions returns the number of requested genomic loci
+func (r *HtsgetRequest) NRegions() int {
+	return len(r.GetRegions())
 }
 
 // AllRegionsRequested checks if the client request is for all chromosomal
 // regions in the file (ie. referenceName not specified)
-//
-// Type: HtsgetRequest
-// Returns
-//	(bool): true if all chromosomal regions requested
-func (htsgetReq *HtsgetRequest) AllRegionsRequested() bool {
-	return htsgetReq.isDefaultScalar("referenceName")
+func (r *HtsgetRequest) AllRegionsRequested() bool {
+	return r.NRegions() == 0
 }
 
 // AllFieldsRequested checks if all fields were requested by the client. all
 // fields are requested if the client does not specify the 'fields' parameter
-//
-// Type: HtsgetRequest
-// Returns
-//	(bool): true if all fields were requested by client, false if not
-func (htsgetReq *HtsgetRequest) AllFieldsRequested() bool {
-	return htsgetReq.isDefaultList("fields")
+func (r *HtsgetRequest) AllFieldsRequested() bool {
+	return r.isDefaultList(r.GetFields(), defaultFields)
 }
 
 // TagsNotSpecified checks if the tags parameter was not provided in the HTTP
 // request
-//
-// Type: HtsgetRequest
-// Returns
-// (bool): true if the tags parameter was not specified in request, false if not
-func (htsgetReq *HtsgetRequest) TagsNotSpecified() bool {
-	return htsgetReq.isDefaultList("tags")
+func (r *HtsgetRequest) TagsNotSpecified() bool {
+	return r.isDefaultList(r.GetTags(), defaultTags)
 }
 
 // NoTagsNotSpecified checks if the notags parameter was not provided in the
 // HTTP request
-//
-// Type: HtsgetRequest
-// Returns
-//	(bool): true if the notags parameter was not specified in request, false if not
-func (htsgetReq *HtsgetRequest) NoTagsNotSpecified() bool {
-	return htsgetReq.isDefaultList("notags")
+func (r *HtsgetRequest) NoTagsNotSpecified() bool {
+	return r.isDefaultList(r.GetNoTags(), defaultNoTags)
 }
 
 // AllTagsRequested checks if all tags were requested by the client. all tags
 // are requested if the request specifies neither the 'tags' or 'notags' parameters
-//
-// Type: HtsgetRequest
-// Returns
-//	(bool): true if neither tags nor notags was specified, thereby requesting all tags
-func (htsgetReq *HtsgetRequest) AllTagsRequested() bool {
-	return htsgetReq.TagsNotSpecified() && htsgetReq.NoTagsNotSpecified()
+func (r *HtsgetRequest) AllTagsRequested() bool {
+	return r.TagsNotSpecified() && r.NoTagsNotSpecified()
+}
+
+// IsHeaderBlock checks whether the current data block / filepart represents
+// the header of the genomic file
+func (r *HtsgetRequest) IsHeaderBlock() bool {
+	current, _ := strconv.Atoi(r.GetHtsgetCurrentBlock())
+	return current == 0
+}
+
+// IsFinalBlock checks whether the current data block / filepart is the final
+// block in a list of blocks, altogether constituting a single file
+func (r *HtsgetRequest) IsFinalBlock() bool {
+	current, _ := strconv.Atoi(r.GetHtsgetCurrentBlock())
+	total, _ := strconv.Atoi(r.GetHtsgetTotalBlocks())
+	return current == total-1
 }
 
 // ConstructDataEndpointURL for a given htsget request object, return the url
 // that will redirect the client to the correct data download endpoint with
 // all necessary parameters and headers provided
-func (htsgetReq *HtsgetRequest) ConstructDataEndpointURL() (*url.URL, error) {
+func (r *HtsgetRequest) ConstructDataEndpointURL(useRegion bool, regionI int) (string, error) {
 	host := htsconfig.GetHost()
-	dataEndpointPath := htsgetReq.GetEndpoint().DataEndpointPath()
-	dataEndpoint, err := url.Parse(htsutils.RemoveTrailingSlash(host) + dataEndpointPath + htsgetReq.ID())
+	dataEndpointPath := r.GetEndpoint().DataEndpointPath()
+	dataEndpoint, err := url.Parse(htsutils.RemoveTrailingSlash(host) + dataEndpointPath + r.GetID())
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	// add query params
 	query := dataEndpoint.Query()
-	if htsgetReq.HeaderOnlyRequested() {
-		query.Set("class", htsgetReq.Class())
+	if r.HeaderOnlyRequested() {
+		query.Set("class", r.GetClass())
 	}
-	if htsgetReq.ReferenceNameRequested() {
-		query.Set("referenceName", htsgetReq.ReferenceName())
+
+	if useRegion {
+		region := r.GetRegions()[regionI]
+		if region.ReferenceNameRequested() {
+			query.Set("referenceName", region.GetReferenceName())
+		}
+		if region.StartRequested() {
+			query.Set("start", region.StartString())
+		}
+		if region.EndRequested() {
+			query.Set("end", region.EndString())
+		}
 	}
-	if htsgetReq.StartRequested() {
-		query.Set("start", htsgetReq.Start())
-	}
-	if htsgetReq.EndRequested() {
-		query.Set("end", htsgetReq.End())
-	}
-	if !htsgetReq.AllFieldsRequested() {
-		f := strings.Join(htsgetReq.Fields(), ",")
+
+	if !r.AllFieldsRequested() {
+		f := strings.Join(r.GetFields(), ",")
 		query.Set("fields", f)
 	}
-	if !htsgetReq.TagsNotSpecified() {
-		t := strings.Join(htsgetReq.Tags(), ",")
+	if !r.TagsNotSpecified() {
+		t := strings.Join(r.GetTags(), ",")
 		query.Set("tags", t)
 	}
-	if !htsgetReq.NoTagsNotSpecified() {
-		nt := strings.Join(htsgetReq.NoTags(), ",")
+	if !r.NoTagsNotSpecified() {
+		nt := strings.Join(r.GetNoTags(), ",")
 		query.Set("notags", nt)
 	}
 	dataEndpoint.RawQuery = query.Encode()
-	return dataEndpoint, nil
+	return dataEndpoint.String(), nil
 }
 
-func (htsgetReq *HtsgetRequest) GetDataSourceRegistry() *htsconfig.DataSourceRegistry {
-	return htsconfig.GetDataSourceRegistry(htsgetReq.GetEndpoint())
+// GetDataSourceRegistry retrieves the data sources associated with the endpoint
+func (r *HtsgetRequest) GetDataSourceRegistry() *htsconfig.DataSourceRegistry {
+	return htsconfig.GetDataSourceRegistry(r.GetEndpoint())
 }
 
-func (htsgetReq *HtsgetRequest) GetServiceInfo() *htsconfig.ServiceInfo {
-	return htsconfig.GetServiceInfo(htsgetReq.GetEndpoint())
+// GetServiceInfo retrieves the service info object associated with the endpoint
+func (r *HtsgetRequest) GetServiceInfo() *htsconfig.ServiceInfo {
+	return htsconfig.GetServiceInfo(r.GetEndpoint())
 }

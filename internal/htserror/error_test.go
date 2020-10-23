@@ -5,6 +5,7 @@ package htserror
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -12,8 +13,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// newMessageA sample expected message
 var newMessageA = "format BAM not supported"
 
+// errorsTC test cases for constructing various HTTP errors
 var errorsTC = []struct {
 	errorFunction func(writer http.ResponseWriter, msgPtr *string)
 	message       *string
@@ -70,6 +73,7 @@ var errorsTC = []struct {
 	},
 }
 
+// TestErrors tests various error-generating functions
 func TestErrors(t *testing.T) {
 	for _, tc := range errorsTC {
 
@@ -85,4 +89,13 @@ func TestErrors(t *testing.T) {
 		assert.Equal(t, tc.expString, htsgetErrObj.Error())
 		assert.Equal(t, tc.expCode, writer.Code)
 	}
+}
+
+// TestHTTPErrorDefault tests the default behaviour of writeHTTPError, in which
+// the default code 500 is specified
+func TestHTTPErrorDefault(t *testing.T) {
+	writer := httptest.NewRecorder()
+	err := errors.New("An unspecified error")
+	writeHTTPError(writer, err)
+
 }

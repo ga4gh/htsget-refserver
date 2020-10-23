@@ -19,5 +19,5 @@ func getMatchingDao(id string, registry *htsconfig.DataSourceRegistry) (DataAcce
 
 func GetDao(req *htsrequest.HtsgetRequest) (DataAccessObject, error) {
 	registry := req.GetDataSourceRegistry()
-	return getMatchingDao(req.ID(), registry)
+	return getMatchingDao(req.GetID(), registry)
 }

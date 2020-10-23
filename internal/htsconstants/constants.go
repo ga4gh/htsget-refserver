@@ -12,6 +12,7 @@ import (
  * TIME RELATED CONSTANTS
  * ************************************************** */
 
+// StartupTime default startup time for service-info
 var StartupTime = time.Date(2020, 9, 1, 12, 0, 0, 0, time.UTC).UTC().Format(time.RFC3339)
 
 // SingleBlockByteSize suggested byte size of response from a single ticket url
@@ -50,14 +51,17 @@ var BamExcludedValues []string = []string{
 	"*",   // QUAL
 }
 
+// BamBGZF bytes marking BGZF Block
+var BamBGZF, _ = hex.DecodeString("1f8b08040000000000ff060042430200")
+
+// BamBGZFLen byte length of a single BGZF block header marker
+var BamBGZFLen = len(BamBGZF)
+
 // BamEOF BAM end of file byte sequence
 var BamEOF, _ = hex.DecodeString("1f8b08040000000000ff0600424302001b0003000000000000000000")
 
 // BamEOFLen length (number of bytes) of BAM end of file byte sequence
 var BamEOFLen = len(BamEOF)
-
-// BamHeaderEOFLen length (number of bytes) of BAM header end marker
-var BamHeaderEOFLen = 12
 
 // ReadsDataURLPath path to reads data endpoint
 var ReadsDataURLPath = "reads/data/"

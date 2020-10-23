@@ -11,11 +11,11 @@ import (
 
 // Headers contains any headers needed by the server from the client
 type Headers struct {
-	BlockID   string `json:"HtsgetBlockId,omitempty"`   // id of current block
-	NumBlocks string `json:"HtsgetNumBlocks,omitempty"` // total number of blocks
-	Range     string `json:"Range,omitempty"`
-	Class     string `json:"HtsgetBlockClass,omitempty"`
-	FilePath  string `json:"HtsgetFilePath,omitempty"`
+	BlockClass   string `json:"HtsgetBlockClass,omitempty"`
+	CurrentBlock string `json:"HtsgetCurrentBlock,omitempty"` // number of current block
+	TotalBlocks  string `json:"HtsgetTotalBlocks,omitempty"`  // total number of blocks
+	FilePath     string `json:"HtsgetFilePath,omitempty"`
+	Range        string `json:"Range,omitempty"`
 }
 
 // NewHeaders instantiates an empty headers object
@@ -23,15 +23,15 @@ func NewHeaders() *Headers {
 	return new(Headers)
 }
 
-// SetBlockID assigns the BlockID header value
-func (headers *Headers) SetBlockID(blockID string) *Headers {
-	headers.BlockID = blockID
+// SetCurrentBlock assigns the CurrentBlock header value
+func (headers *Headers) SetCurrentBlock(currentBlock string) *Headers {
+	headers.CurrentBlock = currentBlock
 	return headers
 }
 
-// SetNumBlocks assigns the NumBlocks header value
-func (headers *Headers) SetNumBlocks(numBlocks string) *Headers {
-	headers.NumBlocks = numBlocks
+// SetTotalBlocks assigns the TotalBlocks header value
+func (headers *Headers) SetTotalBlocks(totalBlocks string) *Headers {
+	headers.TotalBlocks = totalBlocks
 	return headers
 }
 
@@ -41,23 +41,23 @@ func (headers *Headers) SetRangeHeader(start int64, end int64) *Headers {
 	return headers
 }
 
-// setClass assigns the Class header value
-func (headers *Headers) setClass(class string) *Headers {
-	headers.Class = class
+// setBlockClass assigns the BlockClass header value
+func (headers *Headers) setBlockClass(blockClass string) *Headers {
+	headers.BlockClass = blockClass
 	return headers
 }
 
 // SetClassHeader assigns the Class header value to "header", indicating the data
 // download url is responsible for downloading the file header
 func (headers *Headers) SetClassHeader() *Headers {
-	headers.setClass(htsconstants.ClassHeader)
+	headers.setBlockClass(htsconstants.ClassHeader)
 	return headers
 }
 
 // SetClassBody assigns the Class header value to "body", indicating the data
 // download url is responsible for downloading the file body
 func (headers *Headers) SetClassBody() *Headers {
-	headers.setClass(htsconstants.ClassBody)
+	headers.setBlockClass(htsconstants.ClassBody)
 	return headers
 }
 

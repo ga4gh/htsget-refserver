@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// urlSetURLTC test cases for SetURL
 var urlSetURLTC = []struct {
 	url string
 }{
@@ -18,12 +19,14 @@ var urlSetURLTC = []struct {
 	{"http://localhost:4000/reads/data/gatktest.11111"},
 }
 
+// urlSetHeadersTC test cases for SetHeaders
 var urlSetHeadersTC = []struct {
-	blockid, numblocks, filepath string
+	currentBlock, totalBlocks, filepath string
 }{
 	{"1", "10", "./gatk/test1.bam"},
 }
 
+// TestUrlSetURL tests SetURL function
 func TestUrlSetURL(t *testing.T) {
 	for _, tc := range urlSetURLTC {
 		url := NewURL()
@@ -32,20 +35,22 @@ func TestUrlSetURL(t *testing.T) {
 	}
 }
 
+// TestUrlSetHeaders tests SetHeaders function
 func TestUrlSetHeaders(t *testing.T) {
 	for _, tc := range urlSetHeadersTC {
 		h := NewHeaders()
-		h.SetBlockID(tc.blockid)
-		h.SetNumBlocks(tc.numblocks)
+		h.SetCurrentBlock(tc.currentBlock)
+		h.SetTotalBlocks(tc.totalBlocks)
 		h.SetFilePathHeader(tc.filepath)
 		url := NewURL()
 		url.SetHeaders(h)
-		assert.Equal(t, tc.blockid, url.Headers.BlockID)
-		assert.Equal(t, tc.numblocks, url.Headers.NumBlocks)
+		assert.Equal(t, tc.currentBlock, url.Headers.CurrentBlock)
+		assert.Equal(t, tc.totalBlocks, url.Headers.TotalBlocks)
 		assert.Equal(t, tc.filepath, url.Headers.FilePath)
 	}
 }
 
+// TestUrlSetClass tests SetClass function
 func TestUrlSetClass(t *testing.T) {
 	url := NewURL()
 	functions := []func() *URL{

@@ -26,9 +26,10 @@ func main() {
 	if err != nil {
 		panic("Problem setting up server.")
 	}
+	http.Handle("/", router)
 
 	// start server
 	port := htsconfig.GetPort()
 	fmt.Printf("Server started on port %s!\n", port)
-	http.ListenAndServe(":"+port, router)
+	http.ListenAndServe(":"+port, nil)
 }

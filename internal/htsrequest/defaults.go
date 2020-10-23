@@ -2,24 +2,38 @@
 // parameters from the HTTP request, and performing validation and
 // transformation
 //
-// Module defaults.go contains default values for each parameter
+// Module defaults contains default values for each parameter
 package htsrequest
 
-// defaultScalarParameterValues (map[string]string): values for scalar params
-// if param is not specified in request
-var defaultScalarParameterValues = map[string]string{
-	"id":            "",
-	"format":        "BAM",
-	"class":         "",
-	"referenceName": "",
-	"start":         "-1",
-	"end":           "-1",
-}
+var defaultID = ""
+var defaultFormatReads = "BAM"
+var defaultFormatVariants = "VCF"
+var defaultClass = ""
+var defaultReferenceName = ""
+var defaultStart = -1
+var defaultEnd = -1
+var defaultFields = []string{"ALL"}
+var defaultTags = []string{"ALL"}
+var defaultNoTags = []string{"NONE"}
+var defaultRegions = []*Region{}
+var defaultHtsgetBlockClass = ""
+var defaultHtsgetCurrentBlock = "0"
+var defaultHtsgetTotalBlocks = "1"
+var defaultHtsgetFilePath = ""
+var defaultHtsgetRange = ""
 
-// defaultListParameterValues (map[string][]string): values for list params
-// if param is not specified in request
-var defaultListParameterValues = map[string][]string{
-	"fields": {"ALL"},
-	"tags":   {"ALL"},
-	"notags": {"NONE"},
+/*
+var defaultParameterValues = map[string]interface{}{
+	"id":               defaultID,
+	"format":           defaultFormat,
+	"class":            defaultClass,
+	"referenceName":    defaultReferenceName,
+	"start":            defaultStart,
+	"end":              defaultEnd,
+	"fields":           defaultFields,
+	"tags":             defaultTags,
+	"notags":           defaultNoTags,
+	"regions":          defaultRegions,
+	"HtsgetBlockClass": defaultHtsgetBlockClass,
 }
+*/
