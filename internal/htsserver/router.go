@@ -26,6 +26,7 @@ func SetRouter() (*chi.Mux, error) {
 	// if variants enabled, add variants routes
 	if htsconfig.IsEndpointEnabled(htsconstants.APIEndpointVariantsTicket) {
 		router.Get(htsconstants.APIEndpointVariantsTicket.String(), getVariantsTicket)
+		router.Post(htsconstants.APIEndpointVariantsTicket.String(), postVariantsTicket)
 		router.Get(htsconstants.APIEndpointVariantsData.String(), getVariantsData)
 		router.Get(htsconstants.APIEndpointVariantsServiceInfo.String(), getVariantsServiceInfo)
 	}

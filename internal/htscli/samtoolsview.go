@@ -1,7 +1,7 @@
 // Package htscli deals with the construction and submission of command-line
 // jobs
 //
-// Module samtools view defines the job submission for the 'samtools view'
+// Module samtoolsview defines the job submission for the 'samtools view'
 // command, which streams SAM or BAM to stdout
 package htscli
 
