@@ -70,6 +70,7 @@ The htsget web service can be configured with runtime parameters via a JSON conf
 Examples of valid JSON config files are available in this repository:
 
 * [ga4gh instance config](./deployments/ga4gh/prod/config-server.json) - used to run the GA4GH-hosted instance at https://htsget.ga4gh.org
+* [local development config](./deployments/ga4gh/prod/config-local.json) - used to run the local instance for development
 * [integration tests config](./data/config/integration-tests.config.json) - used for integration testing on Travis CI builds
 * [example 0 config](./data/config/example-0.config.json)
 * [empty config](./data/config/example-empty.config.json)
@@ -93,6 +94,11 @@ Under the `htsgetConfig` property, the `props` object overrides application-wide
 | docsDir | path to static file directory containing server documentation (e.g. OpenAPI). the server will serve its contents at the `/docs/` endpoint | NONE |
 | tempDir | writes temporary files used in request processing to this directory | . |
 | logFile | writes application logs to this file | htsget-refserver.log |
+| corsAllowedOrigins | CORS allow client from origins. Use comma to separate for multiple origins. | http://localhost |
+| corsAllowedMethods | CORS allow methods. | GET, POST, PUT, DELETE, OPTIONS |
+| corsAllowedHeaders | CORS allow headers.  | * |
+| corsAllowCredentials | CORS allow credentials.  | false |
+| corsMaxAge | CORS max age in seconds.  | 300 |
 
 Example `props` object:
 
@@ -103,7 +109,8 @@ Example `props` object:
             "port": "80",
             "host": "https://htsget.ga4gh.org/",
             "tempdir": "/tmp/",
-            "logfile": "/usr/src/app/htsget-refserver.log"
+            "logfile": "/usr/src/app/htsget-refserver.log",
+            "corsAllowedOrigins": "https://portal.ga4gh.org, http://intranet.ga4gh.org",
         }
     }
 }

@@ -3,15 +3,28 @@ package htsserver
 import (
 	"net/http"
 	"path/filepath"
+	"strings"
 
 	"github.com/ga4gh/htsget-refserver/internal/htsconfig"
 	"github.com/ga4gh/htsget-refserver/internal/htsconstants"
 	"github.com/go-chi/chi"
+	"github.com/go-chi/cors"
 )
 
 // SetRouter sets up and returns a go-chi router to caller
 func SetRouter() (*chi.Mux, error) {
 	router := chi.NewRouter()
+
+	// Setup CORS
+	corsAllowedHeaders := strings.Split(htsconfig.GetCorsAllowedHeaders(), ",")
+	allowedHeaders := append(corsAllowedHeaders, "HtsgetBlockClass", "HtsgetCurrentBlock", "HtsgetTotalBlocks", "HtsgetFilePath")
+	router.Use(cors.Handler(cors.Options{
+		AllowedOrigins:   strings.Split(htsconfig.GetCorsAllowedOrigins(), ","),
+		AllowedMethods:   strings.Split(htsconfig.GetCorsAllowedMethods(), ","),
+		AllowedHeaders:   allowedHeaders,
+		AllowCredentials: htsconfig.GetCorsAllowCredentials(),
+		MaxAge:           htsconfig.GetCorsMaxAge(),
+	}))
 
 	// Add API Routes
 

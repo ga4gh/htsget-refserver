@@ -5,7 +5,8 @@
       "host": "http://localhost:3000/",
       "docsDir": "./deployments/ga4gh/prod/docs/",
       "tempDir": "/tmp/",
-      "logFile": "/usr/src/app/htsget-refserver.log"
+      "logFile": "/usr/src/app/htsget-refserver.log",
+      "corsAllowedOrigins": "*"
     },
     "reads": {
       "enabled": true,

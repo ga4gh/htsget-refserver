@@ -7,6 +7,7 @@ require (
 	github.com/biogo/hts v1.0.1
 	github.com/getlantern/deepcopy v0.0.0-20160317154340-7f45deb8130a
 	github.com/go-chi/chi v4.0.2+incompatible
+	github.com/go-chi/cors v1.1.1
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/mattn/goveralls v0.0.6 // indirect
 	github.com/stretchr/testify v1.6.1
