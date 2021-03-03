@@ -19,11 +19,11 @@ const (
 
 // maps enum int values to string representation
 var htsEndpointStringMap = map[APIEndpoint]string{
-	APIEndpointReadsTicket:         "/reads/{id}",
-	APIEndpointReadsData:           "/reads/data/{id}",
+	APIEndpointReadsTicket:         "/reads/{id}*",
+	APIEndpointReadsData:           "/reads/data/{id}*",
 	APIEndpointReadsServiceInfo:    "/reads/service-info",
-	APIEndpointVariantsTicket:      "/variants/{id}",
-	APIEndpointVariantsData:        "/variants/data/{id}",
+	APIEndpointVariantsTicket:      "/variants/{id}*",
+	APIEndpointVariantsData:        "/variants/data/{id}*",
 	APIEndpointVariantsServiceInfo: "/variants/service-info",
 	APIEndpointFileBytes:           "/file-bytes",
 }

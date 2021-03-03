@@ -35,6 +35,8 @@ var DfltCorsAllowCredentials = false
 
 var DfltCorsMaxAge = 300
 
+var DfltAwsAssumeRole = false
+
 /* **************************************************
  * READS DATA SOURCE REGISTRY
  * ************************************************** */

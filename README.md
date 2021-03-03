@@ -99,6 +99,7 @@ Under the `htsgetConfig` property, the `props` object overrides application-wide
 | corsAllowedHeaders | CORS allow headers.  | * |
 | corsAllowCredentials | CORS allow credentials.  | false |
 | corsMaxAge | CORS max age in seconds.  | 300 |
+| awsAssumeRole | Turn on `awsAssumeRole` middleware. See **Private Bucket** section below. | false |
 
 Example `props` object:
 
@@ -228,6 +229,64 @@ Example `variants` object:
         }
     }
 }
+```
+
+## Private Bucket
+
+- Turn on `awsAssumeRole` [middleware](https://github.com/go-chi/chi#middleware-handlers) request interceptor to support AWS [Assume Role](https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRole.html) temporary security credentials loading to access S3 private bucket.
+
+- When it is not configured, the default `awsAssumeRole` set to `false` such that execution environment know how to access S3 private bucket through AWS [standard mechanism](https://aws.github.io/aws-sdk-go-v2/docs/configuring-sdk/). In that case, see [htslib AWS S3 plugin](http://www.htslib.org/doc/htslib-s3-plugin.html) for credentials loading requirement.
+
+Say, you have data in private bucket as follows:
+```
+s3://my-primary-data-prod/Project/PID00115/WGS/PID00115-final.bam
+```
+
+Example configuration:
+```
+{
+  "htsgetConfig": {
+    "props": {
+      ...
+      "awsAssumeRole": true
+    },
+    "reads": {
+      ...
+      "dataSourceRegistry": {
+        "sources": [
+          ...
+          {
+            "pattern": "^my-primary-data(?P<accession>.*)$",
+            "path": "s3://my-primary-data{accession}"
+          }
+        ]
+      },
+      "serviceInfo": {
+        ...
+      }
+    },
+    "variants": {
+      ...
+      "dataSourceRegistry": {
+        "sources": [
+          ...
+          {
+            "pattern": "^my-primary-data(?P<accession>.*)$",
+            "path": "s3://my-primary-data{accession}"
+          }
+        ]
+      },
+      "serviceInfo": {
+        ...
+      }
+    }
+  }
+}
+```
+
+Then you can call Htsget as follows:
+```
+curl -s http://localhost:3000/reads/my-primary-data-prod/Project/PID00115/WGS/PID00115-final.bam | jq
 ```
 
 ## Testing

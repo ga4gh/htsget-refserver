@@ -14,8 +14,8 @@ var endpointsStringTC = []struct {
 	e   APIEndpoint
 	exp string
 }{
-	{APIEndpointReadsTicket, "/reads/{id}"},
-	{APIEndpointReadsData, "/reads/data/{id}"},
+	{APIEndpointReadsTicket, "/reads/{id}*"},
+	{APIEndpointReadsData, "/reads/data/{id}*"},
 	{APIEndpointVariantsServiceInfo, "/variants/service-info"},
 	{APIEndpointFileBytes, "/file-bytes"},
 }

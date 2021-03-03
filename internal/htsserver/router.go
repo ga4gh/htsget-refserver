@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ga4gh/htsget-refserver/internal/assumerole"
 	"github.com/ga4gh/htsget-refserver/internal/htsconfig"
 	"github.com/ga4gh/htsget-refserver/internal/htsconstants"
 	"github.com/go-chi/chi"
@@ -25,6 +26,13 @@ func SetRouter() (*chi.Mux, error) {
 		AllowCredentials: htsconfig.GetCorsAllowCredentials(),
 		MaxAge:           htsconfig.GetCorsMaxAge(),
 	}))
+
+	// Setup AWS AssumeRole middleware
+	if htsconfig.IsAwsAssumeRole() {
+		router.Use(assumerole.Handler(assumerole.Options{
+			Debug: false,
+		}))
+	}
 
 	// Add API Routes
 

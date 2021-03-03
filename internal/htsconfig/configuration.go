@@ -43,6 +43,7 @@ type configurationServerProps struct {
 	CorsAllowedHeaders   string `json:"corsAllowedHeaders"`
 	CorsAllowCredentials *bool  `json:"corsAllowCredentials"`
 	CorsMaxAge           int    `json:"corsMaxAge"`
+	AwsAssumeRole        *bool  `json:"awsAssumeRole"`
 }
 
 type configurationEndpoint struct {
@@ -233,4 +234,8 @@ func GetServiceInfo(ep htsconstants.APIEndpoint) *ServiceInfo {
 // GetConfigLoadError gets the error associated with loading the configuration
 func GetConfigLoadError() error {
 	return configurationSingletonLoadedError
+}
+
+func IsAwsAssumeRole() bool {
+	return *getServerProps().AwsAssumeRole
 }
