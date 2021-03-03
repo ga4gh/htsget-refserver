@@ -1,6 +1,6 @@
 language: go
 go:
-    - 1.13
+    - 1.15
 env:
     - SAMTOOLS=./scripts/ci/install-samtools.sh BCFTOOLS=./scripts/ci/install-bcftools.sh UTILS=./scripts/ci/install-htsget-refserver-utils.sh
 before_install:
