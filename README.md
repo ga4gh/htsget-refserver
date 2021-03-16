@@ -98,7 +98,7 @@ Example `props` object:
 
 ```
 {
-    "htsget": {
+    "htsgetConfig": {
         "props": {
             "port": "80",
             "host": "https://htsget.ga4gh.org/",
