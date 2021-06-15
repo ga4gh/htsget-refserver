@@ -33,11 +33,17 @@ type configurationContainer struct {
 }
 
 type configurationServerProps struct {
-	Port    string `json:"port"`
-	Host    string `json:"host"`
-	DocsDir string `json:"docsDir"`
-	TempDir string `json:"tempdir"`
-	LogFile string `json:"logFile"`
+	Port                 string `json:"port"`
+	Host                 string `json:"host"`
+	DocsDir              string `json:"docsDir"`
+	TempDir              string `json:"tempdir"`
+	LogFile              string `json:"logFile"`
+	CorsAllowedOrigins   string `json:"corsAllowedOrigins"`
+	CorsAllowedMethods   string `json:"corsAllowedMethods"`
+	CorsAllowedHeaders   string `json:"corsAllowedHeaders"`
+	CorsAllowCredentials *bool  `json:"corsAllowCredentials"`
+	CorsMaxAge           int    `json:"corsMaxAge"`
+	AwsAssumeRole        *bool  `json:"awsAssumeRole"`
 }
 
 type configurationEndpoint struct {
@@ -62,6 +68,7 @@ func patchConfiguration(defR reflect.Value, patchR reflect.Value) {
 
 		typesToPatch := []string{
 			"string",
+			"int",
 			"*bool",
 			"*htsconfig.DataSourceRegistry",
 		}
@@ -81,6 +88,8 @@ func patchConfiguration(defR reflect.Value, patchR reflect.Value) {
 				if patchString != "" {
 					defR.Field(i).Set(patchR.Field(i))
 				}
+			} else if defRType == "int" {
+				defR.Field(i).Set(patchR.Field(i))
 			} else if defRType == "*bool" {
 				if !patchR.Field(i).IsNil() {
 					defR.Field(i).Set(patchR.Field(i))
@@ -172,6 +181,26 @@ func GetLogFile() string {
 	return getServerProps().LogFile
 }
 
+func GetCorsAllowedOrigins() string {
+	return getServerProps().CorsAllowedOrigins
+}
+
+func GetCorsAllowedMethods() string {
+	return getServerProps().CorsAllowedMethods
+}
+
+func GetCorsAllowedHeaders() string {
+	return getServerProps().CorsAllowedHeaders
+}
+
+func GetCorsAllowCredentials() bool {
+	return *getServerProps().CorsAllowCredentials
+}
+
+func GetCorsMaxAge() int {
+	return getServerProps().CorsMaxAge
+}
+
 func getEndpointConfig(ep htsconstants.APIEndpoint) *configurationEndpoint {
 	reads := getContainer().ReadsConfig
 	variants := getContainer().VariantsConfig
@@ -205,4 +234,8 @@ func GetServiceInfo(ep htsconstants.APIEndpoint) *ServiceInfo {
 // GetConfigLoadError gets the error associated with loading the configuration
 func GetConfigLoadError() error {
 	return configurationSingletonLoadedError
+}
+
+func IsAwsAssumeRole() bool {
+	return *getServerProps().AwsAssumeRole
 }

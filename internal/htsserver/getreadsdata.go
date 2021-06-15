@@ -10,6 +10,7 @@ import (
 	"github.com/ga4gh/htsget-refserver/internal/htsconfig"
 	"github.com/ga4gh/htsget-refserver/internal/htsconstants"
 	"github.com/ga4gh/htsget-refserver/internal/htsrequest"
+	"github.com/google/uuid"
 )
 
 func getReadsData(writer http.ResponseWriter, request *http.Request) {
@@ -37,7 +38,7 @@ func getReadsDataHandler(handler *requestHandler) {
 	} else {
 		// body-based requests will remove header bytes, as they are streamed
 		// in a different block
-		headerByteSize, _ := getHeaderByteSize(handler.HtsReq.GetID(), fileURL)
+		headerByteSize, _ := getHeaderByteSize(fileURL)
 		removedHeadBytes = headerByteSize
 		var region *htsrequest.Region = nil
 		if !handler.HtsReq.AllRegionsRequested() {
@@ -149,9 +150,9 @@ func samtoolsViewSamToBamStream() *htscli.Command {
 	return htscli.SamtoolsView().OutputBAM().StreamFromStdin().GetCommand()
 }
 
-func getHeaderByteSize(id string, fileURL string) (int, error) {
+func getHeaderByteSize(fileURL string) (int, error) {
 	cmd := exec.Command("samtools", "view", "-H", "-b", fileURL)
-	tmpHeader, err := htsconfig.CreateTempFile(id + "_header")
+	tmpHeader, err := htsconfig.CreateTempFile(uuid.New().String() + "_header")
 	if err != nil {
 		return 0, err
 	}

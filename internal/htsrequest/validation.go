@@ -19,6 +19,7 @@ import (
 	"github.com/ga4gh/htsget-refserver/internal/htsconstants"
 	"github.com/ga4gh/htsget-refserver/internal/htserror"
 	"github.com/ga4gh/htsget-refserver/internal/htsutils"
+	"github.com/ga4gh/htsget-refserver/internal/awsutils"
 )
 
 // ParamValidator validates request parameters
@@ -75,13 +76,22 @@ func (v *ParamValidator) ValidateID(htsgetReq *HtsgetRequest, id string) (bool, 
 	// attempt to locate the object by http request (if url) or on local file
 	// path
 	if htsutils.IsValidURL(objPath) {
-		res, err := http.Head(objPath)
-		if err != nil {
-			return false, "The requested resource was not found"
-		}
-		res.Body.Close()
-		if res.Status == "404 Not Found" {
-			return false, "The requested resource was not found"
+		if strings.HasPrefix(objPath, awsutils.S3Proto) {
+			_, err := awsutils.HeadS3Object(awsutils.S3Dto{
+				ObjPath: objPath,
+			})
+			if err != nil {
+				return false, "Error accessing the requested S3 resource"
+			}
+		} else {
+			res, err := http.Head(objPath)
+			if err != nil {
+				return false, "The requested resource was not found"
+			}
+			res.Body.Close()
+			if res.Status == "404 Not Found" {
+				return false, "The requested resource was not found"
+			}
 		}
 	} else {
 		_, err := os.Stat(objPath)
