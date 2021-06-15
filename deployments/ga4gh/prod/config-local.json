@@ -47,7 +47,7 @@
         "createdAt": "2019-09-15T12:00:00Z",
         "updatedAt": "2020-09-04T14:40:00Z",
         "environment": "production",
-        "version": "1.4.1"
+        "version": "1.5.0"
       }
     },
     "variants": {
@@ -85,7 +85,7 @@
         "createdAt": "2020-08-31T08:00:00Z",
         "updatedAt": "2020-09-04T14:40:00Z",
         "environment": "production",
-        "version": "1.4.1"
+        "version": "1.5.0"
       }
     }
   }

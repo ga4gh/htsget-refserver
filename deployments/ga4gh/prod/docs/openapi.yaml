@@ -135,7 +135,7 @@ info:
         To stream NA12878/HG001 variant data, provide the ID `giab.NA12878` 
         to the `/variants/{id}` endpoint
 
-    version: 1.4.1
+    version: 1.5.0
     contact:
         name: GA4GH Tech Team
         url: https://ga4gh.org
