@@ -42,7 +42,7 @@
           "url": "https://ga4gh.org"
         },
         "contactUrl": "mailto:jeremy.adams@ga4gh.org",
-        "documentationUrl": "https://ga4gh.github.io/htsget-refserver/docs/index.html",
+        "documentationUrl": "https://htsget.ga4gh.org/docs/index.html",
         "createdAt": "2019-09-15T12:00:00Z",
         "updatedAt": "2020-09-04T14:40:00Z",
         "environment": "production",
