@@ -11,12 +11,17 @@ var (
 	log *logrus.Logger
 )
 
+func init() {
+	// set up a logrus instance for the application
+	// we need this instantiated in init so it works out of the box without necessarily calling Setup()
+
+	// calling Setup once in main to configure this instance is however the correct way this should be used
+	log = logrus.New()
+}
+
 // Setup sets up the configuration of a global logger variable
 // Should only be called once in the main
 func Setup(logFile string, logLevel string) {
-
-	// set up a logrus instance for the application
-	log = logrus.New()
 
 	// if a log file is specified then lets hook our logger up to that, otherwise leave as default logrus output
 	if htsconfig.GetLogFile() != "" {
