@@ -4,12 +4,13 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/ga4gh/htsget-refserver/internal/htsconfig"
+	log "github.com/ga4gh/htsget-refserver/internal/htslog"
 	"github.com/ga4gh/htsget-refserver/internal/htsserver"
 )
+
 
 // main program entrypoint
 func main() {
@@ -21,6 +22,9 @@ func main() {
 		panic(configLoadError.Error())
 	}
 
+	// set up our global logging instance
+	log.Setup(htsconfig.GetLogFile(), htsconfig.GetLogLevel())
+
 	// load server routes
 	router, err := htsserver.SetRouter()
 	if err != nil {
@@ -30,6 +34,8 @@ func main() {
 
 	// start server
 	port := htsconfig.GetPort()
-	fmt.Printf("Server started on port %s!\n", port)
+
+	log.Info("Server started on port %s!\n", port)
+
 	http.ListenAndServe(":"+port, nil)
 }

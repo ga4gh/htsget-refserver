@@ -15,11 +15,12 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/ga4gh/htsget-refserver/internal/awsutils"
 	"github.com/ga4gh/htsget-refserver/internal/htsconfig"
 	"github.com/ga4gh/htsget-refserver/internal/htsconstants"
 	"github.com/ga4gh/htsget-refserver/internal/htserror"
+	log "github.com/ga4gh/htsget-refserver/internal/htslog"
 	"github.com/ga4gh/htsget-refserver/internal/htsutils"
-	"github.com/ga4gh/htsget-refserver/internal/awsutils"
 )
 
 // ParamValidator validates request parameters
@@ -77,15 +78,19 @@ func (v *ParamValidator) ValidateID(htsgetReq *HtsgetRequest, id string) (bool, 
 	// path
 	if htsutils.IsValidURL(objPath) {
 		if strings.HasPrefix(objPath, awsutils.S3Proto) {
+			log.Debug("Resource with id %s mapped to S3 URL %s so attempting AWS validation", id, objPath)
 			_, err := awsutils.HeadS3Object(awsutils.S3Dto{
 				ObjPath: objPath,
 			})
 			if err != nil {
+				log.Error("ValidateID: %v", err)
 				return false, "Error accessing the requested S3 resource"
 			}
 		} else {
+			log.Debug("Resource with id %s mapped to HTTP URL %s so attempting web validation", id, objPath)
 			res, err := http.Head(objPath)
 			if err != nil {
+				log.Error("ValidateID: %v", err)
 				return false, "The requested resource was not found"
 			}
 			res.Body.Close()
@@ -94,8 +99,10 @@ func (v *ParamValidator) ValidateID(htsgetReq *HtsgetRequest, id string) (bool, 
 			}
 		}
 	} else {
+		log.Debug("Resource with id %s was not a URL format so attempting local file validation of %s", id, objPath)
 		_, err := os.Stat(objPath)
 		if os.IsNotExist(err) {
+			log.Error("ValidateID: %v", err)
 			return false, "The requested resource was not found"
 		}
 	}

@@ -37,6 +37,7 @@ type configurationServerProps struct {
 	Host                 string `json:"host"`
 	DocsDir              string `json:"docsDir"`
 	TempDir              string `json:"tempdir"`
+	LogLevel             string `json:"logLevel"`
 	LogFile              string `json:"logFile"`
 	CorsAllowedOrigins   string `json:"corsAllowedOrigins"`
 	CorsAllowedMethods   string `json:"corsAllowedMethods"`
@@ -175,6 +176,10 @@ func CreateTempFile(filename string) (*os.File, error) {
 
 func RemoveTempfile(file *os.File) error {
 	return os.Remove(file.Name())
+}
+
+func GetLogLevel() string {
+	return getServerProps().LogLevel
 }
 
 func GetLogFile() string {
