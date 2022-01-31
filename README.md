@@ -302,6 +302,9 @@ go test ./internal/htsrequest -coverprofile=cp.out
 
 ## Changelog
 
+**v1.5.0**
+* Supports configurable CORS headers
+
 **v1.4.0**
 * Server supports **experimental** `POST` method for endpoint `/reads/{id}`. Multiple
 genomic regions can be requested in a single request. See
