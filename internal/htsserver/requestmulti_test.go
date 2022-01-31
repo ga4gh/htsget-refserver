@@ -173,6 +173,34 @@ var httpRequestMultiTC = []E2ETestCase{
 		"",
 		"variants-tc-01.vcf",
 	},
+
+	// POST VARIANTS, NOTHING SPECIFIED
+
+	{
+		"POST",
+		"/variants/HG002_GIAB",
+		nil,
+		"{}",
+		"variants-tc-00.vcf.gz",
+	},
+
+	// POST VARIANTS, SINGLE REGION SPECIFIED
+	{
+		"POST",
+		"/variants/HG002_GIAB",
+		nil,
+		"{\"format\":\"VCF\",\"regions\":[{\"referenceName\":\"10\",\"start\":60000000,\"end\":90000000}]}",
+		"variants-tc-02.vcf",
+	},
+
+	// POST VARIANTS, MULTI REGION SPECIFIED
+	{
+		"POST",
+		"/variants/HG002_GIAB",
+		nil,
+		"{\"format\":\"VCF\",\"regions\":[{\"referenceName\":\"10\",\"start\":60000000,\"end\":90000000},{\"referenceName\":\"11\",\"start\":70000000,\"end\":100000000},{\"referenceName\":\"12\",\"start\":80000000,\"end\":110000000}]}",
+		"variants-tc-03.vcf",
+	},
 }
 
 func getHtsgetTicket(server *httptest.Server, tc E2ETestCase) *htsticket.Ticket {

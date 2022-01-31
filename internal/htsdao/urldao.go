@@ -3,9 +3,11 @@ package htsdao
 import (
 	"math"
 	"net/http"
+	"strings"
 
 	"github.com/ga4gh/htsget-refserver/internal/htsconstants"
 	"github.com/ga4gh/htsget-refserver/internal/htsticket"
+	"github.com/ga4gh/htsget-refserver/internal/awsutils"
 )
 
 type URLDao struct {
@@ -21,6 +23,12 @@ func NewURLDao(id string, url string) *URLDao {
 }
 
 func (dao *URLDao) GetContentLength() int64 {
+	if strings.HasPrefix(dao.url, awsutils.S3Proto) {
+		contentLength, _ := awsutils.HeadS3Object(awsutils.S3Dto{
+			ObjPath: dao.url,
+		})
+		return contentLength
+	}
 	res, _ := http.Head(dao.url)
 	return res.ContentLength
 }

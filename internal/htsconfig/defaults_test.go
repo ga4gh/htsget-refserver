@@ -22,6 +22,12 @@ func TestDefaults(t *testing.T) {
 	assert.Equal(t, props.Host, htsconstants.DfltServerPropsHost)
 	assert.Equal(t, props.Port, htsconstants.DfltServerPropsPort)
 
+	assert.Equal(t, props.CorsAllowedOrigins, htsconstants.DfltCorsAllowedOrigins)
+	assert.Equal(t, props.CorsAllowedMethods, htsconstants.DfltCorsAllowedMethods)
+	assert.Equal(t, props.CorsAllowedHeaders, htsconstants.DfltCorsAllowedHeaders)
+	assert.Equal(t, props.CorsAllowCredentials, &htsconstants.DfltCorsAllowCredentials)
+	assert.Equal(t, props.CorsMaxAge, htsconstants.DfltCorsMaxAge)
+
 	// READS DATA SOURCE REGISTRY
 	assert.Equal(t, *reads.Enabled, true)
 

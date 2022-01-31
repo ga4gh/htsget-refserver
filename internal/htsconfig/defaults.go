@@ -26,11 +26,17 @@ var defaultTagsParametersEffectiveVariants = false
 var DefaultConfiguration = &Configuration{
 	Container: &configurationContainer{
 		ServerProps: &configurationServerProps{
-			Port:    htsconstants.DfltServerPropsPort,
-			Host:    htsconstants.DfltServerPropsHost,
-			DocsDir: htsconstants.DfltServerPropsDocsDir,
-			TempDir: htsconstants.DfltServerPropsTempDir,
-			LogFile: htsconstants.DfltServerPropsLogFile,
+			Port:                 htsconstants.DfltServerPropsPort,
+			Host:                 htsconstants.DfltServerPropsHost,
+			DocsDir:              htsconstants.DfltServerPropsDocsDir,
+			TempDir:              htsconstants.DfltServerPropsTempDir,
+			LogFile:              htsconstants.DfltServerPropsLogFile,
+			CorsAllowedOrigins:   htsconstants.DfltCorsAllowedOrigins,
+			CorsAllowedMethods:   htsconstants.DfltCorsAllowedMethods,
+			CorsAllowedHeaders:   htsconstants.DfltCorsAllowedHeaders,
+			CorsAllowCredentials: &htsconstants.DfltCorsAllowCredentials,
+			CorsMaxAge:           htsconstants.DfltCorsMaxAge,
+			AwsAssumeRole:        &htsconstants.DfltAwsAssumeRole,
 		},
 		ReadsConfig: &configurationEndpoint{
 			Enabled: &defaultEnabledReads,

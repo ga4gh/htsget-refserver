@@ -22,6 +22,21 @@ var DfltServerPropsTempDir = "."
 // DfltServerPropsLogFile default logfile to write logs
 var DfltServerPropsLogFile = "htsget-refserver.log"
 
+// Only allow client from origin http://localhost by default
+var DfltCorsAllowedOrigins = "http://localhost"
+
+// Suffice to allow most methods
+var DfltCorsAllowedMethods = "GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD"
+
+// Suffice to allow all headers since access control mainly controlled by AllowedOrigins field
+var DfltCorsAllowedHeaders = "*"
+
+var DfltCorsAllowCredentials = false
+
+var DfltCorsMaxAge = 300
+
+var DfltAwsAssumeRole = false
+
 /* **************************************************
  * READS DATA SOURCE REGISTRY
  * ************************************************** */

@@ -5,7 +5,8 @@
       "host": "https://htsget.ga4gh.org/",
       "docsDir": "./deployments/ga4gh/prod/docs/",
       "tempDir": "/tmp/",
-      "logFile": "/usr/src/app/htsget-refserver.log"
+      "logFile": "/usr/src/app/htsget-refserver.log",
+      "corsAllowedOrigins": "*"
     },
     "reads": {
       "enabled": true,
@@ -42,11 +43,11 @@
           "url": "https://ga4gh.org"
         },
         "contactUrl": "mailto:jeremy.adams@ga4gh.org",
-        "documentationUrl": "https://ga4gh.github.io/htsget-refserver/docs/index.html",
+        "documentationUrl": "https://htsget.ga4gh.org/docs/index.html",
         "createdAt": "2019-09-15T12:00:00Z",
         "updatedAt": "2020-09-04T14:40:00Z",
         "environment": "production",
-        "version": "1.4.1"
+        "version": "1.5.0"
       }
     },
     "variants": {
@@ -80,11 +81,11 @@
           "url": "https://ga4gh.org"
         },
         "contactUrl": "mailto:jeremy.adams@ga4gh.org",
-        "documentationUrl": "https://ga4gh.github.io/htsget-refserver/docs/index.html",
+        "documentationUrl": "https://htsget.ga4gh.org/docs/index.html",
         "createdAt": "2020-08-31T08:00:00Z",
         "updatedAt": "2020-09-04T14:40:00Z",
         "environment": "production",
-        "version": "1.4.1"
+        "version": "1.5.0"
       }
     }
   }
