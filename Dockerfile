@@ -1,4 +1,4 @@
-FROM golang:latest
+FROM golang:1.14.4
 
 WORKDIR /usr/src/app
 
@@ -47,6 +47,5 @@ RUN go mod download github.com/ga4gh/htsget-refserver-utils@v1.0.0 \
 ENV PATH="/usr/local:${PATH}"
 
 RUN go build -o ./htsget-refserver ./cmd
-EXPOSE 3000
 
 CMD ["./htsget-refserver"]

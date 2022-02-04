@@ -10,9 +10,9 @@ info:
         which streams open alignment and variant datasets according to the
         [GA4GH htsget protocol](http://samtools.github.io/hts-specs/htsget.html).
 
-        The API's base url is: https://htsget.ga4gh-apps.org/
-        * ex: https://htsget.ga4gh-apps.org/reads/service-info
-        * ex: https://htsget.ga4gh-apps.org/variants/service-info
+        The API's base url is: https://htsget.ga4gh.org/
+        * ex: https://htsget.ga4gh.org/reads/service-info
+        * ex: https://htsget.ga4gh.org/variants/service-info
 
         # Datasets
         This section lists the various open datasets that are available via the
@@ -150,7 +150,7 @@ info:
         href: https://ga4gh.org
 
 servers:
-    - url: https://htsget.ga4gh-apps.org
+    - url: https://htsget.ga4gh.org
       description: Production htsget reference server API
 
 paths:
@@ -588,7 +588,7 @@ components:
                 url:
                     type: string
                     description: Data transfer URL
-                    example: https://htsget.ga4gh-apps.org/reads/data/object00001?referenceName=chr1
+                    example: https://htsget.ga4gh.org/reads/data/object00001?referenceName=chr1
                 headers:
                     $ref: '#/components/schemas/HtsgetHeaders'
                 class:
@@ -636,7 +636,7 @@ components:
                                         - $ref: '#/components/schemas/HtsgetUrl'
                                         - properties:
                                             url:
-                                                example: https://htsget.ga4gh-apps.org/variants/data/00001
+                                                example: https://htsget.ga4gh.org/variants/data/00001
                                             headers:
                                                 allOf:
                                                     - $ref: '#/components/schemas/HtsgetHeaders'

@@ -2,7 +2,7 @@
   "htsgetConfig": {
     "props": {
       "port": "80",
-      "host": "https://htsget.ga4gh-apps.org/",
+      "host": "https://htsget.ga4gh.org/",
       "docsDir": "./deployments/ga4gh/prod/docs/",
       "tempDir": "/tmp/",
       "logFile": "/usr/src/app/htsget-refserver.log",
@@ -43,7 +43,7 @@
           "url": "https://ga4gh.org"
         },
         "contactUrl": "mailto:jeremy.adams@ga4gh.org",
-        "documentationUrl": "https://htsget.ga4gh-apps.org/docs/index.html",
+        "documentationUrl": "https://htsget.ga4gh.org/docs/index.html",
         "createdAt": "2019-09-15T12:00:00Z",
         "updatedAt": "2020-09-04T14:40:00Z",
         "environment": "production",
@@ -81,7 +81,7 @@
           "url": "https://ga4gh.org"
         },
         "contactUrl": "mailto:jeremy.adams@ga4gh.org",
-        "documentationUrl": "https://htsget.ga4gh-apps.org/docs/index.html",
+        "documentationUrl": "https://htsget.ga4gh.org/docs/index.html",
         "createdAt": "2020-08-31T08:00:00Z",
         "updatedAt": "2020-09-04T14:40:00Z",
         "environment": "production",

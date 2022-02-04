@@ -8,7 +8,7 @@
 
 Reference server implementation of the htsget API protocol for securely streaming genomic data. For more information about htsget, see the [paper](https://academic.oup.com/bioinformatics/article/35/1/119/5040320) or [specification](http://samtools.github.io/hts-specs/htsget.html).
 
-A GA4GH-hosted instance of this server is running at `https://htsget.ga4gh-apps.org/`. To use, see the [OpenAPI documentation](https://htsget.ga4gh-apps.org/docs/index.html).
+A GA4GH-hosted instance of this server is running at `https://htsget.ga4gh.org/`. To use, see the [OpenAPI documentation](https://htsget.ga4gh.org/docs/index.html).
 
 ## Quickstart - Docker
 
@@ -69,7 +69,7 @@ The htsget web service can be configured with runtime parameters via a JSON conf
 
 Examples of valid JSON config files are available in this repository:
 
-* [ga4gh instance config](./deployments/ga4gh/prod/config-server.json) - used to run the GA4GH-hosted instance at https://htsget.ga4gh-apps.org
+* [ga4gh instance config](./deployments/ga4gh/prod/config-server.json) - used to run the GA4GH-hosted instance at https://htsget.ga4gh.org
 * [local development config](./deployments/ga4gh/prod/config-local.json) - used to run the local instance for development
 * [integration tests config](./data/config/integration-tests.config.json) - used for integration testing on Travis CI builds
 * [example 0 config](./data/config/example-0.config.json)
@@ -108,7 +108,7 @@ Example `props` object:
     "htsget": {
         "props": {
             "port": "80",
-            "host": "https://htsget.ga4gh-apps.org/",
+            "host": "https://htsget.ga4gh.org/",
             "tempdir": "/tmp/",
             "logfile": "/usr/src/app/htsget-refserver.log",
             "corsAllowedOrigins": "https://portal.ga4gh.org, http://intranet.ga4gh.org",
