@@ -18,7 +18,7 @@ var configFileSingletonLoaded = false
 
 var configFileSingletonLoadedError error
 
-// LoadConfigFile instanties config file singleton with correct runtime properties
+// LoadConfigFile instantiates config file singleton with correct runtime properties
 func LoadConfigFile() {
 	// get config file path from cli
 	filePath := getCliArgs().configFile

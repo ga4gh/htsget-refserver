@@ -7,6 +7,7 @@ package htsconfig
 
 import (
 	"github.com/ga4gh/htsget-refserver/internal/htsconstants"
+	log "github.com/sirupsen/logrus"
 )
 
 var defaultServiceType = &ServiceType{
@@ -30,7 +31,10 @@ var DefaultConfiguration = &Configuration{
 			Host:                 htsconstants.DfltServerPropsHost,
 			DocsDir:              htsconstants.DfltServerPropsDocsDir,
 			TempDir:              htsconstants.DfltServerPropsTempDir,
-			LogFile:              htsconstants.DfltServerPropsLogFile,
+			// default to info
+			LogLevel:          	  log.InfoLevel.String(),
+			// default to an empty log file name - saying basically we should just log to stderr
+			LogFile:              "",
 			CorsAllowedOrigins:   htsconstants.DfltCorsAllowedOrigins,
 			CorsAllowedMethods:   htsconstants.DfltCorsAllowedMethods,
 			CorsAllowedHeaders:   htsconstants.DfltCorsAllowedHeaders,
