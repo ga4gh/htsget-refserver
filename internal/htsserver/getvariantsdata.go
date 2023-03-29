@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/ga4gh/htsget-refserver/internal/htscli"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/ga4gh/htsget-refserver/internal/htsconfig"
 	"github.com/ga4gh/htsget-refserver/internal/htsconstants"
@@ -23,6 +24,7 @@ func getVariantsData(writer http.ResponseWriter, request *http.Request) {
 func getVariantsDataHandler(handler *requestHandler) {
 	fileURL, err := htsconfig.GetObjectPath(handler.HtsReq.GetEndpoint(), handler.HtsReq.GetID())
 	if err != nil {
+		log.Debugf("error in getVariantsDataHandler GetObjectPath, %v", err)
 		return
 	}
 

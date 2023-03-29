@@ -5,7 +5,9 @@
 // Module region contains genomic intervals
 package htsrequest
 
-import "strconv"
+import (
+	"strconv"
+)
 
 // Region defines a simple genomic interval: contig name, start, and end position
 type Region struct {

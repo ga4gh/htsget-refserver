@@ -12,6 +12,7 @@ import (
 	"reflect"
 
 	"github.com/ga4gh/htsget-refserver/internal/htsconstants"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/ga4gh/htsget-refserver/internal/htsutils"
 
@@ -112,6 +113,7 @@ func LoadConfig() {
 
 	configFileLoadError := getConfigFileLoadError()
 	if configFileLoadError != nil {
+		log.Debugf("error loading configuration: %v", configFileLoadError)
 		configurationSingletonLoadedError = errors.New(configFileLoadError.Error())
 	}
 

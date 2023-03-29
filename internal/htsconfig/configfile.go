@@ -10,6 +10,8 @@ import (
 	"errors"
 	"io/ioutil"
 	"os"
+
+	log "github.com/sirupsen/logrus"
 )
 
 var configFileSingleton *Configuration
@@ -26,26 +28,31 @@ func LoadConfigFile() {
 	// check if the file doesn't exist, and if file is not valid JSON
 	if os.IsNotExist(err) {
 		configFileSingletonLoadedError = errors.New("The specified config file doesn't exist: " + filePath)
+		log.Debugf("error in HeadObject: %v", configFileSingletonLoadedError)
 		return
 	}
 	if err != nil {
 		configFileSingletonLoadedError = errors.New(err.Error())
+		log.Debugf("error in HeadObject: %v", configFileSingletonLoadedError)
 		return
 	}
 	jsonFile, err := os.Open(filePath)
 	if err != nil {
 		configFileSingletonLoadedError = errors.New(err.Error())
+		log.Debugf("error in Open: %v", configFileSingletonLoadedError)
 		return
 	}
 	jsonContent, err := ioutil.ReadAll(jsonFile)
 	if err != nil {
 		configFileSingletonLoadedError = errors.New(err.Error())
+		log.Debugf("error in ReadAll: %v", configFileSingletonLoadedError)
 		return
 	}
 
 	err = json.Unmarshal(jsonContent, &configFileSingleton)
 	if err != nil {
 		configFileSingletonLoadedError = errors.New(err.Error())
+		log.Debugf("error in Unmarshal: %v", configFileSingletonLoadedError)
 	}
 	configFileSingletonLoaded = true
 }

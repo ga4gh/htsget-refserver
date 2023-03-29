@@ -2,10 +2,13 @@ package awsutils
 
 import (
 	"context"
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/config"
 	"os"
 	"strconv"
+
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+
+	log "github.com/sirupsen/logrus"
 )
 
 func SetProfile(profileName string) {
@@ -32,6 +35,7 @@ func UnsetCredentials() {
 func GetCredentials() (*aws.Credentials, error) {
 	cfg, cfgErr := config.LoadDefaultConfig(context.TODO())
 	if cfgErr != nil {
+		log.Debugf("error in LoadDefaultConfig: %v", cfgErr)
 		return nil, cfgErr
 	}
 

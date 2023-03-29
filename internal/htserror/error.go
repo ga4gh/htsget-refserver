@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // htsgetError contains attributes to write an error as an HTTP response,
@@ -26,6 +28,7 @@ type errorContainer struct {
 
 // Error displays htsgetError attributes as a string
 func (err *htsgetError) Error() string {
+	log.Debug("some error: %v", err.Htsget.Error)
 	return fmt.Sprint(err.Htsget.Error + ": " + err.Htsget.Message)
 }
 
