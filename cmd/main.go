@@ -4,7 +4,7 @@
 package main
 
 import (
-	"fmt"
+	"flag"
 	"net/http"
 
 	"github.com/ga4gh/htsget-refserver/internal/htsconfig"
@@ -14,6 +14,10 @@ import (
 
 // main program entrypoint
 func main() {
+
+	TLSCert := flag.String("cert", "/certs/server.crt", "TLS Server certificate")
+	TLSKey := flag.String("key", "/certs/server.key", "TLS encryption key")
+	NoTLS := flag.Bool("notls", false, "Run server without TLS")
 
 	log.SetLevel(log.InfoLevel)
 	// load configuration object
@@ -34,8 +38,13 @@ func main() {
 
 	// start server
 	port := htsconfig.GetPort()
-	fmt.Printf("Server started on port %s!\n", port)
-	http.ListenAndServe(":"+port, logRequest(http.DefaultServeMux))
+	if *NoTLS {
+		log.Infof("Insecure HTTP Server started on port %s!", port)
+		log.Fatal(http.ListenAndServe(":"+port, logRequest(http.DefaultServeMux)))
+	} else {
+		log.Infof("Server started on port %s!", port)
+		log.Fatal(http.ListenAndServeTLS(":"+port, *TLSCert, *TLSKey, logRequest(http.DefaultServeMux)))
+	}
 }
 
 func logRequest(handler http.Handler) http.Handler {
