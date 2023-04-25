@@ -20,7 +20,13 @@ var DfltServerPropsDocsDir = ""
 var DfltServerPropsTempDir = "."
 
 // DfltServerPropsLogFile default logfile to write logs
-var DfltServerPropsLogFile = "htsget-refserver.log"
+var DfltServerPropsLogFile = ""
+
+// DfltServerPropsLogFormat default format when writing logs
+var DfltServerPropsLogFormat = ""
+
+// DfltServerPropsLogLevel default log level
+var DfltServerPropsLogLevel = "info"
 
 // Only allow client from origin http://localhost by default
 var DfltCorsAllowedOrigins = "http://localhost"

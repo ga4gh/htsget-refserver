@@ -31,6 +31,8 @@ var DefaultConfiguration = &Configuration{
 			DocsDir:              htsconstants.DfltServerPropsDocsDir,
 			TempDir:              htsconstants.DfltServerPropsTempDir,
 			LogFile:              htsconstants.DfltServerPropsLogFile,
+			LogFormat:            htsconstants.DfltServerPropsLogFormat,
+			LogLevel:             htsconstants.DfltServerPropsLogLevel,
 			CorsAllowedOrigins:   htsconstants.DfltCorsAllowedOrigins,
 			CorsAllowedMethods:   htsconstants.DfltCorsAllowedMethods,
 			CorsAllowedHeaders:   htsconstants.DfltCorsAllowedHeaders,
