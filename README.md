@@ -1,6 +1,7 @@
 [![Logo](https://www.ga4gh.org/wp-content/themes/ga4gh-theme/gfx/GA-logo-horizontal-tag-RGB.svg)](https://ga4gh.org)
 
 # htsget Reference Server
+
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat-square)](https://opensource.org/licenses/Apache-2.0)
 [![Go Report](https://goreportcard.com/badge/github.com/ga4gh/htsget-refserver)](https://goreportcard.com/badge/github.com/ga4gh/htsget-refserver)
 [![Travis (.org) branch](https://img.shields.io/travis/ga4gh/htsget-refserver/master.svg?style=flat-square)](https://travis-ci.org/ga4gh/htsget-refserver)
@@ -16,17 +17,23 @@ We suggest running the reference server as a docker container, as the image come
 pre-installed with all dependencies.
 
 With docker installed, run:
-```
+
+```cmd
 docker image pull ga4gh/htsget-refserver:${TAG}
 ```
+
 to pull the image, and:
-```
+
+```cmd
 docker container run -d -p 3000:3000 ga4gh/htsget-refserver:${TAG}
 ```
+
 to spin up a containerized server. Custom config files can also be passed to the application by first mounting the directory containing the config, and specifying the path to config in the run command:
-```
+
+```cmd
 docker container run -d -p ${PORT}:${PORT} -v /directory/to/config:/usr/src/app/config ga4gh/htsget-refserver:${TAG} ./htsget-refserver -config /usr/src/app/config/config.json
 ```
+
 Additional BAM/CRAM/VCF/BCF directories you wish to serve via htsget can also be mounted into the container. See the **Configuration** section below for instructions on how to serve custom datasets.
 
 The full list of tags/versions is available on the [dockerhub repository page](https://hub.docker.com/repository/docker/ga4gh/htsget-refserver).
@@ -43,27 +50,35 @@ To run and/or develop the server natively on your OS, the following **dependenci
 This project uses [Go modules](https://blog.golang.org/using-go-modules) to manage packages and dependencies.
 
 With the above dependencies installed, run:
-```
+
+```cmd
 git clone https://github.com/ga4gh/htsget-refserver.git
 cd htsget-refserver
 ```
+
 to clone and enter the repository, and:
-```
+
+```cmd
 go build -o ./htsget-refserver ./cmd
 ```
+
 to build the application binary. To start, run:
-```
+
+```cmd
 ./htsget-refserver
 ```
+
 A custom config file can also be specified with `-config`:
-```
+
+```cmd
 ./htsget-refserver -config /path/to/config.json
 ```
 
 ## Configuration
 
 The htsget web service can be configured with runtime parameters via a JSON config file, specified with `-config`. For example:
-```
+
+```cmd
 ./htsget-refserver -config /path/to/config.json
 ```
 
@@ -77,7 +92,7 @@ Examples of valid JSON config files are available in this repository:
 
 In the JSON file, the root object must have a single "htsgetConfig" property, containing all sub-properties. ie:
 
-```
+```json
 {
     "htsgetConfig": {}
 }
@@ -87,23 +102,25 @@ In the JSON file, the root object must have a single "htsgetConfig" property, co
 
 Under the `htsgetConfig` property, the `props` object overrides application-wide settings. The following table indicates the attributes of `props` and what settings they affect.
 
-| Name | Description |  Default Value | 
-|------|-------------|----------------|
-| port | the port on which the service will run | 3000 | 
-| host | web service hostname. The JSON ticket returned by the server will reference other endpoints, using this hostname/base url to provide a complete url. | http://localhost:3000/ | 
-| docsDir | path to static file directory containing server documentation (e.g. OpenAPI). the server will serve its contents at the `/docs/` endpoint | NONE |
-| tempDir | writes temporary files used in request processing to this directory | . |
-| logFile | writes application logs to this file | htsget-refserver.log |
-| corsAllowedOrigins | CORS allow client from origins. Use comma to separate for multiple origins. | http://localhost |
-| corsAllowedMethods | CORS allow methods. | GET, POST, PUT, DELETE, OPTIONS |
-| corsAllowedHeaders | CORS allow headers.  | * |
-| corsAllowCredentials | CORS allow credentials.  | false |
-| corsMaxAge | CORS max age in seconds.  | 300 |
-| awsAssumeRole | Turn on `awsAssumeRole` middleware. See **Private Bucket** section below. | false |
+| Name                 | Description                                                                                                                                          | Default Value                   |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------- |
+| port                 | the port on which the service will run                                                                                                               | 3000                            |
+| host                 | web service hostname. The JSON ticket returned by the server will reference other endpoints, using this hostname/base url to provide a complete url. | `http://localhost:3000/`        |
+| docsDir              | path to static file directory containing server documentation (e.g. OpenAPI). the server will serve its contents at the `/docs/` endpoint            | NONE                            |
+| tempDir              | writes temporary files used in request processing to this directory                                                                                  | .                               |
+| logFile              | writes application logs to this file                                                                                                                 | htsget-refserver.log            |
+| logFormat            | Writes logs in the specified format (text or json)                                                                                                   | text                            |
+| logLevel             | writes application logs on the specified verbosity level                                                                                             | info                            |
+| corsAllowedOrigins   | CORS allow client from origins. Use comma to separate for multiple origins.                                                                          | `http://localhost`              |
+| corsAllowedMethods   | CORS allow methods.                                                                                                                                  | GET, POST, PUT, DELETE, OPTIONS |
+| corsAllowedHeaders   | CORS allow headers.                                                                                                                                  | *                               |
+| corsAllowCredentials | CORS allow credentials.                                                                                                                              | false                           |
+| corsMaxAge           | CORS max age in seconds.                                                                                                                             | 300                             |
+| awsAssumeRole        | Turn on `awsAssumeRole` middleware. See **Private Bucket** section below.                                                                            | false                           |
 
 Example `props` object:
 
-```
+```json
 {
     "htsget": {
         "props": {
@@ -123,23 +140,23 @@ Under the `htsgetConfig` property, the `reads` object overrides settings for rea
 
 * `enabled` (boolean): if true, the server will set up reads-related routes (ie. `/reads/{id}`, `/reads/service-info`). True by default.
 * `dataSourceRegistry` (object): allows the server to serve alignment data from multiple cloud or local storage sources by mapping request object id patterns to registered data sources. A single `sources` property contains an array of data sources. For each data source, the following properties are required:
-    * `pattern` - a regex pattern that the `id` in `/reads/{id}` is matched against. If an `id` matches the pattern, the server will attempt to load data from the specified source. The pattern should make use of named capture group(s) to populate the path to the file.
-    * `path` - the path template (either by url or local file path) to alignment files matching the pattern. The path must indicate how named capture groups in the pattern will populate the path to the file.
+  * `pattern` - a regex pattern that the `id` in `/reads/{id}` is matched against. If an `id` matches the pattern, the server will attempt to load data from the specified source. The pattern should make use of named capture group(s) to populate the path to the file.
+  * `path` - the path template (either by url or local file path) to alignment files matching the pattern. The path must indicate how named capture groups in the pattern will populate the path to the file.
 * `serviceInfo` (object): specify the attribute values returned in the Service Info response from `/reads/service-info`. Default attributes are supplied if not provided by config. Allows modification of the following properties from the Service Info specification:
-    * `id`
-    * `name`
-    * `description`
-    * `organization`
-    * `contactUrl`
-    * `documentationUrl`
-    * `createdAt`
-    * `updatedAt`
-    * `environment`
-    * `version`)
+  * `id`
+  * `name`
+  * `description`
+  * `organization`
+  * `contactUrl`
+  * `documentationUrl`
+  * `createdAt`
+  * `updatedAt`
+  * `environment`
+  * `version`)
 
 Example `reads` object:
 
-```
+```json
 {
     "htsgetConfig": {
         "reads": {
@@ -182,23 +199,23 @@ Under the `htsgetConfig` property, the `variants` object overrides settings for 
 
 * `enabled` (boolean): if true, the server will set up variants-related routes (ie. `/variants/{id}`, `/variants/service-info`). True by default.
 * `dataSourceRegistry` (object): allows the server to serve variant data from multiple cloud or local storage sources by mapping request object id patterns to registered data sources. A single `sources` property contains an array of data sources. For each data source, the following properties are required:
-    * `pattern` - a regex pattern that the `id` in `/variants/{id}` is matched against. If an `id` matches the pattern, the server will attempt to load data from the specified source. The pattern should make use of named capture group(s) to populate the path to the file.
-    * `path` - the path template (either by url or local file path) to variant files matching the pattern. The path must indicate how named capture groups in the pattern will populate the path to the file.
+  * `pattern` - a regex pattern that the `id` in `/variants/{id}` is matched against. If an `id` matches the pattern, the server will attempt to load data from the specified source. The pattern should make use of named capture group(s) to populate the path to the file.
+  * `path` - the path template (either by url or local file path) to variant files matching the pattern. The path must indicate how named capture groups in the pattern will populate the path to the file.
 * `serviceInfo` (object): specify the attribute values returned in the Service Info response from `/variants/service-info`. Default attributes are supplied if not provided by config. Allows modification of the following properties from the Service Info specification:
-    * `id`
-    * `name`
-    * `description`
-    * `organization`
-    * `contactUrl`
-    * `documentationUrl`
-    * `createdAt`
-    * `updatedAt`
-    * `environment`
-    * `version`)
+  * `id`
+  * `name`
+  * `description`
+  * `organization`
+  * `contactUrl`
+  * `documentationUrl`
+  * `createdAt`
+  * `updatedAt`
+  * `environment`
+  * `version`)
 
 Example `variants` object:
 
-```
+```json
 {
     "htsgetConfig": {
         "variants": {
@@ -233,17 +250,19 @@ Example `variants` object:
 
 ## Private Bucket
 
-- Turn on `awsAssumeRole` [middleware](https://github.com/go-chi/chi#middleware-handlers) request interceptor to support AWS [Assume Role](https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRole.html) temporary security credentials loading to access S3 private bucket.
+* Turn on `awsAssumeRole` [middleware](https://github.com/go-chi/chi#middleware-handlers) request interceptor to support AWS [Assume Role](https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRole.html) temporary security credentials loading to access S3 private bucket.
 
-- When it is not configured, the default `awsAssumeRole` set to `false` such that execution environment know how to access S3 private bucket through AWS [standard mechanism](https://aws.github.io/aws-sdk-go-v2/docs/configuring-sdk/). In that case, see [htslib AWS S3 plugin](http://www.htslib.org/doc/htslib-s3-plugin.html) for credentials loading requirement.
+* When it is not configured, the default `awsAssumeRole` set to `false` such that execution environment know how to access S3 private bucket through AWS [standard mechanism](https://aws.github.io/aws-sdk-go-v2/docs/configuring-sdk/). In that case, see [htslib AWS S3 plugin](http://www.htslib.org/doc/htslib-s3-plugin.html) for credentials loading requirement.
 
 Say, you have data in private bucket as follows:
-```
+
+```cmd
 s3://my-primary-data-prod/Project/PID00115/WGS/PID00115-final.bam
 ```
 
 Example configuration:
-```
+
+```json
 {
   "htsgetConfig": {
     "props": {
@@ -285,52 +304,59 @@ Example configuration:
 ```
 
 Then you can call Htsget as follows:
-```
+
+```cmd
 curl -s http://localhost:3000/reads/my-primary-data-prod/Project/PID00115/WGS/PID00115-final.bam | jq
 ```
 
 ## Testing
 
 To execute unit and end-to-end tests on the entire package, run:
-```
+
+```cmd
 go test ./... -coverprofile=cp.out
 ```
+
 The go coverage report will be available at `./cp.out`. To execute tests for a specific package (for example the `htsrequest` package) run:
-```
+
+```cmd
 go test ./internal/htsrequest -coverprofile=cp.out
 ```
 
 ## Changelog
 
-**v1.5.0**
+### **v1.5.0**
+
 * Supports configurable CORS headers
 
-**v1.4.0**
+### **v1.4.0**
+
 * Server supports **experimental** `POST` method for endpoint `/reads/{id}`. Multiple
 genomic regions can be requested in a single request. See
 [hts-specs PR #285](https://github.com/samtools/hts-specs/pull/285) for more info.
 
-**v1.3.0**
+### **v1.3.0**
+
 * Server supports reads and/or variants `service-info` endpoints. The attributes of the `service-info` response can be specified via the config file independently for each datatype 
 
-**v1.2.0**
+### **v1.2.0**
 
 * Server supports htsget `/variants/{id}` endpoint, streams VCFs via htsget protocol
 using bcftools dependency
 
-**v1.1.0**
+### **v1.1.0**
 
 * Added support for configurable data sources via a data source registry specified
 in config file
 * server can stream reads data via htsget protocol from any **url** or **local file** specified via config 
 
-**v1.0.0**
+### **v1.0.0**
 
 * Initial release
 
 ## Roadmap
 
-* Implement `POST` request functionality 
+* Implement `POST` request functionality
 
 ## Maintainers
 
