@@ -28,7 +28,7 @@ type errorContainer struct {
 
 // Error displays htsgetError attributes as a string
 func (err *htsgetError) Error() string {
-	log.Debug("some error: %v", err.Htsget.Error)
+	log.Debugf("some error: %v", err.Htsget.Error)
 	return fmt.Sprint(err.Htsget.Error + ": " + err.Htsget.Message)
 }
 

@@ -44,7 +44,7 @@ func (t *ParamTransformer) TransformStringToInt(s string) (int, string) {
 	msg := ""
 	value, err := strconv.Atoi(s)
 	if err != nil {
-		log.Debug("error in TransformStringToInt, %v", err)
+		log.Debugf("error in TransformStringToInt, %v", err)
 		msg = fmt.Sprintf("Could not parse value: '%s', integer expected", s)
 	}
 	return value, msg

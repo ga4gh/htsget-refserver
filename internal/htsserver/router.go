@@ -65,7 +65,7 @@ func SetRouter() (*chi.Mux, error) {
 	if docsDir != "" {
 		absDocsDir, err := filepath.Abs(docsDir)
 		if err != nil {
-			log.Debug("error adding the static files route, %v", err)
+			log.Debugf("error adding the static files route, %v", err)
 			return nil, err
 		}
 		http.Handle("/docs/", http.StripPrefix("/docs/", http.FileServer(http.Dir(absDocsDir))))

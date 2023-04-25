@@ -138,7 +138,7 @@ func parseReqBodyParam(requestBodyBytes []byte, key string) (reflect.Value, bool
 	partialRequestBodyObj := newPartialRequestBody(key)
 	err := json.Unmarshal(requestBodyBytes, partialRequestBodyObj)
 	if err != nil {
-		log.Debug("error unmarshaling in parseReqBodyParam, %v", err)
+		log.Debugf("error unmarshaling in parseReqBodyParam, %v", err)
 		msg := "Could not parse request body, offending attribute: '" + key + "'. Value is malformed or incorrect datatype"
 		return reflect.ValueOf(nil), false, errors.New(msg)
 	}

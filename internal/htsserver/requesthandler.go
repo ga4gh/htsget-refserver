@@ -32,7 +32,7 @@ func (reqHandler *requestHandler) setup(writer http.ResponseWriter, request *htt
 	// set all parameters
 	htsgetReq, err := htsrequest.SetAllParameters(reqHandler.method, reqHandler.endpoint, writer, request)
 	if err != nil {
-		log.Debug("error set all parameters request, %v", err)
+		log.Debugf("error set all parameters request, %v", err)
 		return err
 	}
 	// assign writer, golang request, and htsget request objects to the handler
@@ -47,14 +47,14 @@ func (reqHandler *requestHandler) handleRequest(writer http.ResponseWriter, requ
 	// setup, create generic htsgetRequest and set to handler
 	setupErr := reqHandler.setup(writer, request)
 	if setupErr != nil {
-		log.Debug("error setting up request, %v", setupErr)
+		log.Debugf("error setting up request, %v", setupErr)
 		return setupErr
 	}
 	//log.Debug("reqHandler %v", reqHandler.Request)
 	// after setup, perform any postprocessing steps on the generic htsgetRequest
 	afterSetupErr := reqHandler.afterSetupFunc(reqHandler)
 	if afterSetupErr != nil {
-		log.Debug("error after setting up request, %v", afterSetupErr)
+		log.Debugf("error after setting up request, %v", afterSetupErr)
 		return afterSetupErr
 	}
 

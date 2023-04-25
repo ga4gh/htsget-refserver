@@ -45,12 +45,12 @@ func (dto *S3Dto) NewS3Client() S3ClientApi {
 func HeadS3Object(dto S3Dto) (int64, error) {
 	client := dto.NewS3Client()
 	bucketName, objKeyName := dto.getBucketAndKey()
-	log.Debug("client in s3Head %v", client)
+	log.Debugf("client in s3Head %v", client)
 	headResp, herr := client.HeadObject(context.TODO(), &s3.HeadObjectInput{
 		Bucket: aws.String(bucketName),
 		Key:    aws.String(objKeyName),
 	})
-	log.Debug("response from head %v", headResp)
+	log.Debugf("response from head %v", headResp)
 	if herr != nil {
 		log.Debugf("error in HeadObject: %v", herr)
 		return 0, herr
