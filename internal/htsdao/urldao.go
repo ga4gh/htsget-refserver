@@ -34,6 +34,11 @@ func (dao *URLDao) GetContentLength(request *http.Request) int64 {
 		return contentLength
 	}
 	req, err := http.NewRequest("HEAD", dao.url, nil)
+	if err != nil {
+		log.Errorf("error creating the request, %v", err)
+		
+		return 0
+	}
 	if request.Header.Get("Authorization") != "" {
 		req.Header.Set("Authorization", request.Header.Get("Authorization"))
 	}
