@@ -15,11 +15,12 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/ga4gh/htsget-refserver/internal/awsutils"
 	"github.com/ga4gh/htsget-refserver/internal/htsconfig"
 	"github.com/ga4gh/htsget-refserver/internal/htsconstants"
 	"github.com/ga4gh/htsget-refserver/internal/htserror"
 	"github.com/ga4gh/htsget-refserver/internal/htsutils"
-	"github.com/ga4gh/htsget-refserver/internal/awsutils"
+	log "github.com/sirupsen/logrus"
 )
 
 // ParamValidator validates request parameters
@@ -70,6 +71,7 @@ func (v *ParamValidator) NoValidation(htsgetReq *HtsgetRequest, value string) (b
 func (v *ParamValidator) ValidateID(htsgetReq *HtsgetRequest, id string) (bool, string) {
 	objPath, err := htsconfig.GetObjectPath(htsgetReq.GetEndpoint(), id)
 	if err != nil {
+		log.Errorf("error in ValidateID, %v", err)
 		return false, "The requested resource could not be associated with a registered data source"
 	}
 
@@ -81,11 +83,15 @@ func (v *ParamValidator) ValidateID(htsgetReq *HtsgetRequest, id string) (bool, 
 				ObjPath: objPath,
 			})
 			if err != nil {
+				log.Errorf("error in has prefix, %v", err)
 				return false, "Error accessing the requested S3 resource"
 			}
 		} else {
-			res, err := http.Head(objPath)
+			req, err := http.NewRequest("HEAD", objPath, nil)
+			req.Header = htsgetReq.headers
+			res, err := http.DefaultClient.Do(req)
 			if err != nil {
+				log.Errorf("error get head, %v", err)
 				return false, "The requested resource was not found"
 			}
 			res.Body.Close()
@@ -96,6 +102,7 @@ func (v *ParamValidator) ValidateID(htsgetReq *HtsgetRequest, id string) (bool, 
 	} else {
 		_, err := os.Stat(objPath)
 		if os.IsNotExist(err) {
+			log.Errorf("error get stat, %v", err)
 			return false, "The requested resource was not found"
 		}
 	}
@@ -130,12 +137,14 @@ func getReferenceNamesInReadsObject(htsgetReq *HtsgetRequest) ([]string, error) 
 	var referenceNames []string
 	fileURL, err := htsconfig.GetObjectPath(htsgetReq.GetEndpoint(), htsgetReq.GetID())
 	if err != nil {
+		log.Errorf("error get object path, %v", err)
 		return nil, err
 	}
 
 	cmd := exec.Command("samtools", "view", "-H", fileURL)
 	pipe, err := cmd.StdoutPipe()
 	if err != nil {
+		log.Errorf("error stdout pipe, %v", err)
 		return nil, err
 	}
 
@@ -155,6 +164,7 @@ func getReferenceNamesInReadsObject(htsgetReq *HtsgetRequest) ([]string, error) 
 	// likely the file was not found
 	err = cmd.Wait()
 	if err != nil {
+		log.Errorf("error in wait, %v", err)
 		return nil, errors.New("Could not get referenceNames from requested alignment file")
 	}
 
@@ -165,11 +175,13 @@ func getReferenceNamesInVariantsObject(htsgetReq *HtsgetRequest) ([]string, erro
 	var referenceNames []string
 	fileURL, err := htsconfig.GetObjectPath(htsgetReq.GetEndpoint(), htsgetReq.GetID())
 	if err != nil {
+		log.Errorf("error object path ref, %v", err)
 		return nil, err
 	}
 	cmd := exec.Command("bcftools", "view", "-h", fileURL)
 	pipe, err := cmd.StdoutPipe()
 	if err != nil {
+		log.Errorf("error stdout pipe ref, %v", err)
 		return nil, err
 	}
 
@@ -352,6 +364,7 @@ func (v *ParamValidator) ValidateRegions(htsgetReq *HtsgetRequest, regions []*Re
 
 	allowedReferenceNames, err := getReferenceNames(htsgetReq)
 	if err != nil {
+		log.Errorf("error in ValidateRegions, %v", err)
 		return false, err.Error()
 	}
 

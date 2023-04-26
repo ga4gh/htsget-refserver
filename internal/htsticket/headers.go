@@ -11,11 +11,12 @@ import (
 
 // Headers contains any headers needed by the server from the client
 type Headers struct {
-	BlockClass   string `json:"HtsgetBlockClass,omitempty"`
-	CurrentBlock string `json:"HtsgetCurrentBlock,omitempty"` // number of current block
-	TotalBlocks  string `json:"HtsgetTotalBlocks,omitempty"`  // total number of blocks
-	FilePath     string `json:"HtsgetFilePath,omitempty"`
-	Range        string `json:"Range,omitempty"`
+	BlockClass    string `json:"HtsgetBlockClass,omitempty"`
+	CurrentBlock  string `json:"HtsgetCurrentBlock,omitempty"` // number of current block
+	TotalBlocks   string `json:"HtsgetTotalBlocks,omitempty"`  // total number of blocks
+	FilePath      string `json:"HtsgetFilePath,omitempty"`
+	Range         string `json:"Range,omitempty"`
+	Authorization string `json:"Authorization,omitempty"`
 }
 
 // NewHeaders instantiates an empty headers object

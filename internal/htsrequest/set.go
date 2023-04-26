@@ -14,6 +14,7 @@ import (
 	"reflect"
 
 	"github.com/ga4gh/htsget-refserver/internal/htserror"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/ga4gh/htsget-refserver/internal/htsconstants"
 )
@@ -565,6 +566,7 @@ func setSingleParameter(request *http.Request, setParamTuple SetParameterTuple,
 		rawValue = v
 		found = f
 		if err != nil {
+			log.Errorf("error parsing in parseQueryParam, %v", err)
 			return err
 		}
 	case htsconstants.ParamLocHeader:
@@ -574,6 +576,7 @@ func setSingleParameter(request *http.Request, setParamTuple SetParameterTuple,
 		reflectedValue = v
 		found = f
 		if err != nil {
+			log.Errorf("error parsing in parseReqBodyParam, %v", err)
 			return err
 		}
 	}
@@ -631,6 +634,7 @@ func SetAllParameters(method htsconstants.HTTPMethod, endpoint htsconstants.APIE
 	htsgetReq := NewHtsgetRequest()
 	htsgetReq.SetEndpoint(endpoint)
 
+	htsgetReq.headers = request.Header
 	// for POST requests, unmarshal the JSON body once and pass to individual
 	// setting methods
 	var requestBodyBytes []byte
@@ -639,6 +643,7 @@ func SetAllParameters(method htsconstants.HTTPMethod, endpoint htsconstants.APIE
 		requestBodyBytes = rbb
 		msg := "Request body malformed"
 		if err != nil {
+			log.Errorf("error body malformed, %v", err)
 			htserror.InvalidInput(writer, &msg)
 			return htsgetReq, err
 		}
@@ -649,6 +654,7 @@ func SetAllParameters(method htsconstants.HTTPMethod, endpoint htsconstants.APIE
 		paramName := param.name
 		err := setSingleParameter(request, param, requestBodyBytes, htsgetReq)
 		if err != nil {
+			log.Errorf("error in setSingleParameter, %v", err)
 			htsgetErrorFunc := errorsByParam[paramName]
 			msg := err.Error()
 			htsgetErrorFunc(writer, &msg)
