@@ -21,6 +21,7 @@ import (
 // Configuration contains properties loaded from the JSON config file
 //
 // Attributes
+//
 //	ReadsDataSourceRegistry (*DataSourceRegistry): data sources for reads endpoint
 type Configuration struct {
 	Container *configurationContainer `json:"htsgetConfig"`
@@ -43,6 +44,8 @@ type configurationServerProps struct {
 	CorsAllowedHeaders   string `json:"corsAllowedHeaders"`
 	CorsAllowCredentials *bool  `json:"corsAllowCredentials"`
 	CorsMaxAge           int    `json:"corsMaxAge"`
+	ServerCert           string `json:"serverCert"`
+	ServerKey            string `json:"serverKey"`
 	AwsAssumeRole        *bool  `json:"awsAssumeRole"`
 }
 
@@ -234,6 +237,14 @@ func GetServiceInfo(ep htsconstants.APIEndpoint) *ServiceInfo {
 // GetConfigLoadError gets the error associated with loading the configuration
 func GetConfigLoadError() error {
 	return configurationSingletonLoadedError
+}
+
+func GetServerCert() string {
+	return getServerProps().ServerCert
+}
+
+func GetServerKey() string {
+	return getServerProps().ServerKey
 }
 
 func IsAwsAssumeRole() bool {

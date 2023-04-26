@@ -35,6 +35,10 @@ var DfltCorsAllowCredentials = false
 
 var DfltCorsMaxAge = 300
 
+var DfltServerPropsServerCert = ""
+
+var DfltServerPropsServerKey = ""
+
 var DfltAwsAssumeRole = false
 
 /* **************************************************

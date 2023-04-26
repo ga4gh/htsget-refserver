@@ -4,7 +4,6 @@
 package main
 
 import (
-	"flag"
 	"net/http"
 	"time"
 
@@ -15,10 +14,6 @@ import (
 
 // main program entrypoint
 func main() {
-
-	TLSCert := flag.String("cert", "/certs/server.crt", "TLS Server certificate")
-	TLSKey := flag.String("key", "/certs/server.key", "TLS encryption key")
-	NoTLS := flag.Bool("notls", false, "Run server without TLS")
 
 	log.SetLevel(log.InfoLevel)
 	// load configuration object
@@ -47,12 +42,12 @@ func main() {
 		Handler:           logRequest(http.DefaultServeMux),
 	}
 
-	if *NoTLS {
+	if htsconfig.GetServerCert() == "" && htsconfig.GetServerKey() == "" {
 		log.Infof("Insecure HTTP Server started at %s", server.Addr)
 		log.Fatal(server.ListenAndServe())
 	} else {
 		log.Infof("HTTPS Server started at %s", server.Addr)
-		log.Fatal(server.ListenAndServeTLS(*TLSCert, *TLSKey))
+		log.Fatal(server.ListenAndServeTLS(htsconfig.GetServerCert(), htsconfig.GetServerKey()))
 	}
 }
 
