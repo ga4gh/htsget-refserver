@@ -6,6 +6,7 @@ package main
 import (
 	"flag"
 	"net/http"
+	"time"
 
 	"github.com/ga4gh/htsget-refserver/internal/htsconfig"
 	"github.com/ga4gh/htsget-refserver/internal/htsserver"
@@ -37,13 +38,21 @@ func main() {
 	http.Handle("/", router)
 
 	// start server
-	port := htsconfig.GetPort()
+	server := &http.Server{
+		Addr:              ":" + htsconfig.GetPort(),
+		ReadTimeout:       30 * time.Second,
+		WriteTimeout:      30 * time.Second,
+		IdleTimeout:       30 * time.Second,
+		ReadHeaderTimeout: 30 * time.Second,
+		Handler:           logRequest(http.DefaultServeMux),
+	}
+
 	if *NoTLS {
-		log.Infof("Insecure HTTP Server started on port %s!", port)
-		log.Fatal(http.ListenAndServe(":"+port, logRequest(http.DefaultServeMux)))
+		log.Infof("Insecure HTTP Server started at %s", server.Addr)
+		log.Fatal(server.ListenAndServe())
 	} else {
-		log.Infof("Server started on port %s!", port)
-		log.Fatal(http.ListenAndServeTLS(":"+port, *TLSCert, *TLSKey, logRequest(http.DefaultServeMux)))
+		log.Infof("HTTPS Server started at %s", server.Addr)
+		log.Fatal(server.ListenAndServeTLS(*TLSCert, *TLSKey))
 	}
 }
 
