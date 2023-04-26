@@ -4,6 +4,7 @@ import (
 	"strconv"
 
 	"github.com/ga4gh/htsget-refserver/internal/htsrequest"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/ga4gh/htsget-refserver/internal/htsdao"
 	"github.com/ga4gh/htsget-refserver/internal/htserror"
@@ -43,6 +44,7 @@ func ticketRequestHandler(handler *requestHandler) {
 
 	dao, err := htsdao.GetDao(handler.HtsReq)
 	if err != nil {
+		log.Errorf("Could not determine data source path/url from request id, %v", err)
 		msg := "Could not determine data source path/url from request id"
 		htserror.InternalServerError(handler.Writer, &msg)
 		return
@@ -55,7 +57,7 @@ func ticketRequestHandler(handler *requestHandler) {
 		blockURLs = addHeaderBlockURL(blockURLs, handler.HtsReq, 1)
 		// pure byte range URLs, requires one block per every x bytes
 	} else if handler.HtsReq.AllFieldsRequested() && handler.HtsReq.AllTagsRequested() && handler.HtsReq.AllRegionsRequested() {
-		blockURLs = dao.GetByteRangeUrls()
+		blockURLs = dao.GetByteRangeUrls(handler.Request)
 	} else {
 		if handler.HtsReq.AllRegionsRequested() {
 			// the entire file was requested, requires 2 blocks: one for header

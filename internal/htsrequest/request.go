@@ -8,6 +8,7 @@
 package htsrequest
 
 import (
+	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
@@ -15,6 +16,8 @@ import (
 	"github.com/ga4gh/htsget-refserver/internal/htsconfig"
 	"github.com/ga4gh/htsget-refserver/internal/htsconstants"
 	"github.com/ga4gh/htsget-refserver/internal/htsutils"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // HtsgetRequest contains htsget-related parameters
@@ -35,6 +38,7 @@ type HtsgetRequest struct {
 	htsgetTotalBlocks  string
 	htsgetFilePath     string
 	htsgetRange        string
+	headers            http.Header
 }
 
 // NewHtsgetRequest instantiates a new HtsgetRequest instance
@@ -321,6 +325,7 @@ func (r *HtsgetRequest) ConstructDataEndpointURL(useRegion bool, regionI int) (s
 	dataEndpointPath := r.GetEndpoint().DataEndpointPath()
 	dataEndpoint, err := url.Parse(htsutils.RemoveTrailingSlash(host) + dataEndpointPath + r.GetID())
 	if err != nil {
+		log.Errorf("error parsing in ConstructDataEndpointURL, %v", err)
 		return "", err
 	}
 

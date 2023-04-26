@@ -1,9 +1,13 @@
 package htsdao
 
-import "github.com/ga4gh/htsget-refserver/internal/htsticket"
+import (
+	"net/http"
+
+	"github.com/ga4gh/htsget-refserver/internal/htsticket"
+)
 
 type DataAccessObject interface {
-	GetContentLength() int64
-	GetByteRangeUrls() []*htsticket.URL
+	GetContentLength(request *http.Request) int64
+	GetByteRangeUrls(request *http.Request) []*htsticket.URL
 	String() string
 }

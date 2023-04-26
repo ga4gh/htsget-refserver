@@ -5,9 +5,10 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/ga4gh/htsget-refserver/internal/awsutils"
 	"github.com/ga4gh/htsget-refserver/internal/htsconstants"
 	"github.com/ga4gh/htsget-refserver/internal/htsticket"
-	"github.com/ga4gh/htsget-refserver/internal/awsutils"
+	log "github.com/sirupsen/logrus"
 )
 
 type URLDao struct {
@@ -22,20 +23,28 @@ func NewURLDao(id string, url string) *URLDao {
 	return dao
 }
 
-func (dao *URLDao) GetContentLength() int64 {
+func (dao *URLDao) GetContentLength(request *http.Request) int64 {
 	if strings.HasPrefix(dao.url, awsutils.S3Proto) {
-		contentLength, _ := awsutils.HeadS3Object(awsutils.S3Dto{
+		contentLength, err := awsutils.HeadS3Object(awsutils.S3Dto{
 			ObjPath: dao.url,
 		})
+		if err != nil {
+			log.Errorf("error at heads, %v", err)
+		}
 		return contentLength
 	}
-	res, _ := http.Head(dao.url)
+	req, err := http.NewRequest("HEAD", dao.url, nil)
+	req.Header.Set("Authorization", request.Header.Get("Authorization"))
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		log.Errorf("error getting the head, %v", err)
+	}
 	return res.ContentLength
 }
 
-func (dao *URLDao) GetByteRangeUrls() []*htsticket.URL {
+func (dao *URLDao) GetByteRangeUrls(request *http.Request) []*htsticket.URL {
 
-	numBytes := dao.GetContentLength()
+	numBytes := dao.GetContentLength(request)
 	blockSize := htsconstants.SingleBlockByteSize
 	var start, end int64 = 0, 0
 	numBlocks := int(math.Ceil(float64(numBytes) / float64(blockSize)))
@@ -47,6 +56,7 @@ func (dao *URLDao) GetByteRangeUrls() []*htsticket.URL {
 		}
 		headers := htsticket.NewHeaders()
 		headers.SetRangeHeader(start, end)
+		headers.Authorization = request.Header.Get("Authorization")
 		url := htsticket.NewURL()
 		url.SetURL(dao.url)
 		url.SetHeaders(headers)
