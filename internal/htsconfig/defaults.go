@@ -36,6 +36,8 @@ var DefaultConfiguration = &Configuration{
 			CorsAllowedHeaders:   htsconstants.DfltCorsAllowedHeaders,
 			CorsAllowCredentials: &htsconstants.DfltCorsAllowCredentials,
 			CorsMaxAge:           htsconstants.DfltCorsMaxAge,
+			ServerCert:           htsconstants.DfltServerPropsServerCert,
+			ServerKey:            htsconstants.DfltServerPropsServerKey,
 			AwsAssumeRole:        &htsconstants.DfltAwsAssumeRole,
 		},
 		ReadsConfig: &configurationEndpoint{

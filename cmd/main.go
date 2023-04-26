@@ -4,8 +4,8 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/ga4gh/htsget-refserver/internal/htsconfig"
 	"github.com/ga4gh/htsget-refserver/internal/htsserver"
@@ -33,9 +33,22 @@ func main() {
 	http.Handle("/", router)
 
 	// start server
-	port := htsconfig.GetPort()
-	fmt.Printf("Server started on port %s!\n", port)
-	http.ListenAndServe(":"+port, logRequest(http.DefaultServeMux))
+	server := &http.Server{
+		Addr:              ":" + htsconfig.GetPort(),
+		ReadTimeout:       30 * time.Second,
+		WriteTimeout:      30 * time.Second,
+		IdleTimeout:       30 * time.Second,
+		ReadHeaderTimeout: 30 * time.Second,
+		Handler:           logRequest(http.DefaultServeMux),
+	}
+
+	if htsconfig.GetServerCert() == "" && htsconfig.GetServerKey() == "" {
+		log.Infof("Insecure HTTP Server started at %s", server.Addr)
+		log.Fatal(server.ListenAndServe())
+	} else {
+		log.Infof("HTTPS Server started at %s", server.Addr)
+		log.Fatal(server.ListenAndServeTLS(htsconfig.GetServerCert(), htsconfig.GetServerKey()))
+	}
 }
 
 func logRequest(handler http.Handler) http.Handler {
