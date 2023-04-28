@@ -11,9 +11,12 @@ import (
 	"github.com/ga4gh/htsget-refserver/internal/htsconstants"
 	"github.com/ga4gh/htsget-refserver/internal/htsrequest"
 	"github.com/google/uuid"
+	
+	log "github.com/sirupsen/logrus"
 )
 
 func getReadsData(writer http.ResponseWriter, request *http.Request) {
+	log.Debug("get reads call")
 	newRequestHandler(
 		htsconstants.GetMethod,
 		htsconstants.APIEndpointReadsData,
@@ -25,6 +28,7 @@ func getReadsData(writer http.ResponseWriter, request *http.Request) {
 func getReadsDataHandler(handler *requestHandler) {
 	fileURL, err := htsconfig.GetObjectPath(handler.HtsReq.GetEndpoint(), handler.HtsReq.GetID())
 	if err != nil {
+		log.Debugf("error in getReadsDataHandler - GetObjectPath, %v", err)
 		return
 	}
 
@@ -154,6 +158,7 @@ func getHeaderByteSize(fileURL string) (int, error) {
 	cmd := exec.Command("samtools", "view", "-H", "-b", fileURL)
 	tmpHeader, err := htsconfig.CreateTempFile(uuid.New().String() + "_header")
 	if err != nil {
+		log.Debugf("error in CreateTempFile, %v", err)
 		return 0, err
 	}
 
@@ -162,6 +167,7 @@ func getHeaderByteSize(fileURL string) (int, error) {
 
 	fi, err := tmpHeader.Stat()
 	if err != nil {
+		log.Debugf("error in TempHeader, %v", err)
 		return 0, err
 	}
 

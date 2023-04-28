@@ -1,6 +1,8 @@
 package htsserver
 
-import "github.com/ga4gh/htsget-refserver/internal/htsrequest"
+import (
+	"github.com/ga4gh/htsget-refserver/internal/htsrequest"
+)
 
 func noAfterSetup(handler *requestHandler) error {
 	return nil

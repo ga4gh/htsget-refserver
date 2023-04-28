@@ -15,6 +15,8 @@ import (
 
 	"github.com/ga4gh/htsget-refserver/internal/htsutils"
 	"github.com/go-chi/chi"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // parsePathParam parses a single url path parameter as a string
@@ -34,6 +36,7 @@ func parseQueryParam(params url.Values, key string) (string, bool, error) {
 		return params[key][0], true, nil
 	}
 	if len(params[key]) > 1 {
+		log.Debug("error in params length")
 		return "", true, errors.New("too many values specified for parameter: " + key)
 	}
 	return "", false, nil
@@ -135,6 +138,7 @@ func parseReqBodyParam(requestBodyBytes []byte, key string) (reflect.Value, bool
 	partialRequestBodyObj := newPartialRequestBody(key)
 	err := json.Unmarshal(requestBodyBytes, partialRequestBodyObj)
 	if err != nil {
+		log.Debugf("error unmarshaling in parseReqBodyParam, %v", err)
 		msg := "Could not parse request body, offending attribute: '" + key + "'. Value is malformed or incorrect datatype"
 		return reflect.ValueOf(nil), false, errors.New(msg)
 	}

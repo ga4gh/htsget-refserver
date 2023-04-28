@@ -10,11 +10,14 @@ import (
 	"github.com/ga4gh/htsget-refserver/internal/htsconstants"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/cors"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // SetRouter sets up and returns a go-chi router to caller
 func SetRouter() (*chi.Mux, error) {
 	router := chi.NewRouter()
+	log.Debug("in the setRouter call")
 
 	// Setup CORS
 	corsAllowedHeaders := strings.Split(htsconfig.GetCorsAllowedHeaders(), ",")
@@ -38,6 +41,8 @@ func SetRouter() (*chi.Mux, error) {
 
 	// if reads enabled, add reads routes
 	if htsconfig.IsEndpointEnabled(htsconstants.APIEndpointReadsTicket) {
+		log.Debugf("is reads enabled? %v", htsconstants.APIEndpointReadsTicket.String())
+
 		router.Get(htsconstants.APIEndpointReadsTicket.String(), getReadsTicket)
 		router.Post(htsconstants.APIEndpointReadsTicket.String(), postReadsTicket)
 		router.Get(htsconstants.APIEndpointReadsData.String(), getReadsData)
@@ -60,6 +65,7 @@ func SetRouter() (*chi.Mux, error) {
 	if docsDir != "" {
 		absDocsDir, err := filepath.Abs(docsDir)
 		if err != nil {
+			log.Debugf("error adding the static files route, %v", err)
 			return nil, err
 		}
 		http.Handle("/docs/", http.StripPrefix("/docs/", http.FileServer(http.Dir(absDocsDir))))

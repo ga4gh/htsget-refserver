@@ -10,6 +10,8 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // ParamTransformer transforms request parameters on query string to expected datatype
@@ -42,6 +44,7 @@ func (t *ParamTransformer) TransformStringToInt(s string) (int, string) {
 	msg := ""
 	value, err := strconv.Atoi(s)
 	if err != nil {
+		log.Debugf("error in TransformStringToInt, %v", err)
 		msg = fmt.Sprintf("Could not parse value: '%s', integer expected", s)
 	}
 	return value, msg

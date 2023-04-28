@@ -1,10 +1,11 @@
 package assumerole
 
 import (
-	"github.com/ga4gh/htsget-refserver/internal/awsutils"
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/ga4gh/htsget-refserver/internal/awsutils"
 )
 
 type Options struct {

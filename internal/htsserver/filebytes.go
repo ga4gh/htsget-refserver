@@ -8,8 +8,9 @@ import (
 	"os"
 
 	"github.com/ga4gh/htsget-refserver/internal/htsconstants"
-
 	"github.com/ga4gh/htsget-refserver/internal/htsutils"
+	
+	log "github.com/sirupsen/logrus"
 )
 
 func getFileBytes(writer http.ResponseWriter, request *http.Request) {
@@ -24,6 +25,7 @@ func getFileBytes(writer http.ResponseWriter, request *http.Request) {
 func getFileBytesHandler(handler *requestHandler) {
 	start, end, err := htsutils.ParseRangeHeader(handler.HtsReq.GetHtsgetRange())
 	if err != nil {
+		log.Debugf("error in ParseRangeHeader, %v", err)
 		return
 	}
 
@@ -41,7 +43,7 @@ func getFileBytesHandler(handler *requestHandler) {
 
 		n, err := io.ReadFull(reader, buffer)
 		if err != nil {
-
+			log.Debugf("error in ParseRangeHeader - ReadFull, %v", err)
 		}
 		handler.Writer.Write(buffer)
 		// at the second last chunk, create a buffer that will only read bytes

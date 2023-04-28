@@ -9,6 +9,8 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // AddTrailingSlash adds a trailing slash to a url if there isn't one already
@@ -77,8 +79,14 @@ func CreateRegexNamedParameterMap(pattern string, s string) (map[string][]string
 // IsValidURL checks if a passed string is a valid url
 func IsValidURL(toTest string) bool {
 	_, err1 := url.ParseRequestURI(toTest)
+	if err1 != nil {
+		log.Debugf("url not valid, %v", err1)
+	}
 	u, err2 := url.Parse(toTest)
 	if err1 != nil || err2 != nil || u.Scheme == "" || u.Host == "" {
+		if err2 != nil {
+			log.Debugf("url not valid, %v", err2)
+		}
 		return false
 	}
 	return true
@@ -91,6 +99,7 @@ func ParseRangeHeader(rangeHeader string) (int64, int64, error) {
 	pattern := "bytes=(?P<start>\\d+)-(?P<end>\\d+)"
 	matchMap, err := CreateRegexNamedParameterMap(pattern, rangeHeader)
 	if err != nil {
+		log.Debugf("cannot parseRangeHeader, %v", err)
 		return 0, 0, err
 	}
 

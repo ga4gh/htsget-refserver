@@ -12,10 +12,10 @@ import (
 	"reflect"
 
 	"github.com/ga4gh/htsget-refserver/internal/htsconstants"
-
 	"github.com/ga4gh/htsget-refserver/internal/htsutils"
-
-	"github.com/getlantern/deepcopy"
+        "github.com/getlantern/deepcopy"
+        
+	log "github.com/sirupsen/logrus"
 )
 
 // Configuration contains properties loaded from the JSON config file
@@ -39,6 +39,8 @@ type configurationServerProps struct {
 	DocsDir              string `json:"docsDir"`
 	TempDir              string `json:"tempdir"`
 	LogFile              string `json:"logFile"`
+	LogFormat            string `json:"logFormat"`
+	LogLevel             string `json:"LogLevel"`
 	CorsAllowedOrigins   string `json:"corsAllowedOrigins"`
 	CorsAllowedMethods   string `json:"corsAllowedMethods"`
 	CorsAllowedHeaders   string `json:"corsAllowedHeaders"`
@@ -112,6 +114,7 @@ func LoadConfig() {
 
 	configFileLoadError := getConfigFileLoadError()
 	if configFileLoadError != nil {
+		log.Debugf("error loading configuration: %v", configFileLoadError)
 		configurationSingletonLoadedError = errors.New(configFileLoadError.Error())
 	}
 
@@ -124,6 +127,8 @@ func LoadConfig() {
 	}
 	SetConfig(newConfiguration)
 	configurationSingletonLoaded = true
+
+	configureLogrus()
 }
 
 func SetConfig(config *Configuration) {
@@ -135,6 +140,28 @@ func GetConfig() *Configuration {
 		LoadConfig()
 	}
 	return configurationSingleton
+}
+
+func configureLogrus() {
+	parsedLevel, err := log.ParseLevel(getServerProps().LogLevel)
+	if err != nil {
+		log.Error("failed to parse log level, defaulting to `info`")
+		parsedLevel = log.InfoLevel
+	}
+	log.SetLevel(parsedLevel)
+
+	if getServerProps().LogFormat == "json" {
+		log.SetFormatter(&log.JSONFormatter{})
+	}
+
+	if getServerProps().LogFile != "" {
+		logFile, err := os.OpenFile(getServerProps().LogFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err == nil {
+			log.SetOutput(logFile)
+		} else {
+			log.Error("Failed to open log file, logging to stderr")
+		}
+	}
 }
 
 func getContainer() *configurationContainer {
