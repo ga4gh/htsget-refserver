@@ -13,10 +13,9 @@ import (
 
 	"github.com/ga4gh/htsget-refserver/internal/htsconstants"
 	"github.com/ga4gh/htsget-refserver/internal/htsutils"
-
+        "github.com/getlantern/deepcopy"
+        
 	log "github.com/sirupsen/logrus"
-
-	"github.com/getlantern/deepcopy"
 )
 
 // Configuration contains properties loaded from the JSON config file

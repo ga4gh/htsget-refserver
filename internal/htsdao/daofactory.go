@@ -4,6 +4,7 @@ import (
 	"github.com/ga4gh/htsget-refserver/internal/htsconfig"
 	"github.com/ga4gh/htsget-refserver/internal/htsrequest"
 	"github.com/ga4gh/htsget-refserver/internal/htsutils"
+	
 	log "github.com/sirupsen/logrus"
 )
 

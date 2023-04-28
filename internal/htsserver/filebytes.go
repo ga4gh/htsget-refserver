@@ -8,9 +8,9 @@ import (
 	"os"
 
 	"github.com/ga4gh/htsget-refserver/internal/htsconstants"
-	log "github.com/sirupsen/logrus"
-
 	"github.com/ga4gh/htsget-refserver/internal/htsutils"
+	
+	log "github.com/sirupsen/logrus"
 )
 
 func getFileBytes(writer http.ResponseWriter, request *http.Request) {

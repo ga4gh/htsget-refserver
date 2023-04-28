@@ -11,6 +11,7 @@ import (
 	"github.com/ga4gh/htsget-refserver/internal/htsconstants"
 	"github.com/ga4gh/htsget-refserver/internal/htsrequest"
 	"github.com/google/uuid"
+	
 	log "github.com/sirupsen/logrus"
 )
 
