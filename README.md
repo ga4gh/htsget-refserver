@@ -40,9 +40,9 @@ The full list of tags/versions is available on the [dockerhub repository page](h
 
 ## Setup - Native
 
-To run and/or develop the server natively on your OS, the following **dependencies** are required: 
+To run and/or develop the server natively on your OS, the following **dependencies** are required:
 
-* [Golang and language tools](https://golang.org/dl/) (tested on version 1.13) 
+* [Golang and language tools](https://golang.org/dl/) (tested on version 1.13)
 * [samtools](http://www.htslib.org/download/) (tested on version 1.9)
 * [bcftools](http://www.htslib.org/download/) (tested on version 1.10.2)
 * [htsget-refserver-utils](https://github.com/ga4gh/htsget-refserver-utils) (1.0.0+)
@@ -116,6 +116,8 @@ Under the `htsgetConfig` property, the `props` object overrides application-wide
 | corsAllowedHeaders   | CORS allow headers.                                                                                                                                  | *                               |
 | corsAllowCredentials | CORS allow credentials.                                                                                                                              | false                           |
 | corsMaxAge           | CORS max age in seconds.                                                                                                                             | 300                             |
+| ServerCert           | Server certificate to use for TLS. ServerCert and ServerKey must be set to run using https.                                                          |                                 |
+| ServerKey            | Server encryption key to use for TLS                                                                                                                 |                                 |
 | awsAssumeRole        | Turn on `awsAssumeRole` middleware. See **Private Bucket** section below.                                                                            | false                           |
 
 Example `props` object:
@@ -337,7 +339,7 @@ genomic regions can be requested in a single request. See
 
 ### **v1.3.0**
 
-* Server supports reads and/or variants `service-info` endpoints. The attributes of the `service-info` response can be specified via the config file independently for each datatype 
+* Server supports reads and/or variants `service-info` endpoints. The attributes of the `service-info` response can be specified via the config file independently for each datatype
 
 ### **v1.2.0**
 
@@ -348,7 +350,7 @@ using bcftools dependency
 
 * Added support for configurable data sources via a data source registry specified
 in config file
-* server can stream reads data via htsget protocol from any **url** or **local file** specified via config 
+* server can stream reads data via htsget protocol from any **url** or **local file** specified via config
 
 ### **v1.0.0**
 
