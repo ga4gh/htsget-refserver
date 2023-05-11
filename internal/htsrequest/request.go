@@ -335,6 +335,8 @@ func (r *HtsgetRequest) ConstructDataEndpointURL(useRegion bool, regionI int) (s
 		query.Set("class", r.GetClass())
 	}
 
+	useRegion = false // temporary solution: return full file when doing partial request
+
 	if useRegion {
 		region := r.GetRegions()[regionI]
 		if region.ReferenceNameRequested() {
